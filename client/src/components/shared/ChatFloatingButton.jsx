@@ -57,7 +57,7 @@ const ChatFloatingButton = () => {
     if (audioUnlocked.current) return;
     if (!audioRef.current) {
       try {
-        const soundUrl = `/notification-sound-for-whatsapp.mp3?v=${Date.now()}`;
+        const soundUrl = `/public/notification-sound-for-whatsapp.mp3?v=${Date.now()}`;
         audioRef.current = new Audio(soundUrl);
         audioRef.current.addEventListener('error', (e) => {
           console.warn('No se pudo cargar el sonido de notificación:', e);

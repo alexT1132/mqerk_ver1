@@ -1,5 +1,6 @@
 // DocumentCenter.jsx
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   FileUp,
   FileText,
@@ -298,8 +299,8 @@ const CustomModal = ({ isOpen, onClose, type, title, message }) => {
     loading: Loader
   }[type] || AlertCircle;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+  const content = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className={`relative w-full max-w-md rounded-3xl border-2 ${bgClass} p-8 shadow-2xl ring-2 ring-slate-100/50`}>
         <button
           onClick={onClose}
@@ -330,7 +331,10 @@ const CustomModal = ({ isOpen, onClose, type, title, message }) => {
       </div>
     </div>
   );
+
+  return createPortal(content, document.getElementById('modal-root'));
 };
+
 
 /* ---------- Página principal ---------- */
 

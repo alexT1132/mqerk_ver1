@@ -1,8 +1,8 @@
 // HeaderAdmin.jsx
-import React, { useRef, useEffect, useState } from "react"; 
-import { Link, useLocation, useNavigate } from "react-router-dom"; 
+import React, { useRef, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MQerkLogo from "../../assets/MQerK_logo.png";
-import { Logos } from "../../pages/public/IndexComp.jsx"; 
+import { Logos } from "../../pages/public/IndexComp.jsx";
 import { useAdminContext } from "../../context/AdminContext.jsx";
 import { useAdminNotificationContext } from "../../context/AdminNotificationContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -20,12 +20,12 @@ import { useAuth } from "../../context/AuthContext.jsx";
  * - Indicador de estado en línea para administrador
  */
 export function HeaderAdmin() {
-  
+
   const location = useLocation(); // Hook para obtener la ruta actual
   const navigate = useNavigate(); // Navegación programática para deep-link desde notificaciones
   const { adminProfile } = useAdminContext(); // Obtener perfil de administrador del contexto
   const { logout } = useAuth();
-  
+
   // Estado para menú desplegable de perfil
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -33,22 +33,22 @@ export function HeaderAdmin() {
   // Usado para mostrar el nombre de la sección actual en el encabezado
   const routeTitles = {
     "/administrativo/bienvenida": "Panel Principal",
-    "/administrativo/inicio-admin": "Panel Administrativo", 
+    "/administrativo/inicio-admin": "Panel Administrativo",
     "/administrativo/comprobantes-recibo": "Comprobantes de Pago",
     "/administrativo/lista-alumnos": "Lista de Estudiantes",
     "/administrativo/generar-contrato": "Generar Contrato",
-    "/administrativo/reportes-pagos": "Reportes de Pagos", 
+    "/administrativo/reportes-pagos": "Reportes de Pagos",
     "/administrativo/calendario": "Calendario",
     "/administrativo/email": "Correo Electrónico",
     "/administrativo/configuracion": "Configuración",
     "/login": "Iniciar Sesión",
     // Rutas antiguas para compatibilidad
     "/admin1/dashboard": "Panel Principal",
-    "/admin1/inicio-admin": "Panel Administrativo", 
+    "/admin1/inicio-admin": "Panel Administrativo",
     "/admin1/comprobantes-recibo": "Comprobantes de Pago",
     "/admin1/lista-alumnos": "Lista de Estudiantes",
     "/admin1/validacion-pagos": "Validación de Pagos",
-    "/admin1/reportes-pagos": "Reportes de Pagos", 
+    "/admin1/reportes-pagos": "Reportes de Pagos",
     "/admin1/calendario": "Calendario",
     "/admin1/email": "Correo Electrónico",
     "/admin1/configuracion": "Configuración",
@@ -56,7 +56,7 @@ export function HeaderAdmin() {
   };
 
   // Obtener título de sección actual basado en la ruta
-  const currentSectionTitle = routeTitles[location.pathname] || ""; 
+  const currentSectionTitle = routeTitles[location.pathname] || "";
 
   // Referencias para detectar clics fuera de los menús desplegables
   const notificationRef = useRef(null);
@@ -69,7 +69,7 @@ export function HeaderAdmin() {
     setIsNotificationsOpen,
     toggleNotifications,
     markAllAsRead,
-  markAsRead,
+    markAsRead,
   } = useAdminNotificationContext();
 
   /**
@@ -85,7 +85,7 @@ export function HeaderAdmin() {
       ) {
         setIsNotificationsOpen(false);
       }
-      
+
       // Cerrar menú desplegable de perfil si se hace clic fuera
       if (
         profileRef.current &&
@@ -99,7 +99,7 @@ export function HeaderAdmin() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [setIsNotificationsOpen]); 
+  }, [setIsNotificationsOpen]);
 
   /**
    * Alternar visibilidad del menú desplegable de perfil
@@ -139,16 +139,16 @@ export function HeaderAdmin() {
   const getInitials = (name) => {
     if (!name) return 'AD';
     const names = name.split(' ');
-    return names.length >= 2 
+    return names.length >= 2
       ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
       : name.substring(0, 2).toUpperCase();
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-[#3d18c3] to-[#4816bf] flex items-center justify-between px-3 sm:px-6 h-20 sm:h-24 py-0">
+    <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-[#3d18c3] to-[#4816bf] flex items-center justify-between px-3 sm:px-6 h-16 sm:h-20 py-0">
       {/* Contenedor del Logo */}
       <div className="flex items-center justify-start h-full w-fit z-10 pl-2">
-  <Link to="/administrativo/dashboard" className="flex items-center justify-center">
+        <Link to="/administrativo/dashboard" className="flex items-center justify-center">
           <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
             <Logos src={MQerkLogo} />
           </div>
@@ -156,7 +156,7 @@ export function HeaderAdmin() {
       </div>
 
       <div className="absolute left-1/2 transform -translate-x-1/2 flex flex-col justify-center items-center px-8 md:px-12 lg:px-16 w-auto max-w-4xl">
-        
+
         {/* Títulos para PC */}
         <div className="hidden sm:flex flex-col items-center">
           <h1 className="text-center text-lg md:text-xl lg:text-2xl text-white font-extrabold mb-1 whitespace-nowrap tracking-wide">
@@ -174,7 +174,7 @@ export function HeaderAdmin() {
           <h1 className="text-center text-base text-white font-extrabold mb-1 whitespace-nowrap tracking-wide">
             MQerK Academy
           </h1>
-          {currentSectionTitle && ( 
+          {currentSectionTitle && (
             <p className="text-center text-xs text-white font-medium opacity-70 mt-1 whitespace-nowrap uppercase tracking-wider">
               {currentSectionTitle}
             </p>
@@ -220,9 +220,9 @@ export function HeaderAdmin() {
               {/* Dropdown header */}
               <div className="bg-gradient-to-r from-purple-600/50 to-purple-800/50 text-white px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">Notificaciones</h3>
+                  <h3 className="font-semibold text-lg" style={{ fontFamily: 'Silo, sans-serif' }}>Notificaciones</h3>
                   {unreadCount > 0 && (
-                    <span className="bg-purple-500/50 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="bg-purple-500/50 text-white px-2 py-1 rounded-full text-xs font-medium" style={{ fontFamily: 'Silo, sans-serif' }}>
                       {unreadCount} nuevas
                     </span>
                   )}
@@ -233,23 +233,24 @@ export function HeaderAdmin() {
               {unreadCount > 0 && (
                 <div className="px-4 py-2 bg-gray-50/50 border-b border-gray-200/50">
                   <button
-                    onClick={markAllAsRead} 
+                    onClick={markAllAsRead}
                     className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150"
+                    style={{ fontFamily: 'Silo, sans-serif' }}
                   >
                     {/* Double check icon WhatsApp style */}
-                    <svg 
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                       strokeLinejoin="round"
                       className="text-blue-500"
                     >
-                      <path d="M20 6L9 17l-5-5"/>
-                      <path d="M21 6L10 17l-1-1" strokeWidth="1.5"/>
+                      <path d="M20 6L9 17l-5-5" />
+                      <path d="M21 6L10 17l-1-1" strokeWidth="1.5" />
                     </svg>
                     Marcar como leído
                   </button>
@@ -261,8 +262,8 @@ export function HeaderAdmin() {
                 {/* Show only unread notifications */}
                 {displayedNotifications.length > 0 ? (
                   <ul className="py-1">
-                    {displayedNotifications.map((notification) => ( 
-                      <li 
+                    {displayedNotifications.map((notification) => (
+                      <li
                         key={notification.id}
                         className="px-0"
                       >
@@ -278,13 +279,13 @@ export function HeaderAdmin() {
                               setIsNotificationsOpen(false);
                             }
                             // Marcar como leída al hacer click
-                            try { markAsRead(notification.id); } catch(_) {}
+                            try { markAsRead(notification.id); } catch (_) { }
                           }}
                           className="w-full text-left px-4 py-3 text-sm text-gray-800 hover:bg-gray-100/50 transition-colors duration-150 border-l-4 border-l-blue-500 bg-blue-50/50"
                         >
                           <div className="flex items-start gap-3">
                             <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <p className="text-gray-800 font-medium">{notification.message}</p>
+                            <p className="text-gray-800 font-medium" style={{ fontFamily: 'Silo, sans-serif' }}>{notification.message}</p>
                           </div>
                         </button>
                       </li>
@@ -294,18 +295,18 @@ export function HeaderAdmin() {
                   <div className="px-4 py-8 text-center bg-gray-100/50">
                     <div className="w-12 h-12 mx-auto mb-3 text-gray-400">
                       <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                       </svg>
                     </div>
-                    <p className="text-gray-600 text-sm font-medium">¡Todo al día!</p>
-                    <p className="text-gray-500 text-xs">No hay notificaciones pendientes</p>
+                    <p className="text-gray-600 text-sm font-medium" style={{ fontFamily: 'Silo, sans-serif' }}>¡Todo al día!</p>
+                    <p className="text-gray-500 text-xs" style={{ fontFamily: 'Silo, sans-serif' }}>No hay notificaciones pendientes</p>
                   </div>
                 )}
               </div>
 
               {/* Dropdown footer */}
               <div className="px-4 py-2 bg-gray-50/50 border-t border-gray-200/50">
-                <button className="text-xs text-gray-600 hover:text-gray-800 transition-colors duration-150">
+                <button className="text-xs text-gray-600 hover:text-gray-800 transition-colors duration-150" style={{ fontFamily: 'Silo, sans-serif' }}>
                   Ver todas las notificaciones
                 </button>
               </div>
@@ -333,16 +334,16 @@ export function HeaderAdmin() {
                 }}
               />
             ) : null}
-            
+
             {/* Fallback: Admin initials or default avatar */}
-            <div 
+            <div
               className={`w-full h-full flex items-center justify-center bg-gradient-to-b from-blue-500 to-blue-600 text-white font-bold text-sm sm:text-base ${adminProfile?.avatar ? 'hidden' : 'flex'}`}
               style={{ display: adminProfile?.avatar ? 'none' : 'flex' }}
             >
               {adminProfile ? getInitials(adminProfile.name) : 'AD'}
             </div>
           </button>
-          
+
           {/* Online status indicator */}
           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
 
@@ -350,7 +351,7 @@ export function HeaderAdmin() {
           {isProfileOpen && (
             <div className="absolute top-full mt-2 w-64 bg-white/95 border border-gray-200/50 rounded-lg shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200 backdrop-blur-xl
                             max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)] sm:right-0">
-              
+
               {/* Profile Header */}
               <div className="bg-gradient-to-r from-blue-600/50 to-blue-800/50 text-white px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -366,7 +367,7 @@ export function HeaderAdmin() {
                         }}
                       />
                     ) : null}
-                    <div 
+                    <div
                       className={`w-full h-full flex items-center justify-center text-white font-bold text-sm ${adminProfile?.avatar ? 'hidden' : 'flex'}`}
                       style={{ display: adminProfile?.avatar ? 'none' : 'flex' }}
                     >
@@ -419,14 +420,14 @@ export function HeaderAdmin() {
                 <div className="px-4 py-2">
                   <div className="text-xs text-gray-500 mb-1">Último Acceso</div>
                   <div className="text-sm text-gray-700">
-                    {adminProfile?.lastLogin 
+                    {adminProfile?.lastLogin
                       ? new Date(adminProfile.lastLogin).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
                       : 'Hoy'
                     }
                   </div>

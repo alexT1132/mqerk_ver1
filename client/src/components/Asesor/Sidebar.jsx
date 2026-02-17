@@ -65,29 +65,38 @@ export default function SidebarIconOnly({ onLogout = () => { }, active, counts =
       key={key}
       to={href}
       aria-label={label}
-      onMouseEnter={(e) => showTip(e.currentTarget, label, 'dark')}
+      onMouseEnter={(e) => showTip(e.currentTarget, label, "dark")}
       onMouseLeave={hideTip}
       className={({ isActive }) => [
-        "group relative flex items-center justify-center rounded-lg p-2.5 transition",
-        (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback')))))
+        "group relative flex items-center justify-center rounded-lg px-2 py-2.5 transition",
+        isActive || (!!active && (active === key || (key === "feedback" && path.startsWith("/asesor/feedback"))))
           ? "bg-violet-50 text-violet-700 ring-1 ring-violet-200"
-          : "text-slate-600 hover:bg-violet-50 hover:text-violet-700 hover:ring-1 hover:ring-violet-200 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+          : "text-slate-600 hover:bg-violet-50 hover:text-violet-700 hover:ring-1 hover:ring-violet-200 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300",
       ].join(" ")}
     >
       {({ isActive }) => (
         <>
-          <Icon className={["h-5 w-5 transition-colors", (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback'))))) ? "text-violet-700" : "text-slate-500 group-hover:text-violet-700"].join(" ")} />
+          <Icon
+            className={[
+              "h-5 w-5 transition-colors",
+              isActive || (!!active && (active === key || (key === "feedback" && path.startsWith("/asesor/feedback"))))
+                ? "text-violet-700"
+                : "text-slate-500 group-hover:text-violet-700",
+            ].join(" ")}
+          />
           {counts[key] > 0 && (
-            <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow ring-2 ring-white transform translate-x-1/4 -translate-y-1/4">
-              {counts[key] > 99 ? '99+' : counts[key]}
+            <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow ring-2 ring-white transform translate-x-1/4 -translate-y-1/4">
+              {counts[key] > 99 ? "99+" : counts[key]}
             </span>
           )}
-          <span className={[
-            "pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded",
-            (isActive || (!!active && ((active === key) || (key === 'feedback' && path.startsWith('/asesor/feedback')))))
-              ? "bg-violet-600 opacity-100"
-              : "bg-violet-500 opacity-0 group-hover:opacity-100"
-          ].join(" ")} />
+          <span
+            className={[
+              "pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded",
+              isActive || (!!active && (active === key || (key === "feedback" && path.startsWith("/asesor/feedback"))))
+                ? "bg-violet-600 opacity-100"
+                : "bg-violet-500 opacity-0 group-hover:opacity-100",
+            ].join(" ")}
+          />
         </>
       )}
     </NavLink>
@@ -103,23 +112,28 @@ export default function SidebarIconOnly({ onLogout = () => { }, active, counts =
         </div>
 
         {/* Scrollable Navigation (Rest of items) */}
-        <nav ref={navRef} className="mt-0 space-y-0.5 w-full flex-1 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar p-0.5 pt-1">
+        <nav
+          ref={navRef}
+          className="mt-0 w-full flex-1 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar p-0.5 pt-1 flex flex-col justify-evenly"
+        >
           {NAV_ITEMS.slice(1).map(renderNavItem)}
         </nav>
 
         <div className="my-1 border-t border-slate-200" />
 
         {/* Cerrar sesión */}
-        <button
-          onClick={onLogout}
-          aria-label={LOGOUT.label}
-          onMouseEnter={(e) => showTip(e.currentTarget, LOGOUT.label, 'danger')}
-          onMouseLeave={hideTip}
-          className="group relative flex w-full items-center justify-center rounded-lg p-2.5 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:ring-1 hover:ring-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-        >
-          <LOGOUT.icon className="h-5 w-5 text-red-500 transition-colors group-hover:text-red-600" />
-          {/* Tooltip via portal */}
-        </button>
+        <div className="p-1">
+          <button
+            onClick={onLogout}
+            aria-label={LOGOUT.label}
+            onMouseEnter={(e) => showTip(e.currentTarget, LOGOUT.label, "danger")}
+            onMouseLeave={hideTip}
+            className="group relative flex w-full items-center justify-center rounded-lg py-3 px-2.5 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:ring-1 hover:ring-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+          >
+            <LOGOUT.icon className="h-[22px] w-[22px] text-red-500 transition-colors group-hover:text-red-600" />
+            {/* Tooltip via portal */}
+          </button>
+        </div>
       </div>
       {/* Portal global de tooltip */}
       <TooltipPortal visible={tip.visible} x={tip.x} y={tip.y} text={tip.text} color={tip.color} />

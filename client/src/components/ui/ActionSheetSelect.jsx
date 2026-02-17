@@ -60,7 +60,7 @@ export default function ActionSheetSelect({
     if (!open && openerRef.current) {
       try {
         openerRef.current.focus();
-      } catch {}
+      } catch { }
     }
   }, [open]);
 
@@ -162,7 +162,7 @@ export default function ActionSheetSelect({
               </div>
             </div>
           </div>,
-          document.body
+          document.getElementById('modal-root')
         )}
     </div>
   );

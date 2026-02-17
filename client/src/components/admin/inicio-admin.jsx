@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrencyMXN } from '../../utils/formatters.js';
 import { useAdminNotificationContext } from '../../context/AdminNotificationContext.jsx';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 // INTEGRACIÓN BACKEND - ¡Contexto admin listo!
 import { useAdminContext } from '../../context/AdminContext.jsx';
@@ -117,6 +118,27 @@ function DashboardMetrics() {
         lastUpdated 
     } = useAdminContext();
     const navigate = useNavigate();
+    
+    // Session validation
+    const { isAuthenticated, loading } = useAuth();
+    
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            navigate('/login', { replace: true });
+        }
+    }, [loading, isAuthenticated, navigate]);
+    
+    // Show loading state while checking authentication
+    if (loading || !isAuthenticated) {
+        return (
+            <div className="w-full h-full min-h-[calc(100vh-80px)] flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4"></div>
+                    <p className="text-indigo-600 font-medium">Verificando sesión...</p>
+                </div>
+            </div>
+        );
+    }
 
     // Obtener datos de notificaciones del contexto
     // AdminNotificationContext.jsx proporciona: unreadCount, toggleNotifications, notifications, etc.
@@ -415,7 +437,7 @@ function DashboardMetrics() {
 
             <div className="flex-1 flex flex-col justify-center items-center py-3 xs:py-4 sm:py-5 md:py-6">
                 <div className="w-full max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 xs:gap-4 sm:gap-5 md:gap-6 lg:gap-7 auto-rows-fr">
+                    <div className="grid grid-cols-6 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
                         {metricsData.map((metric, index) => (
                             <MetricCard
                                 key={metric.id}

@@ -18,6 +18,7 @@
  * - DELETE /api/admin/calendar/events/{id} - Eliminar evento/recordatorio
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
@@ -50,7 +51,7 @@ export function Calendario_Admin_comp() {
     }
     return () => clearTimeout(timeout);
   }, [isLoading]);
-  
+
   // Estado para el formulario de nuevo recordatorio
   const [newReminder, setNewReminder] = useState({
     titulo: '',
@@ -191,7 +192,7 @@ export function Calendario_Admin_comp() {
         completado: false
       }
     ];
-    
+
     setReminders(sampleReminders);
   };
 
@@ -199,7 +200,7 @@ export function Calendario_Admin_comp() {
   useEffect(() => {
     const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
     const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
-    
+
     // Intentar obtener del backend, recurrir a datos de ejemplo
     fetchReminders(startDate, endDate);
   }, [currentDate]);
@@ -214,7 +215,7 @@ export function Calendario_Admin_comp() {
         if (!reminder.completado) {
           const reminderDate = new Date(`${reminder.fecha}T${reminder.hora}`);
           const reminderTime = new Date(reminderDate.getTime() - (reminder.recordarMinutos * 60000));
-          
+
           // Si es hora de mostrar el recordatorio
           if (now >= reminderTime && now < reminderDate) {
             pendingNotifications.push(reminder);
@@ -244,7 +245,7 @@ export function Calendario_Admin_comp() {
     const firstDayOfWeek = firstDay.getDay();
 
     const days = [];
-    
+
     // Días del mes anterior
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       const date = new Date(year, month, -i);
@@ -293,9 +294,9 @@ export function Calendario_Admin_comp() {
         ...newReminder,
         completado: false
       };
-      
+
       await createReminder(recordatorio);
-      
+
       setNewReminder({
         titulo: '',
         descripcion: '',
@@ -347,7 +348,7 @@ export function Calendario_Admin_comp() {
   const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   const getTipoColor = (tipo) => {
-    switch(tipo) {
+    switch (tipo) {
       case 'trabajo': return 'bg-blue-50 text-blue-800 border-blue-300';
       case 'personal': return 'bg-green-50 text-green-800 border-green-300';
       case 'academico': return 'bg-slate-100 text-slate-800 border-slate-300';
@@ -356,7 +357,7 @@ export function Calendario_Admin_comp() {
   };
 
   const getPrioridadColor = (prioridad) => {
-    switch(prioridad) {
+    switch (prioridad) {
       case 'alta': return 'bg-red-500';
       case 'media': return 'bg-yellow-500';
       case 'baja': return 'bg-green-500';
@@ -366,7 +367,7 @@ export function Calendario_Admin_comp() {
   return (
     <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6 lg:pb-8">
       <div className="max-w-7xl mx-auto">
-       
+
         <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 shadow-xl p-5 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
@@ -376,7 +377,7 @@ export function Calendario_Admin_comp() {
               </p>
             </div>
             <div className="mt-4 sm:mt-0 flex space-x-2">
-              <button 
+              <button
                 onClick={() => setShowNewModal(true)}
                 disabled={isLoading}
                 className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-md shadow-purple-500/30 border border-purple-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -406,7 +407,7 @@ export function Calendario_Admin_comp() {
                 </svg>
               </div>
               <p className="text-red-800 text-sm sm:text-base font-extrabold flex-1">{apiError}</p>
-              <button 
+              <button
                 onClick={() => setApiError(null)}
                 className="text-red-600 hover:text-red-800 p-1 hover:bg-red-100 rounded-lg transition-colors"
               >
@@ -418,7 +419,7 @@ export function Calendario_Admin_comp() {
           </div>
         )}
 
-       
+
         {showOverlay && <LoadingOverlay message="Cargando agenda..." />}
 
         {/* Estado vacío cuando no hay recordatorios y no está cargando */}
@@ -446,12 +447,12 @@ export function Calendario_Admin_comp() {
           </div>
         )}
 
-      
+
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 p-5 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <div className="flex items-center space-x-2">
-                <button 
+                <button
                   onClick={() => cambiarMes(-1)}
                   className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200"
                 >
@@ -462,7 +463,7 @@ export function Calendario_Admin_comp() {
                 <h2 className="text-xl sm:text-2xl font-extrabold text-purple-900">
                   {meses[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </h2>
-                <button 
+                <button
                   onClick={() => cambiarMes(1)}
                   className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200"
                 >
@@ -471,7 +472,7 @@ export function Calendario_Admin_comp() {
                   </svg>
                 </button>
               </div>
-              <button 
+              <button
                 onClick={() => setCurrentDate(new Date())}
                 className="px-4 py-2 text-sm font-semibold bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 border border-purple-300 transition-all duration-200"
               >
@@ -482,10 +483,10 @@ export function Calendario_Admin_comp() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
+
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 overflow-hidden">
-             
+
               <div className="grid grid-cols-7 bg-gradient-to-r from-purple-100 via-indigo-100 to-purple-100 border-b-2 border-purple-300">
                 {diasSemana.map((dia) => (
                   <div key={dia} className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-extrabold text-purple-900">
@@ -494,27 +495,25 @@ export function Calendario_Admin_comp() {
                 ))}
               </div>
 
-           
+
               <div className="grid grid-cols-7">
                 {getDaysOfMonth().map((dia, index) => {
                   const recordatoriosDelDia = obtenerRecordatoriosPorFecha(dia.fechaCompleta);
                   const esHoy = dia.fechaCompleta.toDateString() === new Date().toDateString();
-                  
+
                   return (
-                    <div 
-                      key={index} 
-                      className={`min-h-28 sm:min-h-32 p-2 border-r border-b border-slate-200 ${
-                        !dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
-                      } ${esHoy ? 'bg-gradient-to-br from-slate-100 to-slate-50 border-slate-300 ring-2 ring-slate-300' : ''} hover:bg-slate-50 transition-colors`}
+                    <div
+                      key={index}
+                      className={`min-h-28 sm:min-h-32 p-2 border-r border-b border-slate-200 ${!dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
+                        } ${esHoy ? 'bg-gradient-to-br from-slate-100 to-slate-50 border-slate-300 ring-2 ring-slate-300' : ''} hover:bg-slate-50 transition-colors`}
                     >
-                      <div className={`text-xs sm:text-sm font-extrabold mb-2 ${
-                        esHoy ? 'text-slate-900' : 'text-slate-700'
-                      }`}>
+                      <div className={`text-xs sm:text-sm font-extrabold mb-2 ${esHoy ? 'text-slate-900' : 'text-slate-700'
+                        }`}>
                         {dia.fecha}
                       </div>
                       <div className="space-y-1">
                         {recordatoriosDelDia.slice(0, 3).map((recordatorio) => (
-                          <div 
+                          <div
                             key={recordatorio.id}
                             onClick={() => {
                               setSelectedReminder(recordatorio);
@@ -542,9 +541,9 @@ export function Calendario_Admin_comp() {
             </div>
           </div>
 
-        
+
           <div className="space-y-6">
-          
+
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4 flex items-center">
                 <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 border-2 border-slate-300">
@@ -560,43 +559,43 @@ export function Calendario_Admin_comp() {
                   .sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`))
                   .slice(0, 5)
                   .map((recordatorio) => (
-                  <div 
-                    key={recordatorio.id}
-                    onClick={() => {
-                      setSelectedReminder(recordatorio);
-                      setShowEditModal(true);
-                    }}
-                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-slate-50 hover:shadow-md cursor-pointer border border-transparent hover:border-slate-300 transition-all duration-200"
-                  >
-                    <div className={`w-3 h-3 rounded-full mt-1 ${getPrioridadColor(recordatorio.prioridad)}`}></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {recordatorio.titulo}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {recordatorio.fecha} - {recordatorio.hora}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate mt-1">
-                        {recordatorio.descripcion}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        marcarCompletado(recordatorio.id);
+                    <div
+                      key={recordatorio.id}
+                      onClick={() => {
+                        setSelectedReminder(recordatorio);
+                        setShowEditModal(true);
                       }}
-                      className="text-gray-400 hover:text-green-600 transition-colors"
+                      className="flex items-start space-x-3 p-3 rounded-lg hover:bg-slate-50 hover:shadow-md cursor-pointer border border-transparent hover:border-slate-300 transition-all duration-200"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+                      <div className={`w-3 h-3 rounded-full mt-1 ${getPrioridadColor(recordatorio.prioridad)}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {recordatorio.titulo}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {recordatorio.fecha} - {recordatorio.hora}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate mt-1">
+                          {recordatorio.descripcion}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          marcarCompletado(recordatorio.id);
+                        }}
+                        className="text-gray-400 hover:text-green-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
               </div>
             </div>
 
-        
+
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4">Tipos de Recordatorios</h3>
               <div className="space-y-3">
@@ -613,7 +612,7 @@ export function Calendario_Admin_comp() {
                   <span className="text-sm text-gray-700">Académico</span>
                 </div>
               </div>
-              
+
               <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-4 mb-2">Prioridades</h4>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
@@ -631,7 +630,7 @@ export function Calendario_Admin_comp() {
               </div>
             </div>
 
-       
+
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4">Resumen</h3>
               <div className="space-y-2.5">
@@ -659,9 +658,9 @@ export function Calendario_Admin_comp() {
         </div>
 
         {/* Modal para nuevo recordatorio */}
-        {showNewModal && (
-          <div 
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-start justify-center pt-24 sm:pt-28 md:pt-32 p-4"
+        {showNewModal && createPortal(
+          <div
+            className="fixed inset-0 backdrop-blur-sm bg-black/30 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowNewModal(false);
@@ -674,7 +673,7 @@ export function Calendario_Admin_comp() {
                   <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     Nuevo Recordatorio
                   </h3>
-                  <button 
+                  <button
                     onClick={() => setShowNewModal(false)}
                     className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >
@@ -683,7 +682,7 @@ export function Calendario_Admin_comp() {
                     </svg>
                   </button>
                 </div>
-                
+
                 <form onSubmit={manejarNuevoRecordatorio} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -693,7 +692,7 @@ export function Calendario_Admin_comp() {
                       type="text"
                       required
                       value={newReminder.titulo}
-                      onChange={(e) => setNewReminder({...newReminder, titulo: e.target.value})}
+                      onChange={(e) => setNewReminder({ ...newReminder, titulo: e.target.value })}
                       className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="Título del recordatorio"
                     />
@@ -705,7 +704,7 @@ export function Calendario_Admin_comp() {
                     </label>
                     <textarea
                       value={newReminder.descripcion}
-                      onChange={(e) => setNewReminder({...newReminder, descripcion: e.target.value})}
+                      onChange={(e) => setNewReminder({ ...newReminder, descripcion: e.target.value })}
                       className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       rows="3"
                       placeholder="Descripción opcional"
@@ -721,7 +720,7 @@ export function Calendario_Admin_comp() {
                         type="date"
                         required
                         value={newReminder.fecha}
-                        onChange={(e) => setNewReminder({...newReminder, fecha: e.target.value})}
+                        onChange={(e) => setNewReminder({ ...newReminder, fecha: e.target.value })}
                         className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       />
                     </div>
@@ -734,7 +733,7 @@ export function Calendario_Admin_comp() {
                         type="time"
                         required
                         value={newReminder.hora}
-                        onChange={(e) => setNewReminder({...newReminder, hora: e.target.value})}
+                        onChange={(e) => setNewReminder({ ...newReminder, hora: e.target.value })}
                         className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       />
                     </div>
@@ -747,7 +746,7 @@ export function Calendario_Admin_comp() {
                       </label>
                       <select
                         value={newReminder.tipo}
-                        onChange={(e) => setNewReminder({...newReminder, tipo: e.target.value})}
+                        onChange={(e) => setNewReminder({ ...newReminder, tipo: e.target.value })}
                         className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       >
                         <option value="personal">Personal</option>
@@ -762,7 +761,7 @@ export function Calendario_Admin_comp() {
                       </label>
                       <select
                         value={newReminder.prioridad}
-                        onChange={(e) => setNewReminder({...newReminder, prioridad: e.target.value})}
+                        onChange={(e) => setNewReminder({ ...newReminder, prioridad: e.target.value })}
                         className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       >
                         <option value="baja">Baja</option>
@@ -778,7 +777,7 @@ export function Calendario_Admin_comp() {
                     </label>
                     <select
                       value={newReminder.recordarMinutos}
-                      onChange={(e) => setNewReminder({...newReminder, recordarMinutos: parseInt(e.target.value)})}
+                      onChange={(e) => setNewReminder({ ...newReminder, recordarMinutos: parseInt(e.target.value) })}
                       className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                     >
                       <option value="5">5 minutos</option>
@@ -789,9 +788,9 @@ export function Calendario_Admin_comp() {
                       <option value="1440">1 día</option>
                     </select>
                   </div>
-                  
+
                   <div className="flex justify-end space-x-2 pt-4">
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setShowNewModal(false)}
                       disabled={isLoading}
@@ -799,29 +798,30 @@ export function Calendario_Admin_comp() {
                     >
                       Cancelar
                     </button>
-                    <button 
+                    <button
                       type="submit"
                       disabled={isLoading}
-                      className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm border border-slate-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center font-semibold"
+                      className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-200 border border-purple-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center font-bold transform hover:scale-[1.02] active:scale-95"
                     >
                       {isLoading && (
                         <svg className="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                       )}
-                      {isLoading ? 'Creando...' : 'Crear Recordatorio'}
+                      {isLoading ? 'Guardando...' : 'Guardar Recordatorio'}
                     </button>
                   </div>
                 </form>
               </div>
             </div>
-          </div>
+          </div>,
+          document.getElementById('modal-root')
         )}
 
         {/* Modal para editar recordatorio */}
-        {showEditModal && selectedReminder && (
-          <div 
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
+        {showEditModal && selectedReminder && createPortal(
+          <div
+            className="fixed inset-0 backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowEditModal(false);
@@ -835,7 +835,7 @@ export function Calendario_Admin_comp() {
                   <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     Detalles del Recordatorio
                   </h3>
-                  <button 
+                  <button
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedReminder(null);
@@ -847,7 +847,7 @@ export function Calendario_Admin_comp() {
                     </svg>
                   </button>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <div className={`w-4 h-4 rounded-full ${getPrioridadColor(selectedReminder.prioridad)}`}></div>
@@ -880,39 +880,50 @@ export function Calendario_Admin_comp() {
                   <div className="text-sm">
                     <span className="font-medium text-gray-600">Recordar:</span>
                     <p className="text-gray-900">
-                      {selectedReminder.recordarMinutos >= 1440 
+                      {selectedReminder.recordarMinutos >= 1440
                         ? `${selectedReminder.recordarMinutos / 1440} día(s) antes`
                         : selectedReminder.recordarMinutos >= 60
-                        ? `${selectedReminder.recordarMinutos / 60} hora(s) antes`
-                        : `${selectedReminder.recordarMinutos} minutos antes`
+                          ? `${selectedReminder.recordarMinutos / 60} hora(s) antes`
+                          : `${selectedReminder.recordarMinutos} minutos antes`
                       }
                     </p>
                   </div>
-                  
-                  <div className="flex justify-between space-x-2 pt-4">
-                    <button 
+
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
+                    <button
                       onClick={() => eliminarRecordatorio(selectedReminder.id)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm border border-red-700 transition-all duration-200 font-semibold"
+                      className="order-2 sm:order-1 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 border border-rose-200 transition-all duration-200 font-bold flex items-center justify-center gap-2 text-sm"
                     >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                       Eliminar
                     </button>
-                    <div className="flex space-x-2">
-                      <button 
+                    <div className="order-1 sm:order-2 flex flex-col sm:flex-row gap-2">
+                      <button
                         onClick={() => marcarCompletado(selectedReminder.id)}
-                        className={`px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-sm border ${
-                          selectedReminder.completado 
-                            ? 'bg-yellow-600 text-white hover:bg-yellow-700 border-yellow-700' 
-                            : 'bg-green-600 text-white hover:bg-green-700 border-green-700'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg transition-all duration-200 font-bold shadow-md border transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 text-sm ${selectedReminder.completado
+                          ? 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200'
+                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 hover:from-emerald-700 hover:to-teal-700'
+                          }`}
                       >
-                        {selectedReminder.completado ? 'Desmarcar' : 'Completar'}
+                        {selectedReminder.completado ? (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        {selectedReminder.completado ? 'Desmarcar' : 'Completar Tarea'}
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           setShowEditModal(false);
                           setSelectedReminder(null);
                         }}
-                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                        className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 border border-slate-200 transition-all duration-200 font-bold text-sm"
                       >
                         Cerrar
                       </button>
@@ -921,13 +932,14 @@ export function Calendario_Admin_comp() {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.getElementById('modal-root')
         )}
 
         {/* Modal de notificaciones */}
-        {showNotification && notifications.length > 0 && (
-          <div 
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
+        {showNotification && notifications.length > 0 && createPortal(
+          <div
+            className="fixed inset-0 backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowNotification(false);
@@ -947,7 +959,7 @@ export function Calendario_Admin_comp() {
                       ¡Recordatorios Pendientes!
                     </h3>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setShowNotification(false)}
                     className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >
@@ -956,7 +968,7 @@ export function Calendario_Admin_comp() {
                     </svg>
                   </button>
                 </div>
-                
+
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {notifications.map((notificacion) => (
                     <div key={notificacion.id} className="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg shadow-sm">
@@ -973,15 +985,15 @@ export function Calendario_Admin_comp() {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="flex justify-end space-x-2 pt-4">
-                  <button 
+                  <button
                     onClick={() => setShowNotification(false)}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                   >
                     Cerrar
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       // Marcar todos los recordatorios de la notificación como vistos
                       setShowNotification(false);
@@ -994,7 +1006,8 @@ export function Calendario_Admin_comp() {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.getElementById('modal-root')
         )}
       </div>
     </div>

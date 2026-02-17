@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../../api/axios.js';
 import dayjs from 'dayjs';
@@ -30,21 +31,21 @@ export default function FinanzasHome() {
       } finally { setLoading(false); }
     };
     load();
-  // presupuesto egresos: aplicar rollover y tomar snapshot del mes (preferir backend)
-  rolloverIfNeeded();
-  const m = dayjs().format('YYYY-MM');
-  (async () => {
-    try {
-  const snap = await getResumenMensual(m);
-  const localSpent = sumExpensesMonth(m);
-  const budget = Number(snap.budget || 0);
-  const spent = Math.max(Number(snap.spent || 0), localSpent);
-  const leftover = Math.max(0, budget - spent);
-  setEgresosSnap({ budget, spent, leftover, reductionPct: 0 });
-    } catch {
-      setEgresosSnap(getBudgetSnapshot(m));
-    }
-  })();
+    // presupuesto egresos: aplicar rollover y tomar snapshot del mes (preferir backend)
+    rolloverIfNeeded();
+    const m = dayjs().format('YYYY-MM');
+    (async () => {
+      try {
+        const snap = await getResumenMensual(m);
+        const localSpent = sumExpensesMonth(m);
+        const budget = Number(snap.budget || 0);
+        const spent = Math.max(Number(snap.spent || 0), localSpent);
+        const leftover = Math.max(0, budget - spent);
+        setEgresosSnap({ budget, spent, leftover, reductionPct: 0 });
+      } catch {
+        setEgresosSnap(getBudgetSnapshot(m));
+      }
+    })();
   }, [authLoading, isAuthenticated, user?.role]);
 
   const fmtMoney = (n) => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
@@ -64,7 +65,7 @@ export default function FinanzasHome() {
     const prevLabel = prev.format('MMMM YYYY');
     return { totalMonth, countMonth, totalPrev, growthRaw, growthPositive, avg, prevLabel };
   }, [ingresos]);
-  
+
   return (
     <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-slate-50">
       {/* Header con título grande pegado arriba */}
@@ -86,7 +87,7 @@ export default function FinanzasHome() {
       <div className="flex-1 flex flex-col justify-center items-center py-4 sm:py-6">
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12 auto-rows-fr">
-            
+
             {/* Tarjeta Ingresos */}
             <Link
               to="/administrativo/finanzas/ingresos"
@@ -94,7 +95,7 @@ export default function FinanzasHome() {
             >
               {/* Línea decorativa superior */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400"></div>
-              
+
               {/* Patrón sutil de fondo */}
               <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity duration-500">
                 <div className="absolute inset-0" style={{
@@ -117,7 +118,7 @@ export default function FinanzasHome() {
                     <p className="text-xs sm:text-sm font-extrabold text-emerald-700 uppercase tracking-wider">Gestión Financiera</p>
                   </div>
                 </div>
-                
+
                 <div className="hidden sm:block text-right">
                   <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">{loading ? '…' : fmtMoney(metrics.totalMonth)}</div>
                   <div className="text-[10px] sm:text-xs text-slate-600 font-semibold bg-slate-100 border border-slate-200 px-2 py-0.5 sm:py-1 rounded-lg">Este mes</div>
@@ -181,10 +182,10 @@ export default function FinanzasHome() {
               </div>
 
               {/* Footer */}
-               <div className="relative z-10 flex items-center justify-between">
-                 <div className="flex items-center text-emerald-700 font-extrabold group-hover:text-emerald-800 transition-colors">
-                   <span className="hidden sm:inline mr-2">Administrar</span>
-                   <svg className="w-4 h-4 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center text-emerald-700 font-extrabold group-hover:text-emerald-800 transition-colors">
+                  <span className="hidden sm:inline mr-2">Administrar</span>
+                  <svg className="w-4 h-4 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                   </svg>
                 </div>
@@ -208,7 +209,7 @@ export default function FinanzasHome() {
             >
               {/* Línea decorativa superior */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-rose-400 to-pink-400"></div>
-              
+
               {/* Patrón sutil de fondo */}
               <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity duration-500">
                 <div className="absolute inset-0" style={{
@@ -273,33 +274,32 @@ export default function FinanzasHome() {
                 {/* Compacto en móvil */}
                 <div className="grid sm:hidden grid-cols-3 gap-1.5 bg-gray-50 rounded-lg p-1.5">
                   <div className="text-center">
-          <div className="text-[13px] font-bold text-rose-600">{fmtMoney(egresosSnap.spent)}</div>
-          <div className="text-[9px] text-gray-500">Gastos</div>
+                    <div className="text-[13px] font-bold text-rose-600">{fmtMoney(egresosSnap.spent)}</div>
+                    <div className="text-[9px] text-gray-500">Gastos</div>
                   </div>
                   <div className="text-center">
-          <div className="text-[13px] font-bold text-indigo-600">{fmtMoney(egresosSnap.budget)}</div>
-          <div className="text-[9px] text-gray-500">Presup.</div>
+                    <div className="text-[13px] font-bold text-indigo-600">{fmtMoney(egresosSnap.budget)}</div>
+                    <div className="text-[9px] text-gray-500">Presup.</div>
                   </div>
                   <div className="text-center">
-          <div className={`text-[13px] font-bold ${egresosSnap.leftover <= LOW_REMAINING_THRESHOLD ? 'text-rose-600' : 'text-emerald-600'}`}>{fmtMoney(egresosSnap.leftover)}</div>
-          <div className="text-[9px] text-gray-500">Disp.</div>
+                    <div className={`text-[13px] font-bold ${egresosSnap.leftover <= LOW_REMAINING_THRESHOLD ? 'text-rose-600' : 'text-emerald-600'}`}>{fmtMoney(egresosSnap.leftover)}</div>
+                    <div className="text-[9px] text-gray-500">Disp.</div>
                   </div>
                 </div>
                 {/* Barra de progreso compacta (solo móvil) */}
                 <div className="sm:hidden mt-1">
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${
-                        egresosSnap.budget > 0
-                          ? egresosSnap.spent / egresosSnap.budget <= 0.7
-                            ? 'bg-emerald-500'
-                            : egresosSnap.spent <= egresosSnap.budget
-                              ? 'bg-amber-500'
-                              : 'bg-rose-600'
-                          : egresosSnap.spent > 0
-                            ? 'bg-rose-600'
-                            : 'bg-gray-300'
-                      }`}
+                      className={`h-full ${egresosSnap.budget > 0
+                        ? egresosSnap.spent / egresosSnap.budget <= 0.7
+                          ? 'bg-emerald-500'
+                          : egresosSnap.spent <= egresosSnap.budget
+                            ? 'bg-amber-500'
+                            : 'bg-rose-600'
+                        : egresosSnap.spent > 0
+                          ? 'bg-rose-600'
+                          : 'bg-gray-300'
+                        }`}
                       style={{
                         width: `${Math.min(100, egresosSnap.budget > 0 ? Math.round((egresosSnap.spent / egresosSnap.budget) * 100) : (egresosSnap.spent > 0 ? 100 : 0))}%`
                       }}
@@ -345,10 +345,10 @@ export default function FinanzasHome() {
                 </div>
               </div>
 
-      {/* Footer: igual que Ingresos */}
-         <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center text-rose-700 font-extrabold group-hover:text-rose-800 transition-colors">
-      <span className="hidden sm:inline mr-2">Administrar</span>
+              {/* Footer: igual que Ingresos */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center text-rose-700 font-extrabold group-hover:text-rose-800 transition-colors">
+                  <span className="hidden sm:inline mr-2">Administrar</span>
                   <svg className="w-4 h-4 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                   </svg>
@@ -372,14 +372,17 @@ export default function FinanzasHome() {
         </div>
       </div>
       {/* Selector de subopciones Egresos */}
-      {showEgresosMenu && (
+      {showEgresosMenu && createPortal(
         <div
-          className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 backdrop-blur-sm bg-slate-900/50"
+          className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm bg-slate-900/50"
           onClick={(e) => { if (e.target === e.currentTarget) setShowEgresosMenu(false); }}
         >
           <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col">
-            <div className="px-5 sm:px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">Egresos</h3>
+            <div className="px-5 sm:px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between flex-shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+              <div>
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Egresos</h3>
+                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-0.5">Control de gastos y presupuesto</p>
+              </div>
               <button onClick={() => setShowEgresosMenu(false)} className="text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-100 rounded-lg transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
@@ -447,11 +450,9 @@ export default function FinanzasHome() {
                 <span className="h-8 w-8 rounded-lg bg-white/70 border-2 border-slate-200 flex items-center justify-center text-slate-700 font-extrabold">→</span>
               </Link>
             </div>
-            <div className="px-5 sm:px-6 py-3 border-t-2 border-slate-200 flex items-center justify-end">
-              <button onClick={() => setShowEgresosMenu(false)} className="px-4 py-2 text-sm font-semibold rounded-lg border-2 border-slate-300 text-slate-700 hover:bg-slate-50 transition-all">Cerrar</button>
-            </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
     </div>
   );

@@ -809,7 +809,7 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
       {/* celdas */}
       <div className="grid grid-cols-7 gap-px bg-slate-200">
         {meta.cells.map((date, i) => {
-          if (!date) return <div key={`e-${i}`} className="bg-white h-12 sm:h-14" />;
+          if (!date) return <div key={`e-${i}`} className="bg-white h-12 sm:h-14 lg:h-16 min-[2200px]:h-24" />;
           const iso = toISO(date);
           const evs = meta.map[iso] || [];
           const today = toISO(new Date()) === iso;
@@ -827,7 +827,7 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
                   onCreate(iso);
                 }
               }}
-              className={`relative bg-white h-12 sm:h-16 p-1 hover:bg-slate-50 transition-all duration-200 cursor-pointer border-r border-b border-slate-100 ${today ? "bg-indigo-50/30" : ""
+              className={`relative bg-white h-12 sm:h-14 lg:h-16 min-[2200px]:h-24 p-1 hover:bg-slate-50 transition-all duration-200 cursor-pointer border-r border-b border-slate-100 ${today ? "bg-indigo-50/30" : ""
                 } ${isPast ? "opacity-60" : ""}`}
             >
               <div
@@ -865,10 +865,10 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
       </div>
 
       {/* footer */}
-      <div className="p-4 bg-slate-50 border-t border-slate-200">
+      <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-center">
         <button
           onClick={() => onCreate?.(toISO(new Date()))}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm px-4 py-2.5 font-bold shadow-sm transition-all duration-200 active:scale-95"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm px-6 py-2.5 font-bold shadow-sm transition-all duration-200 active:scale-95"
         >
           <Plus className="size-4" />
           Nuevo recordatorio
@@ -1500,7 +1500,7 @@ export default function AgendaDashboard() {
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
       <div className="relative z-10 min-h-screen">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mx-auto max-w-[1920px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Header */}
           <div className="mb-8 sm:mb-10">
             <div className="flex items-center gap-4 mb-4">

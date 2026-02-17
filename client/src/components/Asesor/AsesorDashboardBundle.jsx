@@ -3,6 +3,7 @@
 import { Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useState, useEffect } from 'react';
+import { Monitor, Laptop } from 'lucide-react';
 
 // Layout genérico y wrappers de Asesor
 import { Layout } from '../layouts/Layout.jsx';
@@ -118,17 +119,13 @@ function AsesorLayout({ children }) {
       try {
         const { default: axios } = await import('../../api/axios.js');
         const res = await axios.get('/chat/unread/count');
-        // Nuevo formato: { data: { total: N, by_student: {...} } }
         setCounts(prev => ({ ...prev, chat: res.data?.data?.total || 0 }));
-      } catch (e) {
-        // Silent error
-      }
+      } catch (e) { }
     };
 
     fetchCounts();
-    interval = setInterval(fetchCounts, 15000); // Polling cada 15s
+    interval = setInterval(fetchCounts, 15000);
 
-    // Listener para actualizar si se envía/recibe mensaje (optimización)
     const handleUpdate = () => fetchCounts();
     window.addEventListener('advisor-chat-update', handleUpdate);
 
@@ -137,6 +134,8 @@ function AsesorLayout({ children }) {
       window.removeEventListener('advisor-chat-update', handleUpdate);
     };
   }, []);
+
+
 
   return (
     <>
@@ -148,10 +147,36 @@ function AsesorLayout({ children }) {
         SideBarSmComponent={mostrarSidebar ? SideBarSmWrapper : undefined}
         sidebarProps={{ onLogout: handleLogout, active: isFeedback ? 'feedback' : undefined, counts }}
         backgroundClassName="bg-transparent"
-        contentClassName="!px-0 !pb-0 !pt-14 md:!pt-16 lg:!pt-20"
+        contentClassName="!px-0 !pb-0 !pt-14 md:!pt-16 lg:!pt-20 hidden lg:block"
       >
         {children}
       </Layout>
+
+      {/* Pantalla de restricción para móviles/tablets (< lg) */}
+      <div className="lg:hidden fixed inset-0 z-[9999] bg-slate-50 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 rounded-full animate-pulse" />
+          <div className="relative w-24 h-24 bg-white ring-1 ring-slate-900/5 rounded-3xl shadow-xl flex items-center justify-center">
+            <Monitor className="w-12 h-12 text-indigo-600" strokeWidth={1.5} />
+          </div>
+          <div className="absolute -bottom-3 -right-3 w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white">
+            <Laptop className="w-5 h-5 text-white" />
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">
+          Optimizado para Escritorio
+        </h2>
+
+        <p className="text-slate-600 max-w-xs mb-8 leading-relaxed font-medium">
+          Por el momento, el panel de asesor está disponible exclusivamente para laptops y ordenadores de escritorio.
+        </p>
+
+        <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-full text-sm font-semibold text-slate-500">
+          <Laptop className="w-4 h-4" />
+          <span>Accede desde tu PC</span>
+        </div>
+      </div>
     </>
   );
 }

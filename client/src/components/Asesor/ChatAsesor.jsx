@@ -9,7 +9,7 @@ import FileCompressionIndicator from '../shared/FileCompressionIndicator';
 import StatusModal from '../shared/StatusModal';
 
 // Sonido de notificación
-const NOTIFICATION_SOUND = '/notification-sound-for-whatsapp.mp3';
+const NOTIFICATION_SOUND = '/public/notification-sound-for-whatsapp.mp3';
 
 // Ícono de adjuntar archivo (Estilizado)
 const AttachIcon = ({ className = "w-5 h-5" }) => (

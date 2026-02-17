@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FaRegEye } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios.js';
@@ -29,7 +30,7 @@ export default function FinanzasIngresos() {
   const [error, setError] = useState('');
   const [exportExcelLoading, setExportExcelLoading] = useState(false);
   const [exportExcelError, setExportExcelError] = useState('');
-  
+
   // Estado para modal de confirmación de asesorías
   const [showConfirmacionModal, setShowConfirmacionModal] = useState(false);
   const [asesoriasPendientes, setAsesoriasPendientes] = useState([]);
@@ -50,12 +51,12 @@ export default function FinanzasIngresos() {
     alumno: '',
     curso: '',
     fechaInicio: '',
-  horaInicio: '',
-  asesorId: '',
+    horaInicio: '',
+    asesorId: '',
     metodo: 'Efectivo',
     importe: '',
     estatus: 'Pagado',
-  descripcion: '',
+    descripcion: '',
   });
 
   const openModal = () => setShowModal(true);
@@ -180,13 +181,13 @@ export default function FinanzasIngresos() {
   const createCalendarEvent = async (ingresoData) => {
     try {
       const titulo = `Inicio ${ingresoData.curso} - ${ingresoData.alumno}`;
-      const descripcion = `Asesor: ${ingresoData.asesor || '-'} | Método: ${ingresoData.metodo} | Importe: ${formatCurrency(ingresoData.importe)} | Estatus: ${ingresoData.estatus}` + 
+      const descripcion = `Asesor: ${ingresoData.asesor || '-'} | Método: ${ingresoData.metodo} | Importe: ${formatCurrency(ingresoData.importe)} | Estatus: ${ingresoData.estatus}` +
         (ingresoData.descripcion ? ` | Nota: ${ingresoData.descripcion}` : '');
       const horaEvento = ingresoData.horaInicio || getSmartEventTime(ingresoData.fechaInicio);
-      const recordarMinutos = dayjs(ingresoData.fechaInicio).isSame(dayjs(), 'day') 
-        ? RECORDAR_MINUTOS_HOY 
+      const recordarMinutos = dayjs(ingresoData.fechaInicio).isSame(dayjs(), 'day')
+        ? RECORDAR_MINUTOS_HOY
         : RECORDAR_MINUTOS_FUTURO;
-      
+
       const evRes = await api.post('/admin/calendar/events', {
         titulo,
         descripcion,
@@ -197,7 +198,7 @@ export default function FinanzasIngresos() {
         recordarMinutos,
         completado: false,
       });
-      
+
       return evRes?.data;
     } catch (error) {
       console.warn('No se pudo crear el evento de calendario para el ingreso:', error?.response?.status || error?.message || error);
@@ -232,7 +233,7 @@ export default function FinanzasIngresos() {
     loadIngresos();
     loadAsesoriasPendientes();
   }, []);
-  
+
   // Cargar asesorías pendientes de confirmación
   const loadAsesoriasPendientes = async () => {
     try {
@@ -245,7 +246,7 @@ export default function FinanzasIngresos() {
       setLoadingPendientes(false);
     }
   };
-  
+
   // Confirmar o rechazar una asesoría
   const handleConfirmarAsesoria = async (confirmacionId, accion) => {
     try {
@@ -255,16 +256,16 @@ export default function FinanzasIngresos() {
         accion, // 'confirmar' | 'rechazar'
         observaciones: confirmacionObservaciones || null,
       });
-      
+
       // Recargar datos
       await loadAsesoriasPendientes();
       await applyFilters(); // Recargar ingresos para ver cambios
-      
+
       // Cerrar modal si no hay más pendientes
       if (asesoriasPendientes.length <= 1) {
         setShowConfirmacionModal(false);
       }
-      
+
       setConfirmacionObservaciones('');
     } catch (e) {
       console.error('Error confirmando asesoría:', e);
@@ -302,7 +303,7 @@ export default function FinanzasIngresos() {
   const onSubmit = async (e) => {
     e.preventDefault();
     // Validación mínima
-  if (!form.alumno || !form.curso || !form.fechaInicio || !form.asesorId || !form.metodo || !form.importe) return;
+    if (!form.alumno || !form.curso || !form.fechaInicio || !form.asesorId || !form.metodo || !form.importe) return;
     const amount = parseFloat(String(form.importe).replace(/,/g, ''));
     if (Number.isNaN(amount)) return;
     const asesorSel = asesores.find(a => String(a.id) === String(form.asesorId));
@@ -311,15 +312,15 @@ export default function FinanzasIngresos() {
       alumno: form.alumno.trim(),
       curso: form.curso.trim(),
       fechaInicio: form.fechaInicio,
-  horaInicio: form.horaInicio || '',
+      horaInicio: form.horaInicio || '',
       asesor: asesorNombre,
       metodo: form.metodo,
       importe: amount,
       estatus: form.estatus || 'Pagado',
-  descripcion: form.descripcion?.trim() || '',
+      descripcion: form.descripcion?.trim() || '',
     };
     // Crear en backend y refrescar lista
-  try {
+    try {
       const payload = {
         estudiante_id: null,
         alumno_nombre: nuevo.alumno,
@@ -340,8 +341,8 @@ export default function FinanzasIngresos() {
       // Crear evento en Calendario para la misma fecha/hora de inicio
       const ev = await createCalendarEvent({ ...nuevo, asesor: asesorNombre });
       if (createdIngreso?.id && ev?.id) {
-        try { 
-          await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id }); 
+        try {
+          await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id });
         } catch (err) {
           console.warn('No se pudo vincular el evento de calendario al ingreso:', err);
         }
@@ -353,7 +354,7 @@ export default function FinanzasIngresos() {
       // Fallback local si hay error
       setRows((r) => [...r, nuevo]);
     }
-  setForm({ alumno: '', curso: '', fechaInicio: '', horaInicio: '', asesorId: '', metodo: 'Efectivo', importe: '', estatus: 'Pagado', descripcion: '' });
+    setForm({ alumno: '', curso: '', fechaInicio: '', horaInicio: '', asesorId: '', metodo: 'Efectivo', importe: '', estatus: 'Pagado', descripcion: '' });
     closeModal();
   };
 
@@ -456,7 +457,7 @@ export default function FinanzasIngresos() {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       a.href = url;
       a.download = `ingresos-${ts}.xlsx`;
       document.body.appendChild(a);
@@ -601,8 +602,8 @@ export default function FinanzasIngresos() {
       });
       if (createdIngreso?.id && ev?.id) {
         newCalendarEventId = ev.id;
-        try { 
-          await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id }); 
+        try {
+          await api.put(`/finanzas/ingresos/${createdIngreso.id}`, { calendar_event_id: ev.id });
         } catch (err) {
           console.warn('No se pudo vincular el evento de calendario al ingreso restaurado:', err);
         }
@@ -650,9 +651,9 @@ export default function FinanzasIngresos() {
           }
         }
       }
-  setRows(prev => prev.filter(x => x._id !== row._id));
-  // Mostrar deshacer
-  startUndo(row, originalIndex < 0 ? undefined : originalIndex);
+      setRows(prev => prev.filter(x => x._id !== row._id));
+      // Mostrar deshacer
+      startUndo(row, originalIndex < 0 ? undefined : originalIndex);
       return true;
     } catch {
       return false;
@@ -681,7 +682,7 @@ export default function FinanzasIngresos() {
 
 
   return (
-  <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl mx-auto">
+    <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl mx-auto">
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">Ingresos</h1>
@@ -733,15 +734,15 @@ export default function FinanzasIngresos() {
           </div>
           <div className="flex items-center gap-3">
             <div className="sm:hidden text-xs text-gray-600">Total: <span className="font-semibold text-gray-900">{formatCurrency(totals.all)}</span></div>
-            <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
               {showFilters ? 'Ocultar filtros' : 'Filtros'}
             </button>
             <button onClick={handleExportExcel} disabled={exportExcelLoading} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">
               {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
             </button>
             {asesoriasPendientes.length > 0 && (
-              <button 
-                onClick={() => setShowConfirmacionModal(true)} 
+              <button
+                onClick={() => setShowConfirmacionModal(true)}
                 className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm relative"
               >
                 <span className="hidden sm:inline">Confirmar Asesorías</span>
@@ -762,15 +763,15 @@ export default function FinanzasIngresos() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
-                <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta</label>
-                <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Origen</label>
-                <select value={filterOrigen} onChange={e=>setFilterOrigen(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <select value={filterOrigen} onChange={e => setFilterOrigen(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                   <option value="">Todos</option>
                   <option value="manual">Manual</option>
                   <option value="externo">Comprobantes</option>
@@ -778,7 +779,7 @@ export default function FinanzasIngresos() {
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Método</label>
-                <select value={filterMetodo} onChange={e=>setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <select value={filterMetodo} onChange={e => setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                   <option value="">Todos</option>
                   <option value="Efectivo">Efectivo</option>
                   <option value="Transferencia">Transferencia</option>
@@ -787,7 +788,7 @@ export default function FinanzasIngresos() {
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Estatus</label>
-                <select value={filterEstatus} onChange={e=>setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <select value={filterEstatus} onChange={e => setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                   <option value="">Todos</option>
                   <option value="Pagado">Pagado</option>
                   <option value="Pendiente">Pendiente</option>
@@ -806,17 +807,17 @@ export default function FinanzasIngresos() {
         )}
 
         {/* Vista móvil (cards) */}
-    <div className="sm:hidden p-4 space-y-3">
+        <div className="sm:hidden p-4 space-y-3">
           {loading && <div className="text-sm text-gray-500">Cargando…</div>}
           {error && <div className="text-sm text-amber-600">{error}</div>}
           {rows.map((r, idx) => (
-      <div key={idx} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 cursor-pointer" onClick={() => openEdit(r)}>
+            <div key={idx} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 cursor-pointer" onClick={() => openEdit(r)}>
               <div className="flex items-start justify-between mb-2">
                 <div className="text-sm font-semibold text-gray-900 truncate pr-2">{idx + 1}. {r.alumno}</div>
                 <select
                   className={`${statusClasses(r.estatus)} rounded-md text-[11px] px-2 py-1`}
                   value={r.estatus}
-          onClick={(e)=>e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   onChange={async (e) => {
                     const newVal = e.target.value;
                     setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: newVal } : x));
@@ -824,8 +825,8 @@ export default function FinanzasIngresos() {
                       await api.put(`/finanzas/ingresos/${r._id}`, { estatus: newVal });
                       if (r.calendarEventId) {
                         const desc = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(r.importe)} | Estatus: ${newVal}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
-                        try { 
-                          await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc }); 
+                        try {
+                          await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc });
                         } catch (calErr) {
                           console.warn('No se pudo actualizar el evento de calendario:', calErr);
                         }
@@ -843,7 +844,7 @@ export default function FinanzasIngresos() {
               <div className="text-xs text-gray-600 mb-2 truncate">{r.curso}</div>
               <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-600 mb-2">
                 <div className="flex items-center gap-1"><span className="text-gray-500">Inicio:</span><span className="font-medium text-gray-800">{r.fechaInicio}</span></div>
-                <div className="flex items-center gap-1"><span className="text-gray-500">Hora:</span><span className="font-medium text-gray-800">{r.horaInicio ? String(r.horaInicio).slice(0,5) : '-'}</span></div>
+                <div className="flex items-center gap-1"><span className="text-gray-500">Hora:</span><span className="font-medium text-gray-800">{r.horaInicio ? String(r.horaInicio).slice(0, 5) : '-'}</span></div>
                 <div className="flex items-center gap-1"><span className="text-gray-500">Asesor:</span><span className="font-medium text-gray-800 truncate">{r.asesor}</span></div>
                 <div className="flex items-center gap-1"><span className="text-gray-500">Método:</span><span className="font-medium text-gray-800">{r.metodo}</span></div>
                 <div className="flex items-center justify-end gap-1 col-span-2">
@@ -863,13 +864,13 @@ export default function FinanzasIngresos() {
                   <button
                     className="inline-flex items-center px-2 py-1 text-[10px] rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
                     title="Ver descripción"
-                    onClick={(e)=>{ e.stopPropagation(); setDescRow(r); setDescOpen(true); }}
+                    onClick={(e) => { e.stopPropagation(); setDescRow(r); setDescOpen(true); }}
                   >👁️ Ver</button>
                 ) : null}
                 <button
                   className="inline-flex items-center px-2 py-1 text-[10px] rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50"
                   title={r.asistenciaEstado ? `Asistencia: ${r.asistenciaEstado}` : 'Marcar asistencia'}
-                  onClick={(e)=>{ e.stopPropagation(); setAsistRow(r); setAsistEstado(r.asistenciaEstado || 'Impartida'); setAsistNota(r.asistenciaNota || ''); setAsistOpen(true); }}
+                  onClick={(e) => { e.stopPropagation(); setAsistRow(r); setAsistEstado(r.asistenciaEstado || 'Impartida'); setAsistNota(r.asistenciaNota || ''); setAsistOpen(true); }}
                 >✅ Asistencia</button>
               </div>
             </div>
@@ -879,499 +880,777 @@ export default function FinanzasIngresos() {
         {/* Vista desktop/tablet (tabla) */}
         <div className="hidden sm:block">
           <div className="overflow-x-auto max-h-[60vh]">
-      <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm">
-    <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
-              <tr>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">#</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Alumno</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Curso / Asesoría</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Fecha</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Hora</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Asesor</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Pago</th>
-        <th className="text-right font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Importe</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Estatus</th>
-  <th className="text-center font-semibold px-2 py-3 border-r border-gray-200 last:border-r-0 w-[60px] min-w-[60px] max-w-[60px] whitespace-nowrap">Desc.</th>
-        <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 whitespace-nowrap">Asistencia</th>
-        <th className="text-left font-semibold px-4 py-3">Acciones</th>
-              </tr>
-            </thead>
-      <tbody>
-              {rows.map((r, idx) => (
-        <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50/50 cursor-pointer" onClick={() => openEdit(r)}>
-          <td className="px-4 py-3 text-gray-500 border-r border-gray-100">{idx + 1}</td>
-          <td className="px-4 py-3 text-gray-900 font-medium max-w-[240px] truncate border-r border-gray-100">{r.alumno}</td>
-          <td className="px-4 py-3 text-gray-700 max-w-[260px] truncate border-r border-gray-100">{r.curso}</td>
-          <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{(r.fechaInicio && dayjs(r.fechaInicio).isValid()) ? dayjs(r.fechaInicio).format('DD/MM/YY') : (r.fechaInicio || '-')}</td>
-          <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{r.horaInicio ? String(r.horaInicio).slice(0,5) : '-'}</td>
-          <td className="px-4 py-3 text-gray-700 max-w-[200px] truncate border-r border-gray-100">{r.asesor}</td>
-          <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{String(r.metodo || '').toLowerCase()}</td>
-          <td className="px-4 py-3 text-right border-r border-gray-100">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-semibold">{formatCurrency(r.importe)}</span>
-                  </td>
-          <td className="px-4 py-3 border-r border-gray-100">
-                    <select
-                      className={`${statusClasses(r.estatus)} rounded-md text-xs px-2 py-1`}
-                      value={r.estatus}
-                      onClick={(e)=>e.stopPropagation()}
-                      onChange={async (e) => {
-                        const newVal = e.target.value;
-                        setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: newVal } : x));
-                        try {
-                          await api.put(`/finanzas/ingresos/${r._id}`, { estatus: newVal });
-                          // Si hay evento de calendario, actualizar su descripción para reflejar el nuevo estatus
-                          if (r.calendarEventId) {
-                            const desc = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(r.importe)} | Estatus: ${newVal}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
-                            try { 
-                              await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc }); 
-                            } catch (calErr) {
-                              console.warn('No se pudo actualizar el evento de calendario:', calErr);
-                            }
-                          }
-                        } catch (err) {
-                          // revertir en caso de error
-                          setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: r.estatus } : x));
-                        }
-                      }}
-                    >
-                      <option value="Pagado">Pagado</option>
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Vencido">Vencido</option>
-                    </select>
-                  </td>
-      <td className="px-2 py-3 text-gray-700 border-r border-gray-100 text-center w-[60px] min-w-[60px] max-w-[60px]">
-                    {r.descripcion ? (
-                      <button
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 text-indigo-600 mx-auto"
-                        aria-label="Ver descripción"
-                        title="Ver descripción"
-                        onClick={(e)=>{ e.stopPropagation(); setDescRow(r); setDescOpen(true); }}
-                      >
-                        <FaRegEye className="h-4 w-4" />
-                      </button>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700 border-r border-gray-100">
-                    <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-md ${asistenciaClasses(r.asistenciaEstado)}`}>{r.asistenciaEstado || '—'}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="inline-flex items-center px-2 py-1 text-xs rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-                        title={r.asistenciaEstado ? `Asistencia: ${r.asistenciaEstado}` : 'Marcar asistencia'}
-                        onClick={(e)=>{ e.stopPropagation(); setAsistRow(r); setAsistEstado(r.asistenciaEstado || 'Impartida'); setAsistNota(r.asistenciaNota || ''); setAsistOpen(true); }}
-                      >✅</button>
-                    </div>
-                  </td>
+            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm">
+              <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
+                <tr>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">#</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Alumno</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Curso / Asesoría</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Fecha</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Hora</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Asesor</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Pago</th>
+                  <th className="text-right font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Importe</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Estatus</th>
+                  <th className="text-center font-semibold px-2 py-3 border-r border-gray-200 last:border-r-0 w-[60px] min-w-[60px] max-w-[60px] whitespace-nowrap">Desc.</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 whitespace-nowrap">Asistencia</th>
+                  <th className="text-left font-semibold px-4 py-3">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r, idx) => (
+                  <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50/50 cursor-pointer" onClick={() => openEdit(r)}>
+                    <td className="px-4 py-3 text-gray-500 border-r border-gray-100">{idx + 1}</td>
+                    <td className="px-4 py-3 text-gray-900 font-medium max-w-[240px] truncate border-r border-gray-100">{r.alumno}</td>
+                    <td className="px-4 py-3 text-gray-700 max-w-[260px] truncate border-r border-gray-100">{r.curso}</td>
+                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{(r.fechaInicio && dayjs(r.fechaInicio).isValid()) ? dayjs(r.fechaInicio).format('DD/MM/YY') : (r.fechaInicio || '-')}</td>
+                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{r.horaInicio ? String(r.horaInicio).slice(0, 5) : '-'}</td>
+                    <td className="px-4 py-3 text-gray-700 max-w-[200px] truncate border-r border-gray-100">{r.asesor}</td>
+                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{String(r.metodo || '').toLowerCase()}</td>
+                    <td className="px-4 py-3 text-right border-r border-gray-100">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-semibold">{formatCurrency(r.importe)}</span>
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-100">
+                      <select
+                        className={`${statusClasses(r.estatus)} rounded-md text-xs px-2 py-1`}
+                        value={r.estatus}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={async (e) => {
+                          const newVal = e.target.value;
+                          setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: newVal } : x));
+                          try {
+                            await api.put(`/finanzas/ingresos/${r._id}`, { estatus: newVal });
+                            // Si hay evento de calendario, actualizar su descripción para reflejar el nuevo estatus
+                            if (r.calendarEventId) {
+                              const desc = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(r.importe)} | Estatus: ${newVal}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
+                              try {
+                                await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc });
+                              } catch (calErr) {
+                                console.warn('No se pudo actualizar el evento de calendario:', calErr);
+                              }
+                            }
+                          } catch (err) {
+                            // revertir en caso de error
+                            setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: r.estatus } : x));
+                          }
+                        }}
+                      >
+                        <option value="Pagado">Pagado</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Vencido">Vencido</option>
+                      </select>
+                    </td>
+                    <td className="px-2 py-3 text-gray-700 border-r border-gray-100 text-center w-[60px] min-w-[60px] max-w-[60px]">
+                      {r.descripcion ? (
+                        <button
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 text-indigo-600 mx-auto"
+                          aria-label="Ver descripción"
+                          title="Ver descripción"
+                          onClick={(e) => { e.stopPropagation(); setDescRow(r); setDescOpen(true); }}
+                        >
+                          <FaRegEye className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">
+                      <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-md ${asistenciaClasses(r.asistenciaEstado)}`}>{r.asistenciaEstado || '—'}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="inline-flex items-center px-2 py-1 text-xs rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                          title={r.asistenciaEstado ? `Asistencia: ${r.asistenciaEstado}` : 'Marcar asistencia'}
+                          onClick={(e) => { e.stopPropagation(); setAsistRow(r); setAsistEstado(r.asistenciaEstado || 'Impartida'); setAsistNota(r.asistenciaNota || ''); setAsistOpen(true); }}
+                        >✅</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       {/* Modal Gráfica */}
-      {showChart && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-4 pt-12 sm:pt-16 md:pt-20 pb-8 bg-black/40">
-          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden mx-auto my-6 sm:my-8">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      {showChart && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-4xl shadow-2xl rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
               <div>
-                <h3 className="text-base font-semibold text-gray-900">Ingresos por mes</h3>
-                <p className="text-xs text-gray-500">Últimos 6 meses</p>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Ingresos por mes</h3>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mt-0.5">Últimos 6 meses</p>
               </div>
-              <button onClick={() => setShowChart(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+              <button
+                onClick={() => setShowChart(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="px-5 py-4 h-[300px] sm:h-[340px] md:h-[380px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => v.toLocaleString('es-MX')} />
-                  <Tooltip content={<CurrencyTooltip />} />
-                  <Bar dataKey="total" fill="#4f46e5" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="p-6">
+              <div className="h-[300px] sm:h-[350px] md:h-[400px] w-full bg-slate-50/50 rounded-2xl border border-slate-100 p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} tickFormatter={(v) => v.toLocaleString('es-MX')} />
+                    <Tooltip content={<CurrencyTooltip />} />
+                    <Bar dataKey="total" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm">
-              <div className="text-gray-600">Total acumulado: <span className="font-semibold text-gray-900">{formatCurrency(totals.all)}</span></div>
-              <button onClick={() => setShowChart(false)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cerrar</button>
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-between sticky bottom-0">
+              <div className="text-sm font-medium text-slate-600">
+                Total acumulado: <span className="text-indigo-600 font-extrabold text-base">{formatCurrency(totals.all)}</span>
+              </div>
+              <button
+                onClick={() => setShowChart(false)}
+                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all duration-200"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
       {/* Modal Ver Descripción */}
-      {descOpen && descRow && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Descripción</h3>
-              <button onClick={()=>setDescOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+      {descOpen && descRow && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Descripción</h3>
+              <button
+                onClick={() => setDescOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="px-5 py-4 space-y-2 text-sm text-gray-700">
-              <div className="text-gray-500 text-xs">{descRow.alumno} • {descRow.curso} • {descRow.fechaInicio}{descRow.horaInicio?` ${descRow.horaInicio}`:''}</div>
-              <div className="rounded-lg bg-gray-50 ring-1 ring-gray-200 p-3 whitespace-pre-wrap break-words min-h-[80px]">{descRow.descripcion}</div>
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex -space-x-1 overflow-hidden">
+                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-indigo-100 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-indigo-600">IN</span>
+                  </div>
+                </div>
+                <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                  {descRow.alumno} • {descRow.curso}
+                </div>
+              </div>
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words min-h-[120px] shadow-inner">
+                {descRow.descripcion}
+              </div>
+              <div className="mt-4 flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                <span>{descRow.fechaInicio}</span>
+                {descRow.horaInicio && (
+                  <>
+                    <span className="h-1 w-1 rounded-full bg-slate-300"></span>
+                    <span>{descRow.horaInicio}</span>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end">
-              <button onClick={()=>setDescOpen(false)} className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cerrar</button>
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end sticky bottom-0">
+              <button
+                onClick={() => setDescOpen(false)}
+                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all duration-200"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Marcar Asistencia */}
-      {asistOpen && asistRow && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden mx-auto my-6 sm:my-8">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Marcar asistencia</h3>
-              <button onClick={()=>!asistSaving && setAsistOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="text-xs text-gray-500">{asistRow.alumno} • {asistRow.curso} • {asistRow.fechaInicio}{asistRow.horaInicio?` ${asistRow.horaInicio}`:''}</div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Estado</label>
-                <select value={asistEstado} onChange={(e)=>setAsistEstado(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                  <option value="Impartida">Impartida</option>
-                  <option value="No asistió alumno">No asistió alumno</option>
-                  <option value="No asistió asesor">No asistió asesor</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nota (opcional)</label>
-                <textarea rows={3} maxLength={200} value={asistNota} onChange={(e)=>setAsistNota(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" placeholder="Motivo, comentarios" />
-                {asistError ? (<p className="mt-1 text-[11px] text-rose-600">{asistError}</p>) : null}
-                {asistRow.asistenciaEstado ? (
-                  <p className="mt-2 text-[11px] text-gray-500">Última marcación: <span className="font-medium text-gray-700">{asistRow.asistenciaEstado}</span>{asistRow.asistenciaFecha?` • ${asistRow.asistenciaFecha}`:''}</p>
-                ) : null}
-              </div>
-            </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
-              <button onClick={()=>setAsistOpen(false)} disabled={asistSaving} className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancelar</button>
+      {asistOpen && asistRow && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Marcar asistencia</h3>
               <button
-                onClick={async()=>{
-                  if(!asistRow) return;
-                  setAsistSaving(true); setAsistError('');
+                onClick={() => !asistSaving && setAsistOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-xs font-bold uppercase tracking-wider">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{asistRow.alumno} • {asistRow.curso} • {asistRow.fechaInicio}</span>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Estado</label>
+                  <select
+                    value={asistEstado}
+                    onChange={(e) => setAsistEstado(e.target.value)}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  >
+                    <option value="Impartida">Impartida</option>
+                    <option value="No asistió alumno">No asistió alumno</option>
+                    <option value="No asistió asesor">No asistió asesor</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Nota / Observación</label>
+                  <textarea
+                    rows={3}
+                    maxLength={200}
+                    value={asistNota}
+                    onChange={(e) => setAsistNota(e.target.value)}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none resize-none"
+                    placeholder="Escribe algún motivo o comentario..."
+                  />
+                </div>
+                {asistError && <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">{asistError}</p>}
+
+                {asistRow.asistenciaEstado && (
+                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Última marcación</p>
+                    <p className="text-xs font-extrabold text-slate-700">{asistRow.asistenciaEstado}</p>
+                    {asistRow.asistenciaFecha && (
+                      <p className="text-[10px] font-bold text-slate-500 italic">📅 {dayjs(asistRow.asistenciaFecha).format('DD/MM/YYYY - HH:mm')}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end gap-3 sticky bottom-0">
+              <button
+                onClick={() => setAsistOpen(false)}
+                disabled={asistSaving}
+                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={asistSaving}
+                onClick={async () => {
+                  if (!asistRow) return;
+                  setAsistSaving(true);
+                  setAsistError('');
                   const payload = { asistencia: { estado: asistEstado, nota: asistNota, fecha: dayjs().format('YYYY-MM-DD HH:mm:ss') } };
                   try {
                     await api.put(`/finanzas/ingresos/${asistRow._id}`, { notas: JSON.stringify(payload) });
                     setRows(prev => prev.map(x => x._id === asistRow._id ? { ...x, asistenciaEstado: payload.asistencia.estado, asistenciaNota: payload.asistencia.nota, asistenciaFecha: payload.asistencia.fecha } : x));
-                    setAsistOpen(false); setAsistRow(null);
-                  } catch(e) {
-                    setAsistError('No se pudo guardar.');
-                  } finally { setAsistSaving(false); }
+                    setAsistOpen(false);
+                    setAsistRow(null);
+                  } catch (e) {
+                    setAsistError('Ocurrió un error al guardar.');
+                  } finally {
+                    setAsistSaving(false);
+                  }
                 }}
-                disabled={asistSaving}
-                className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-70"
-              >{asistSaving ? 'Guardando…' : 'Guardar'}</button>
+                className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200 disabled:opacity-70 flex items-center gap-2"
+              >
+                {asistSaving && <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+                {asistSaving ? 'Guardando...' : 'Confirmar'}
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
+
       {/* Modal Editar Ingreso */}
-      {editOpen && editData && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">Editar ingreso</h3>
-              <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700">✕</button>
+      {editOpen && editData && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Editar ingreso</h3>
+              <button
+                onClick={closeEdit}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <form onSubmit={onEditSubmit} className="flex-1 flex flex-col">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain">
+            <form onSubmit={onEditSubmit} className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-6 no-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Alumno</label>
-                    <input value={editData.alumno} onChange={(e)=>setEditData(d=>({...d, alumno:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Alumno</label>
+                    <input
+                      value={editData.alumno}
+                      onChange={(e) => setEditData(d => ({ ...d, alumno: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Curso / Asesoría</label>
-                    <input value={editData.curso} onChange={(e)=>setEditData(d=>({...d, curso:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Curso / Asesoría</label>
+                    <input
+                      value={editData.curso}
+                      onChange={(e) => setEditData(d => ({ ...d, curso: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Fecha inicio</label>
-                    <input type="date" value={editData.fechaInicio} onChange={(e)=>setEditData(d=>({...d, fechaInicio:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Fecha</label>
+                    <input
+                      type="date"
+                      value={editData.fechaInicio}
+                      onChange={(e) => setEditData(d => ({ ...d, fechaInicio: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Hora</label>
-                    <input type="time" value={editData.horaInicio || ''} onChange={(e)=>setEditData(d=>({...d, horaInicio:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Hora</label>
+                    <input
+                      type="time"
+                      value={editData.horaInicio || ''}
+                      onChange={(e) => setEditData(d => ({ ...d, horaInicio: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Método</label>
-                    <select value={editData.metodo} onChange={(e)=>setEditData(d=>({...d, metodo:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Método</label>
+                    <select
+                      value={editData.metodo}
+                      onChange={(e) => setEditData(d => ({ ...d, metodo: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
                       <option value="Tarjeta">Tarjeta</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Importe</label>
-                    <input type="number" step="0.01" value={editData.importe} onChange={(e)=>setEditData(d=>({...d, importe:Number(e.target.value || 0)}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Importe</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editData.importe}
+                      onChange={(e) => setEditData(d => ({ ...d, importe: Number(e.target.value || 0) }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-black text-indigo-600 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none bg-slate-50"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Estatus</label>
-                    <select value={editData.estatus} onChange={(e)=>setEditData(d=>({...d, estatus:e.target.value}))} className={`w-full rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${statusClasses(editData.estatus)}`}>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Estatus</label>
+                    <select
+                      value={editData.estatus}
+                      onChange={(e) => setEditData(d => ({ ...d, estatus: e.target.value }))}
+                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-sm font-bold focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none ${statusClasses(editData.estatus)}`}
+                    >
                       <option value="Pagado">Pagado</option>
                       <option value="Pendiente">Pendiente</option>
                       <option value="Vencido">Vencido</option>
                     </select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
-                    <textarea rows={2} maxLength={200} value={editData.descripcion || ''} onChange={(e)=>setEditData(d=>({...d, descripcion:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Descripción</label>
+                    <textarea
+                      rows={2}
+                      maxLength={200}
+                      value={editData.descripcion || ''}
+                      onChange={(e) => setEditData(d => ({ ...d, descripcion: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none resize-none"
+                      placeholder="Notas adicionales..."
+                    />
                   </div>
                 </div>
               </div>
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-between gap-2 sticky bottom-0">
+              <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-between gap-3 sticky bottom-0">
                 <button
                   type="button"
                   onClick={() => { setConfirmError(''); setRowToDelete(editData); setConfirmOpen(true); }}
-                  className="px-4 py-2 text-sm rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50"
+                  className="px-5 py-2 text-sm font-bold text-rose-600 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 transition-all duration-200 flex items-center gap-2"
                 >
-                  Borrar
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  Eliminar
                 </button>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={closeEdit} className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Guardar</button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={closeEdit}
+                    className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                  >
+                    Actualizar
+                  </button>
                 </div>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Nuevo Ingreso */}
-      {showModal && (
-  <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 flex-shrink-0">
-              <h3 className="text-base font-semibold text-gray-900">Nuevo ingreso</h3>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">✕</button>
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Nuevo ingreso</h3>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <form onSubmit={onSubmit} className="flex-1 flex flex-col min-h-0">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain flex-1 min-h-0 no-scrollbar">
+            <form onSubmit={onSubmit} className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 no-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Alumno</label>
-                    <input name="alumno" value={form.alumno} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nombre del alumno" required />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Alumno</label>
+                    <input
+                      name="alumno"
+                      value={form.alumno}
+                      onChange={onChange}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                      placeholder="Nombre del alumno"
+                      required
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Curso / Asesoría</label>
-                    <input name="curso" value={form.curso} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nombre del curso" required />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Curso / Asesoría</label>
+                    <input
+                      name="curso"
+                      value={form.curso}
+                      onChange={onChange}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                      placeholder="Nombre del curso"
+                      required
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Fecha</label>
-                    <input type="date" name="fechaInicio" value={form.fechaInicio} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Fecha</label>
+                    <input
+                      type="date"
+                      name="fechaInicio"
+                      value={form.fechaInicio}
+                      onChange={onChange}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                      required
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Hora</label>
-                    <input type="time" name="horaInicio" value={form.horaInicio} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-base sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Hora</label>
+                    <input
+                      type="time"
+                      name="horaInicio"
+                      value={form.horaInicio}
+                      onChange={onChange}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Asesor</label>
-                    <select name="asesorId" value={form.asesorId} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Asesor</label>
+                    <select
+                      name="asesorId"
+                      value={form.asesorId}
+                      onChange={onChange}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                      required
+                    >
                       <option value="" disabled>{asesoresLoading ? 'Cargando asesores…' : 'Selecciona asesor'}</option>
                       {asesores.map(a => (
                         <option key={a.id} value={a.id}>{`${a.nombres} ${a.apellidos || ''}`.trim()}</option>
                       ))}
                     </select>
-                    {asesoresError && <p className="mt-1 text-[11px] text-amber-600">{asesoresError}</p>}
+                    {asesoresError && <p className="mt-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest">{asesoresError}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Pago</label>
-                    <select name="metodo" value={form.metodo} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Pago</label>
+                    <select
+                      name="metodo"
+                      value={form.metodo}
+                      onChange={onChange}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
                       <option value="Tarjeta">Tarjeta</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Importe</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Importe</label>
                     <input
                       type="text"
                       inputMode="decimal"
                       name="importe"
                       value={form.importe}
                       onChange={onChangeImporte}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none font-mono"
                       placeholder="0.00"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Estatus</label>
-                    <select name="estatus" value={form.estatus} onChange={onChange} className={`w-full rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${statusClasses(form.estatus)}`}>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Estatus</label>
+                    <select
+                      name="estatus"
+                      value={form.estatus}
+                      onChange={onChange}
+                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-sm font-bold focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none ${statusClasses(form.estatus)}`}
+                    >
                       <option value="Pagado">Pagado</option>
                       <option value="Pendiente">Pendiente</option>
                       <option value="Vencido">Vencido</option>
                     </select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
-                    <textarea name="descripcion" value={form.descripcion} onChange={onChange} rows={2} maxLength={200} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-base sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" placeholder="Notas o detalles (máx. 200 caracteres)" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Descripción</label>
+                    <textarea
+                      name="descripcion"
+                      value={form.descripcion}
+                      onChange={onChange}
+                      rows={2}
+                      maxLength={200}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none resize-none"
+                      placeholder="Notas o detalles adicionales..."
+                    />
                   </div>
                 </div>
               </div>
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2 sticky bottom-0">
-                <button type="button" onClick={closeModal} className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Guardar</button>
+              <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end gap-3 sticky bottom-0">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                >
+                  Guardar
+                </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Confirmación de borrado */}
-      {confirmOpen && rowToDelete && (
-        <div className="fixed inset-0 z-[10050] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Eliminar ingreso</h3>
-              <button onClick={()=>!confirmLoading && setConfirmOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+      {confirmOpen && rowToDelete && createPortal(
+        <div className="fixed inset-0 z-[10050] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-rose-100 w-full max-w-sm shadow-2xl rounded-2xl bg-white overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-rose-50/30">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Eliminar ingreso</h3>
+              <button
+                onClick={() => !confirmLoading && setConfirmOpen(false)}
+                className="p-2 hover:bg-rose-100 rounded-xl text-rose-400 hover:text-rose-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
-              <p>¿Seguro que deseas eliminar este ingreso? Podrás deshacer durante 7 segundos.</p>
-              <div className="rounded-lg bg-gray-50 ring-1 ring-gray-200 p-3 text-xs">
-                <div><span className="text-gray-500">Alumno:</span> <span className="text-gray-800 font-medium">{rowToDelete.alumno}</span></div>
-                <div><span className="text-gray-500">Fecha:</span> <span className="text-gray-800">{rowToDelete.fechaInicio}</span> <span className="text-gray-500 ml-2">Importe:</span> <span className="text-gray-800 font-medium">{formatCurrency(Number(rowToDelete.importe)||0)}</span></div>
+            <div className="p-6 space-y-4">
+              <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
-              {confirmError ? (<p className="text-[11px] text-rose-600">{confirmError}</p>) : null}
+              <p className="text-sm text-slate-600 text-center font-medium leading-relaxed">
+                ¿Seguro que deseas eliminar este ingreso? <br />
+                <span className="text-rose-500 font-bold italic">Podrás deshacer durante 7 segundos.</span>
+              </p>
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Alumno</span>
+                  <span className="text-xs font-extrabold text-slate-700">{rowToDelete.alumno}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha</span>
+                  <span className="text-xs font-bold text-slate-600">{rowToDelete.fechaInicio}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Importe</span>
+                  <span className="text-sm font-black text-rose-600">{formatCurrency(Number(rowToDelete.importe) || 0)}</span>
+                </div>
+              </div>
+              {confirmError && <p className="text-[10px] font-bold text-rose-600 text-center uppercase tracking-widest mt-2">{confirmError}</p>}
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-stretch gap-3">
               <button
                 type="button"
                 disabled={confirmLoading}
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-              >Cancelar</button>
+                className="flex-1 px-4 py-2.5 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-60"
+              >
+                No, cancelar
+              </button>
               <button
                 type="button"
-                onClick={async()=>{
-                  if(!rowToDelete) return;
-                  setConfirmLoading(true); setConfirmError('');
+                onClick={async () => {
+                  if (!rowToDelete) return;
+                  setConfirmLoading(true);
+                  setConfirmError('');
                   const ok = await onDelete(rowToDelete);
                   setConfirmLoading(false);
-                  if(ok){ setConfirmOpen(false); setRowToDelete(null); setEditOpen(false); setEditData(null); }
-                  else { setConfirmError('No se pudo eliminar. Intenta de nuevo.'); }
+                  if (ok) {
+                    setConfirmOpen(false);
+                    setRowToDelete(null);
+                    setEditOpen(false);
+                    setEditData(null);
+                  } else {
+                    setConfirmError('No se pudo eliminar. Intenta de nuevo.');
+                  }
                 }}
-                className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-70"
+                className="flex-1 px-4 py-2.5 bg-rose-600 text-white font-extrabold rounded-xl shadow-lg shadow-rose-200 hover:bg-rose-700 active:scale-95 transition-all duration-200 disabled:opacity-70"
                 disabled={confirmLoading}
-              >{confirmLoading ? 'Eliminando…' : 'Eliminar'}</button>
+              >
+                {confirmLoading ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal de Confirmación de Asesorías */}
-      {showConfirmacionModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/40 p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 flex items-center justify-center">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[calc(100vh-14rem)] flex flex-col">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      {showConfirmacionModal && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-2xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Confirmar Asesorías Realizadas</h3>
-                <p className="text-sm text-gray-500 mt-1">
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Confirmar Asesorías Realizadas</h3>
+                <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mt-1">
                   {asesoriasPendientes.length} {asesoriasPendientes.length === 1 ? 'asesoría pendiente' : 'asesorías pendientes'}
                 </p>
               </div>
-              <button 
-                onClick={() => setShowConfirmacionModal(false)} 
-                className="text-gray-500 hover:text-gray-700"
+              <button
+                onClick={() => setShowConfirmacionModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
               {loadingPendientes ? (
-                <div className="text-center py-8 text-gray-500">Cargando...</div>
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin"></div>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cargando datos...</p>
+                </div>
               ) : asesoriasPendientes.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No hay asesorías pendientes</div>
+                <div className="text-center py-12 space-y-4">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No hay asesorías pendientes</p>
+                </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {asesoriasPendientes.map((asesoria) => (
-                    <div key={asesoria.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">Asesor</div>
-                          <div className="text-sm font-medium text-gray-900">{asesoria.asesor_nombre}</div>
+                    <div key={asesoria.id} className="border-2 border-slate-100 rounded-2xl p-5 bg-slate-50/50 hover:bg-white hover:border-indigo-100 transition-all duration-200 group shadow-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asesor</label>
+                          <div className="text-sm font-black text-slate-700">{asesoria.asesor_nombre}</div>
                         </div>
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">Curso/Asesoría</div>
-                          <div className="text-sm font-medium text-gray-900">{asesoria.curso}</div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Curso/Asesoría</label>
+                          <div className="text-sm font-extrabold text-indigo-600">{asesoria.curso}</div>
                         </div>
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">Alumno</div>
-                          <div className="text-sm text-gray-900">{asesoria.alumno_nombre || 'N/A'}</div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Alumno</label>
+                          <div className="text-sm font-bold text-slate-600">{asesoria.alumno_nombre || 'No especificado'}</div>
                         </div>
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">Fecha y Hora</div>
-                          <div className="text-sm text-gray-900">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha y Hora</label>
+                          <div className="text-sm font-bold text-slate-600 flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                             {(() => {
-                              // Formatear fecha de manera robusta
-                              let fechaFormateada = 'Sin fecha';
+                              let fStr = 'Sin fecha';
                               if (asesoria.fecha) {
-                                // Normalizar fecha: puede venir como DATE de MySQL (YYYY-MM-DD)
-                                let fechaStr = String(asesoria.fecha).split('T')[0];
-                                const fechaParsed = dayjs(fechaStr);
-                                if (fechaParsed.isValid()) {
-                                  fechaFormateada = fechaParsed.format('DD/MM/YYYY');
-                                }
+                                let d = String(asesoria.fecha).split('T')[0];
+                                const p = dayjs(d);
+                                if (p.isValid()) fStr = p.format('DD/MM/YYYY');
                               }
-                              
-                              // Formatear hora de manera robusta
-                              let horaFormateada = '';
+                              let hStr = '';
                               if (asesoria.hora) {
-                                const horaStr = String(asesoria.hora);
-                                // Si viene como TIME de MySQL (HH:mm:ss), extraer solo HH:mm
-                                if (horaStr.includes(':')) {
-                                  const partes = horaStr.split(':');
-                                  if (partes.length >= 2) {
-                                    const h = partes[0].padStart(2, '0');
-                                    const m = partes[1].padStart(2, '0');
-                                    horaFormateada = `${h}:${m}`;
-                                  }
+                                const s = String(asesoria.hora);
+                                if (s.includes(':')) {
+                                  const parts = s.split(':');
+                                  if (parts.length >= 2) hStr = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
                                 }
                               }
-                              
-                              return `${fechaFormateada}${horaFormateada ? ' ' + horaFormateada : ''}`;
+                              return `${fStr}${hStr ? ' ' + hStr : ''}`;
                             })()}
                           </div>
                         </div>
                       </div>
+
                       {asesoria.observaciones && (
-                        <div className="mb-3">
-                          <div className="text-xs text-gray-500 mb-1">Observaciones del Asesor</div>
-                          <div className="text-sm text-gray-700 bg-white p-2 rounded border border-gray-200">
-                            {asesoria.observaciones}
+                        <div className="mb-5 bg-amber-50/50 border border-amber-100 rounded-xl p-3">
+                          <label className="text-[10px] font-bold text-amber-600 uppercase tracking-widest block mb-1">Notas del Asesor</label>
+                          <div className="text-xs font-semibold text-amber-900 leading-relaxed italic">
+                            "{asesoria.observaciones}"
                           </div>
                         </div>
                       )}
-                      <div className="mb-3">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                          Observaciones (opcional)
-                        </label>
+
+                      <div className="mb-5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Observaciones de confirmación (opcional)</label>
                         <textarea
                           value={confirmacionObservaciones}
                           onChange={(e) => setConfirmacionObservaciones(e.target.value)}
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none resize-none bg-white"
                           rows={2}
-                          placeholder="Agrega observaciones sobre la confirmación..."
+                          placeholder="Añade algún comentario sobre la validación..."
                         />
                       </div>
-                      <div className="flex items-center justify-end gap-2">
+
+                      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100/50">
                         <button
                           onClick={() => handleConfirmarAsesoria(asesoria.id, 'rechazar')}
                           disabled={confirmandoId === asesoria.id}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                          className="px-5 py-2 text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl hover:bg-rose-100 transition-all duration-200 disabled:opacity-50"
                         >
-                          {confirmandoId === asesoria.id ? 'Procesando...' : 'Rechazar'}
+                          {confirmandoId === asesoria.id ? '...' : 'Rechazar'}
                         </button>
                         <button
                           onClick={() => handleConfirmarAsesoria(asesoria.id, 'confirmar')}
                           disabled={confirmandoId === asesoria.id}
-                          className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                          className="px-6 py-2 text-xs font-black text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 hover:scale-[1.02] active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
                         >
-                          {confirmandoId === asesoria.id ? 'Procesando...' : 'Confirmar y Registrar Asistencia'}
+                          {confirmandoId === asesoria.id ? (
+                            <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                          {confirmandoId === asesoria.id ? 'Validando...' : 'Confirmar asistencia'}
                         </button>
                       </div>
                     </div>
@@ -1379,8 +1658,17 @@ export default function FinanzasIngresos() {
                 </div>
               )}
             </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end sticky bottom-0">
+              <button
+                onClick={() => setShowConfirmacionModal(false)}
+                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm"
+              >
+                Hecho
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Toast Deshacer */}

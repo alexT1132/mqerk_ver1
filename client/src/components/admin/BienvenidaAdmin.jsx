@@ -9,7 +9,7 @@ import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
 // Frases motivadoras - Estos datos se quedan aquí en el frontend, no van al backend
 // eso si,se tendra que borrar algunos datos mock y solo dejar las frases
-import { 
+import {
   MOCK_EDUCATIONAL_QUOTES
 } from '../../data/mockData.js';
 
@@ -41,9 +41,9 @@ const useCurrentTime = () => {
       setCurrentTime(new Date());
     }, 1000);
 
-    
+
     return () => clearInterval(timer);
-  }, []); 
+  }, []);
 
   return currentTime;
 };
@@ -53,7 +53,7 @@ const useDailyQuote = (currentTime) => {
 
   const dailyQuote = useMemo(() => {
     if (!MOCK_EDUCATIONAL_QUOTES.length) return null;
-    
+
     // Calcula el día del año para obtener una cita diferente cada día
     const startOfYear = new Date(currentTime.getFullYear(), 0, 0);
     const diff = currentTime.getTime() - startOfYear.getTime();
@@ -118,9 +118,9 @@ const InfoCard = memo(({ title, icon, content, color }) => {
       ${colors.hover}
       ring-2 ring-transparent group-hover:ring-opacity-50
     `}>
-      
+
       <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rounded-xl sm:rounded-2xl lg:rounded-3xl"></div>
-      
+
       <div className={`
         relative z-10 
         w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18
@@ -135,14 +135,14 @@ const InfoCard = memo(({ title, icon, content, color }) => {
       `}>
         <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent rounded-full"></div>
         <div className="relative z-10">
-          {icon} 
+          {icon}
         </div>
       </div>
-      
+
       <h3 className="relative z-10 font-extrabold text-gray-800 mb-1.5 xs:mb-2 sm:mb-3 md:mb-4 text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl tracking-wide leading-tight group-hover:text-indigo-700 transition-colors duration-300 px-1">
         {title}
       </h3>
-      
+
       <div className="relative z-10 w-full">
         {content}
       </div>
@@ -153,33 +153,64 @@ const InfoCard = memo(({ title, icon, content, color }) => {
 // Componente para el encabezado con el saludo y el nombre del administrador
 const GreetingHeader = memo(({ greeting, adminName }) => {
   const [showWelcome, setShowWelcome] = useState(false);
-  
+  const selectedVideo = useMemo(() => {
+    const videos = [
+      "/108366-680178196_small.mp4",
+      "/173684-849839047_small.mp4"
+    ];
+    return videos[Math.floor(Math.random() * videos.length)];
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowWelcome(true);
     }, 1000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 text-white relative overflow-hidden
-      px-3 py-5
-      xs:px-4 xs:py-6
-      sm:px-5 sm:py-7
-      md:px-6 md:py-8
-      lg:px-8 lg:py-10
-      xl:px-10 xl:py-12
-      2xl:px-12 2xl:py-14
-      shadow-2xl
+    <div className="relative text-white overflow-hidden
+      px-3 py-10
+      xs:px-4 xs:py-12
+      sm:px-5 sm:py-16
+      md:px-6 md:py-20
+      lg:px-8 lg:py-24
+      xl:px-10 xl:py-28
+      2xl:px-12 2xl:py-32
+      min-h-[400px] sm:min-h-[500px]
+      bg-black
     ">
-     
+      {/* Background Video with subtle Blur/Opacity */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          key={selectedVideo}
+          className="w-full h-full object-cover object-center opacity-75 blur-[1.5px]"
+          style={{ transform: 'scale(1.03)' }}
+        >
+          <source src={selectedVideo} type="video/mp4" />
+        </video>
+        {/* Overlay para traslucidez suave */}
+        <div className="absolute inset-0 bg-indigo-950/10 backdrop-blur-[1px]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50"></div>
+
+        {/* Línea LED Decorativa Animada - Pulso Índigo Profundo */}
+        <div className="absolute bottom-0 left-0 right-0 h-[8px] z-50 overflow-hidden bg-indigo-950/40">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-600 via-violet-500 via-indigo-400 via-blue-600 to-transparent animate-led-run shadow-[0_0_30px_rgba(79,70,229,1)]"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-300 via-violet-400 via-indigo-300 to-transparent animate-led-run animation-delay-1500 opacity-90 shadow-[0_0_35px_rgba(129,140,248,0.8)]"></div>
+        </div>
+      </div>
+
       <div className="absolute top-0 right-0 w-32 h-32 xs:w-40 xs:h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 bg-gradient-to-br from-white/20 to-white/5 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse blur-2xl"></div>
-     
+
       <div className="absolute bottom-0 left-0 w-24 h-24 xs:w-32 xs:h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-80 xl:h-80 bg-gradient-to-br from-white/10 to-white/5 rounded-full translate-y-1/2 -translate-x-1/2 animate-pulse animation-delay-1000 blur-xl"></div>
 
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 xs:w-48 xs:h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 bg-gradient-to-br from-purple-400/20 to-indigo-400/20 rounded-full animate-pulse animation-delay-2000 blur-3xl"></div>
-    
+
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 text-white/30 text-2xl sm:text-3xl animate-float-slow">✨</div>
         <div className="absolute top-3/4 right-1/4 text-white/30 text-xl sm:text-2xl animate-float-slow animation-delay-2000">⭐</div>
@@ -188,51 +219,54 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
       </div>
 
       <div className="relative z-10 text-center">
-      
-        <h1 className="font-extrabold leading-tight animate-slide-down mb-2 xs:mb-3 sm:mb-4 lg:mb-5
-          text-[clamp(1.25rem,5vw,2.5rem)]
-          xs:text-[clamp(1.5rem,4.5vw,3rem)]
-          sm:text-[clamp(2rem,4vw,3.5rem)]
-          md:text-[clamp(2.25rem,3.5vw,3.75rem)]
-          lg:text-[clamp(2.5rem,3vw,4rem)]
-          tracking-tight
+
+        <h1 className="font-extrabold leading-tight animate-slide-down mb-3 xs:mb-4 sm:mb-5 lg:mb-6
+          text-[clamp(1.75rem,7vw,3.5rem)]
+          xs:text-[clamp(2.25rem,6vw,4rem)]
+          sm:text-[clamp(3rem,5vw,4.5rem)]
+          md:text-[clamp(3.5rem,4.5vw,5rem)]
+          lg:text-[clamp(4rem,4vw,6rem)]
+          tracking-tighter
           bg-gradient-to-r from-white via-yellow-100 to-white
           bg-clip-text text-transparent
-          drop-shadow-lg
+          drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]
           px-2
         ">
           {greeting}
         </h1>
-        
-        <h2 className="font-bold opacity-95 leading-tight animate-slide-up mb-2 xs:mb-3 sm:mb-4 md:mb-5 lg:mb-6
-          text-[clamp(.9rem,3vw,1.4rem)] 
-          xs:text-[clamp(1rem,2.8vw,1.6rem)] 
-          sm:text-[clamp(1.2rem,2.5vw,2rem)] 
-          md:text-[clamp(1.25rem,2.3vw,2.2rem)]
-          lg:text-[clamp(1.3rem,2.2vw,2.4rem)]
-          drop-shadow-md
+
+        <h2 className="font-bold opacity-100 leading-tight animate-slide-up mb-3 xs:mb-4 sm:mb-5 md:mb-6 lg:mb-8
+          text-[clamp(1.2rem,4vw,1.8rem)] 
+          xs:text-[clamp(1.4rem,3.5vw,2.2rem)] 
+          sm:text-[clamp(1.8rem,3vw,2.8rem)] 
+          md:text-[clamp(2rem,2.8vw,3.2rem)]
+          lg:text-[clamp(2.2rem,2.5vw,3.8rem)]
+          drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]
           px-2
+          text-white
         ">
-          Admin <span className="font-extrabold text-yellow-200 drop-shadow-lg">{adminName}</span>
+          Admin <span className="font-extrabold text-yellow-300 drop-shadow-xl">{adminName}</span>
         </h2>
-        
-        <p className="opacity-90 leading-relaxed animate-fade-in-delayed
-          text-[clamp(.7rem,2.6vw,.9rem)] 
-          xs:text-[clamp(.8rem,2.4vw,1rem)] 
-          sm:text-[clamp(.9rem,2.2vw,1.1rem)] 
-          md:text-[clamp(1rem,2vw,1.3rem)] 
-          lg:text-[clamp(1.1rem,1.8vw,1.4rem)]
-          px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8
-          font-medium
+
+        <p className="opacity-100 leading-relaxed animate-fade-in-delayed
+          text-[clamp(1rem,3.2vw,1.2rem)] 
+          xs:text-[clamp(1.1rem,3vw,1.4rem)] 
+          sm:text-[clamp(1.3rem,2.8vw,1.6rem)] 
+          md:text-[clamp(1.5rem,2.5vw,1.8rem)] 
+          lg:text-[clamp(1.6rem,2.2vw,2.2rem)]
+          px-2 xs:px-4 sm:px-6 md:px-8 lg:px-12
+          font-bold text-white
+          drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]
+          max-w-6xl mx-auto
         ">
           Bienvenido al panel administrativo de MQerKAcademy
         </p>
 
         {showWelcome && (
-          <div className="mt-4 xs:mt-5 sm:mt-6 inline-flex items-center gap-1.5 xs:gap-2 sm:gap-3 bg-gradient-to-r from-white/20 via-white/15 to-white/20 backdrop-blur-md rounded-full px-3 py-1.5 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 animate-welcome-banner text-[clamp(.65rem,2.4vw,.8rem)] xs:text-[clamp(.7rem,2.2vw,.85rem)] sm:text-sm md:text-base shadow-lg border border-white/20 ring-2 ring-white/10">
-            <span className="text-yellow-300 text-base xs:text-lg sm:text-xl animate-bounce drop-shadow-lg">🎉</span>
-            <span className="font-semibold text-white drop-shadow-md whitespace-nowrap">¡Que tengas un excelente día!</span>
-            <span className="text-yellow-300 text-base xs:text-lg sm:text-xl animate-bounce animation-delay-500 drop-shadow-lg">🚀</span>
+          <div className="mt-6 xs:mt-8 sm:mt-10 inline-flex items-center gap-2 xs:gap-3 sm:gap-4 bg-black/20 backdrop-blur-xl rounded-2xl px-5 py-3 xs:px-6 xs:py-3.5 sm:px-8 sm:py-4 animate-welcome-banner text-[clamp(.8rem,2.8vw,1rem)] xs:text-[clamp(.9rem,2.5vw,1.1rem)] sm:text-lg md:text-xl lg:text-2xl shadow-2xl border-2 border-white/10 tracking-tight">
+            <span className="text-yellow-400 text-xl xs:text-2xl sm:text-3xl animate-bounce drop-shadow-lg">🎉</span>
+            <span className="font-black text-white drop-shadow-xl whitespace-nowrap">¡Que tengas un excelente día!</span>
+            <span className="text-yellow-400 text-xl xs:text-2xl sm:text-3xl animate-bounce animation-delay-500 drop-shadow-lg">🚀</span>
           </div>
         )}
       </div>
@@ -265,7 +299,13 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
             0% { opacity: 0; transform: scale(0.8) translateY(20px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
           }
+
+          @keyframes led-run {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
           
+          .animate-led-run { animation: led-run 3s linear infinite; }
           .animate-float-slow { animation: floatSlow 4s ease-in-out infinite; }
           .animate-slide-down { animation: slideDown 0.8s ease-out; }
           .animate-slide-up { animation: slideUp 0.8s ease-out 0.3s both; }
@@ -339,12 +379,12 @@ const QuoteCard = memo(({ quote, author }) => {
         max-w-full xs:max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto
         ring-2 ring-indigo-100/50
       ">
-       
+
         <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/20 via-purple-100/10 to-transparent rounded-2xl sm:rounded-3xl"></div>
-        
+
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-200/20 to-purple-200/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-200/20 to-indigo-200/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
-       
+
         <div className="relative z-10 mb-3 xs:mb-4 sm:mb-5 md:mb-6">
           <div className="inline-flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full ring-2 ring-indigo-200/50 shadow-lg">
             <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
@@ -352,7 +392,7 @@ const QuoteCard = memo(({ quote, author }) => {
             </svg>
           </div>
         </div>
-        
+
         {/* Texto de la cita */}
         <p className="
           relative z-10 text-gray-800 
@@ -365,7 +405,7 @@ const QuoteCard = memo(({ quote, author }) => {
         ">
           "{quote}"
         </p>
-        
+
         {/* Autor de la cita */}
         <p className="
           relative z-10 text-indigo-700 
@@ -407,23 +447,23 @@ function Bienvenida_Admin1() {
   // ========================================
   // HOOKS Y ESTADO LOCAL
   // ========================================
-  
+
   // Hora actual usando hook personalizado (esto se queda en frontend)
   const currentTime = useCurrentTime();
-  
+
   // Hook para la cita diaria (frases motivadoras - también frontend)
   const { dailyQuote } = useDailyQuote(currentTime);
 
   // Datos del admin vienen del contexto (AdminContext.jsx maneja el backend)
-  const { 
-    adminData, 
-    isLoading: adminLoading, 
+  const {
+    adminData,
+    isLoading: adminLoading,
     error: adminError
   } = useAdminContext();
 
   // Notificaciones: usa el contexto compartido del header para evitar doble polling
-  const { 
-    notifications, 
+  const {
+    notifications,
     unreadCount
   } = useAdminNotificationContext();
 
@@ -435,14 +475,14 @@ function Bienvenida_Admin1() {
   // ========================================
   // FUNCIONES UTILITARIAS (FRONTEND SOLAMENTE)
   // ========================================
-  
+
   // Función para obtener el saludo según la hora (esto se queda aquí)
   const getGreeting = useCallback(() => {
     const hour = currentTime.getHours();
     if (hour >= 5 && hour < 12) return "¡Buenos días";
     if (hour >= 12 && hour < 18) return "¡Buenas tardes";
     return "¡Buenas noches";
-  }, [currentTime]); 
+  }, [currentTime]);
 
   // Función para formatear la fecha (también se queda aquí)
   const formatDate = useCallback((date) => {
@@ -452,7 +492,7 @@ function Bienvenida_Admin1() {
       month: 'long',
       day: 'numeric'
     });
-  }, []); 
+  }, []);
 
   // Función para formatear la hora (también se queda aquí)
   const formatTime = useCallback((date) => {
@@ -461,7 +501,7 @@ function Bienvenida_Admin1() {
       minute: '2-digit',
       second: '2-digit'
     });
-  }, []); 
+  }, []);
 
   // ========================================
   // RENDER DEL COMPONENTE
@@ -489,8 +529,8 @@ function Bienvenida_Admin1() {
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-red-700 mb-3 sm:mb-4">Error de Conexión</h2>
           <p className="text-gray-700 mb-6 sm:mb-8 text-sm sm:text-base font-medium">No se pudieron cargar los datos del administrador: {adminError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl sm:rounded-2xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-extrabold shadow-lg hover:shadow-xl active:scale-95 ring-2 ring-red-200/50"
           >
             Reintentar
@@ -501,7 +541,7 @@ function Bienvenida_Admin1() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50" style={{ 
+    <div className="w-full min-h-screen font-sans bg-gradient-to-br from-gray-50 via-white to-indigo-50" style={{
       margin: 0,
       padding: 0,
       minHeight: '100vh',
@@ -510,9 +550,9 @@ function Bienvenida_Admin1() {
       <div className="w-full min-h-full">
 
         {/* Header con saludo y nombre (GreetingHeader solo muestra lo que le pasas) */}
-        <GreetingHeader 
-          greeting={getGreeting()} 
-          adminName={name} 
+        <GreetingHeader
+          greeting={getGreeting()}
+          adminName={name}
         />
 
         {/* Tarjetas con info - los datos vienen de los contextos/hooks */}
@@ -550,7 +590,7 @@ function Bienvenida_Admin1() {
                 </p>
               }
             />
-        {/* aunque tal vez la borre ya hay muchas tarjetas de notificaciones */}
+            {/* aunque tal vez la borre ya hay muchas tarjetas de notificaciones */}
             {/* Tarjeta de Notificaciones (datos vienen del hook useAdminNotifications directamente) */}
             <NotificationsCard
               notifications={{
@@ -577,4 +617,3 @@ function Bienvenida_Admin1() {
 }
 
 export default Bienvenida_Admin1;
-

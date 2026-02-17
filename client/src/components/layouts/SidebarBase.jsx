@@ -41,13 +41,13 @@ function HoverTooltip({ anchorRef, text, show }) {
 }
 
 // --- Sidebar Item Component ---
-function SidebarItem({ 
-  icon, 
-  label, 
-  to, 
-  isSidebarOpen, 
-  mobileOnClick, 
-  isActive, 
+function SidebarItem({
+  icon,
+  label,
+  to,
+  isSidebarOpen,
+  mobileOnClick,
+  isActive,
   sectionKey,
   badge,
   onSectionChange,
@@ -61,11 +61,11 @@ function SidebarItem({
 
   const isLogout = to === logoutPath || to === "/logout";
   const isMobileItem = !!mobileOnClick;
-  
+
   // Determine active state
   const active = isActive !== undefined ? isActive :
-                 (sectionKey ? false :
-                  (to === '/' ? location.pathname === to : location.pathname.startsWith(to)));
+    (sectionKey ? false :
+      (to === '/' ? location.pathname === to : location.pathname.startsWith(to)));
 
   const handleLinkClick = async (e) => {
     // Handle logout
@@ -110,7 +110,7 @@ function SidebarItem({
     if (scrollEl) {
       try {
         sessionStorage.setItem('sidebarScrollTop', String(scrollEl.scrollTop));
-      } catch {}
+      } catch { }
     }
     if (mobileOnClick) mobileOnClick();
     if (onSectionChange) onSectionChange(null);
@@ -136,7 +136,7 @@ function SidebarItem({
     }
   } else {
     // Desktop
-    containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " + (isSidebarOpen ? "min-h-[48px]" : "min-h-[60px]");
+    containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " + (isSidebarOpen ? "min-h-[48px]" : "min-h-[52px]");
     if (isSidebarOpen) {
       // Desplegado: estilo listado limpio, sin cajas ni scale
       linkClasses += "justify-start pl-3 pr-3 gap-3 rounded-xl w-full py-2.5 ";
@@ -149,7 +149,7 @@ function SidebarItem({
       }
     } else {
       // Colapsado: iconos en caja
-      linkClasses += "justify-center p-0 rounded-xl w-12 h-12 aspect-square ";
+      linkClasses += "justify-center p-0 rounded-xl w-10 h-10 aspect-square ";
       if (active) {
         linkClasses += "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/40 z-20 font-bold border-none ";
       } else if (isLogout) {
@@ -164,7 +164,7 @@ function SidebarItem({
   const svgColor = "#3818c3";
   const svgColorLogout = "#EA3323";
   const svgColorActive = "#ffffff";
-  
+
   let currentIconColor = svgColor;
   if (isLogout) currentIconColor = svgColorLogout;
   else if (active) currentIconColor = svgColorActive;
@@ -188,12 +188,12 @@ function SidebarItem({
             stroke: currentIconColor,
             color: currentIconColor,
             fill: "none",
-            className: `transition-all duration-300 ${isMobileItem ? "w-6 h-6" : (active ? "w-6 h-6" : "w-5 h-5")}`,
+            className: `transition-all duration-300 ${isMobileItem ? "w-6 h-6" : (active ? "w-5 h-5" : "w-[18px] h-[18px]")}`,
             strokeWidth: active ? 2.5 : 2,
             width: undefined,
             height: undefined,
           })}
-          
+
           {badge && badge > 0 && (
             <span className={`absolute bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm border border-white z-50 animate-pulse
               ${isMobileItem ? 'top-1/2 -translate-y-1/2 -right-2 min-w-[18px] h-[18px]' : '-top-1 -right-1 min-w-[18px] h-[18px]'}`}>
@@ -250,13 +250,13 @@ export function DesktopSidebarBase({
     portrait: typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false,
   });
   const [badges, setBadges] = useState({});
-  
+
   const timeoutRef = useRef(null);
   const freezeUntilRef = useRef(0);
   const sidebarRef = useRef(null);
   const scrollableRef = useRef(null);
   const pinnedGraceUntilRef = useRef(0);
-  
+
   const HOVER_CLOSE_DELAY = 100; // Reducido para respuesta más rápida
   const CLICK_FREEZE_MS = 200; // Reducido para respuesta más rápida
 
@@ -278,23 +278,23 @@ export function DesktopSidebarBase({
         }
       };
       loadBadges();
-      
+
       // Set up event listeners if provided
       const handler = () => loadBadges();
       const cleanup = [];
-      
+
       if (badgeConfig.eventName) {
         window.addEventListener(badgeConfig.eventName, handler);
         cleanup.push(() => window.removeEventListener(badgeConfig.eventName, handler));
       }
-      
+
       if (badgeConfig.eventNames && Array.isArray(badgeConfig.eventNames)) {
         badgeConfig.eventNames.forEach(eventName => {
           window.addEventListener(eventName, handler);
           cleanup.push(() => window.removeEventListener(eventName, handler));
         });
       }
-      
+
       return () => {
         cleanup.forEach(fn => fn());
       };
@@ -310,16 +310,16 @@ export function DesktopSidebarBase({
         portrait: window.matchMedia('(orientation: portrait)').matches,
       });
     };
-    
+
     let resizeTimeout;
     const debouncedHandleResize = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(handleResize, 200);
     };
-    
+
     window.addEventListener('resize', debouncedHandleResize);
     window.addEventListener('orientationchange', debouncedHandleResize);
-    
+
     return () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
       window.removeEventListener('resize', debouncedHandleResize);
@@ -330,13 +330,13 @@ export function DesktopSidebarBase({
   // Auto-collapse logic - solo aplicar si no hay preferencia guardada
   useEffect(() => {
     if (!showAutoCollapse || forceOpen || forceClosed) return; // Si está forzado abierto o cerrado, no auto-colapsar
-    
+
     try {
       const pc = localStorage.getItem('sidebarPinnedCollapsed') === 'true';
       const prefersUnset = localStorage.getItem('sidebarPinnedCollapsed') === null;
       const isTablet = viewport.width >= 640 && viewport.width < 1024;
       const shouldAutoCollapse = prefersUnset && (isTablet || viewport.portrait);
-      
+
       // Si ya está colapsado en localStorage, mantenerlo
       if (pc) {
         setIsPinnedCollapsed(true);
@@ -358,7 +358,7 @@ export function DesktopSidebarBase({
     if (forceOpen) return;
     // Si está forzado cerrado, no permitimos abrirlo
     if (forceClosed) return;
-    
+
     setIsSidebarOpen(prev => {
       if (isPinnedCollapsed && open) return false;
       return open;
@@ -376,7 +376,7 @@ export function DesktopSidebarBase({
 
   const handleMouseLeave = (e) => {
     if (forceOpen || forceClosed) return; // Salida rápida si está forzado
-    
+
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     const scheduleCloseCheck = (delay = HOVER_CLOSE_DELAY) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -400,7 +400,7 @@ export function DesktopSidebarBase({
 
   const togglePinned = () => {
     if (forceOpen || forceClosed) return; // No permitir toggle si está forzado
-    
+
     setIsPinnedCollapsed(prev => {
       const next = !prev;
       if (next) {
@@ -415,11 +415,18 @@ export function DesktopSidebarBase({
   };
 
   const isTablet = viewport.width >= 640 && viewport.width < 1024;
-  
+  const isSmallScreen = viewport.height < 600;
+  const isLargeScreen = viewport.height > 900;
+
   // Usamos effectiveOpen en lugar de isSidebarOpen para calcular el ancho
   const sidebarWidth = effectiveOpen
     ? (isTablet ? 'w-60' : 'w-56 md:w-60 lg:w-64')
     : (isTablet ? 'w-20' : 'w-16 md:w-20');
+
+  // Altura dinámica para pantallas pequeñas
+  const sidebarHeight = isSmallScreen
+    ? `${viewport.height - parseInt(heightOffset.replace('px', ''))}px`
+    : `calc(100vh - ${heightOffset})`;
 
   // Solo Cerrar Sesión (path === logoutPath) fijo abajo; Configuración y el resto hacen scroll
   const mainItems = menuItems.filter(item => item.path !== logoutPath);
@@ -431,7 +438,7 @@ export function DesktopSidebarBase({
     const el = scrollableRef.current;
     if (el && savedScroll) {
       const n = parseInt(savedScroll, 10);
-      if (n > 0) { el.scrollTop = n; try { sessionStorage.removeItem('sidebarScrollTop'); } catch {} }
+      if (n > 0) { el.scrollTop = n; try { sessionStorage.removeItem('sidebarScrollTop'); } catch { } }
     }
   }, [location.pathname]);
 
@@ -441,11 +448,20 @@ export function DesktopSidebarBase({
       className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-lg'} z-[2000] bg-white/95 ${isTablet ? 'backdrop-blur-[2px]' : 'backdrop-blur-sm'} border-r border-gray-200/80 ${isTablet ? (effectiveOpen ? 'translate-x-0' : '-translate-x-0') : ''} transition-all duration-150 ease-out transform-gpu will-change-transform overflow-hidden`}
       style={{
         top: topOffset,
-        height: `calc(100vh - ${heightOffset})`,
+        height: sidebarHeight,
         transform: 'translateX(0)',
         opacity: 1,
         backdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)',
-        WebkitBackdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)'
+        WebkitBackdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)',
+        // Mejoras para pantallas pequeñas
+        ...(isSmallScreen && {
+          maxHeight: '100vh',
+          overflowY: 'auto'
+        }),
+        // Mejoras para tablets
+        ...(isTablet && {
+          borderRadius: effectiveOpen ? '0 12px 12px 0' : '0'
+        })
       }}
       aria-label={`Sidebar de ${userRole}`}
       // Si está forceOpen o forceClosed, desactivamos los listeners del mouse pasando undefined
@@ -486,7 +502,7 @@ export function DesktopSidebarBase({
           </button>
         </div>
       )}
-      
+
       <nav className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Opciones principales + Configuración hacen scroll; solo Cerrar Sesión fijo abajo */}
         <div

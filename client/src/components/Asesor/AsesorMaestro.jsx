@@ -1,5 +1,5 @@
 // AsesorDashboard.jsx - Página de inicio
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { BookOpen, GraduationCap, Sparkles, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -113,7 +113,29 @@ export default function AsesorDashboard({
 }) {
   const authContext = useAuth();
   const authUser = authContext?.user || null;
-  const [loading, setLoading] = useState(true);
+  const { isAuthenticated, loading } = authContext;
+  const navigate = useNavigate();
+
+  // Session validation - redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [loading, isAuthenticated, navigate]);
+
+  // Show loading state while checking authentication
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-violet-600 font-medium">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const [loadingData, setLoadingData] = useState(true);
   const [estudiantes, setEstudiantes] = useState([]);
   const [perfil, setPerfil] = useState(null);
   const [prereg, setPrereg] = useState(null);
@@ -127,7 +149,7 @@ export default function AsesorDashboard({
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true);
+      setLoadingData(true);
       try {
         const { data } = await getMisEstudiantes().catch(() => ({ data: { data: [] } }));
         if (!alive) return;
@@ -136,7 +158,7 @@ export default function AsesorDashboard({
       } catch (e) {
         // Error silencioso
       } finally {
-        if (alive) setLoading(false);
+        if (alive) setLoadingData(false);
       }
     })();
     return () => { alive = false; };
@@ -198,12 +220,12 @@ export default function AsesorDashboard({
     try { localStorage.setItem("cursoSeleccionado", title); } catch { }
   };
 
-  const cursosMostrar = loading
+  const cursosMostrar = loadingData
     ? (courses || [])
     : (cursosAsignados.length > 0 ? cursosAsignados : (courses || []));
 
   useEffect(() => {
-    if (!loading && cursosMostrar.length > 0) {
+    if (!loadingData && cursosMostrar.length > 0) {
       const cursoGuardado = selected;
       const cursoExiste = cursosMostrar.some(c => c.title === cursoGuardado);
       if (cursoGuardado && !cursoExiste) {
@@ -211,7 +233,7 @@ export default function AsesorDashboard({
         try { localStorage.removeItem("cursoSeleccionado"); } catch { }
       }
     }
-  }, [loading, cursosMostrar, selected]);
+  }, [loadingData, cursosMostrar, selected]);
 
   // Nombre del usuario
   const userName = useMemo(() => {
@@ -235,7 +257,7 @@ export default function AsesorDashboard({
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] bg-gradient-to-br from-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none -z-40"></div>
 
       {/* Contenido Principal */}
-      <div className="relative z-10 w-full max-w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-8 sm:pb-12">
+      <div className="relative z-10 w-full max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-8 sm:pb-12">
         {/* Header mejorado */}
         <div className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 space-y-4 sm:space-y-5 md:space-y-6">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
@@ -257,7 +279,7 @@ export default function AsesorDashboard({
               {userName}
             </p>
             <p className="text-sm sm:text-base md:text-lg text-violet-700 max-w-3xl leading-relaxed font-bold">
-              Selecciona un curso para comenzar a gestionar tus estudiantes, actividades y recursos educativos de manera eficiente
+              Selecciona un curso para comenzar a gestionar tus estudiantes, actividades y recursos educativos de manera eficaz.
             </p>
           </div>
         </div>
@@ -279,7 +301,7 @@ export default function AsesorDashboard({
                 Elige el curso para acceder a su dashboard completo
               </p>
             </div>
-            {cursosMostrar.length > 0 && !loading && (
+            {cursosMostrar.length > 0 && !loadingData && (
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 shadow-lg ring-2 ring-violet-200 flex-shrink-0">
                 <span className="text-xs sm:text-sm font-extrabold text-white">Total:</span>
                 <span className="text-lg sm:text-xl font-extrabold text-white">{cursosMostrar.length}</span>
@@ -288,14 +310,14 @@ export default function AsesorDashboard({
           </div>
 
           {/* Grid de cursos */}
-          {loading && cursosMostrar.length === 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          {loadingData && cursosMostrar.length === 0 ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="w-full h-[140px] sm:h-[150px] md:h-[160px] animate-pulse rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-200 to-indigo-200 border-2 border-violet-300 shadow-lg"></div>
               ))}
             </div>
           ) : cursosMostrar.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5 lg:gap-6" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
               {cursosMostrar.map((c, i) => (
                 <div key={c.id ?? i} className="w-full" style={{ minHeight: '140px' }}>
                   <CourseChip

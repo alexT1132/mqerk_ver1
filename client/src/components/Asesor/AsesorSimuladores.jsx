@@ -79,7 +79,7 @@ export default function Simuladores() {
       {/* Fondo fijo independiente del scroll */}
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-      <div className="relative z-10 mx-auto max-w-9xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
+      <div className="relative z-10 mx-auto max-w-[1920px] px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6">
         <div className="space-y-4 sm:space-y-6">
           {/* Hero panel */}
           <section
@@ -128,7 +128,7 @@ export default function Simuladores() {
             </div>
           </header>
 
-          <section className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
+          <section className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2 max-w-7xl mx-auto w-full">
             <SimCard
               icon={Target}
               title="Simulador por"

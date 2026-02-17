@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from 'react-dom';
 import { Link } from "react-router-dom";
 import { FaRegEye } from "react-icons/fa";
 import dayjs from "dayjs";
@@ -8,11 +9,11 @@ import {
   getBudgetSnapshot,
 } from "../../utils/budgetStore.js";
 import { getResumenMensual } from "../../service/finanzasPresupuesto.js";
-import { 
-  listGastosVariables, 
-  createGastoVariable, 
-  updateGastoVariable, 
-  deleteGastoVariable 
+import {
+  listGastosVariables,
+  createGastoVariable,
+  updateGastoVariable,
+  deleteGastoVariable
 } from "../../service/finanzasGastosVariables.js";
 import api from "../../api/axios.js";
 
@@ -83,7 +84,7 @@ export default function FinanzasEgresosVariables() {
   const [filterTo, setFilterTo] = useState('');
   const [filterMetodo, setFilterMetodo] = useState('');
   const [filterEstatus, setFilterEstatus] = useState('');
-  
+
   useEffect(() => {
     const fetchGastosVariables = async () => {
       try {
@@ -92,7 +93,7 @@ export default function FinanzasEgresosVariables() {
         // Normalizar para asegurar que siempre haya valorUnitario
         const normalized = (data || []).map(d => ({
           ...d,
-            // prefer camelCase ya devuelto por backend actualizado
+          // prefer camelCase ya devuelto por backend actualizado
           valorUnitario: d.valorUnitario ?? d.valor_unitario ?? 0
         }));
         setRows(normalized);
@@ -122,7 +123,7 @@ export default function FinanzasEgresosVariables() {
       const normalized = (data || []).map(d => ({ ...d, valorUnitario: d.valorUnitario ?? d.valor_unitario ?? 0 }));
       setRows(normalized);
       saveExpenses('variables', normalized);
-    } catch(e){ console.error('Error filtrando gastos variables', e); }
+    } catch (e) { console.error('Error filtrando gastos variables', e); }
     finally { setLoading(false); }
   };
   const clearFilters = async () => { setFilterFrom(''); setFilterTo(''); setFilterMetodo(''); setFilterEstatus(''); await applyFilters(); };
@@ -293,7 +294,7 @@ export default function FinanzasEgresosVariables() {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       a.href = url; a.download = `gastos-variables-${ts}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -343,7 +344,7 @@ export default function FinanzasEgresosVariables() {
         return;
       }
     }
-    
+
     try {
       // Crear gasto variable en la API
       const createdGasto = await createGastoVariable(nuevo);
@@ -392,7 +393,7 @@ export default function FinanzasEgresosVariables() {
                 saveExpenses("variables", next);
                 return next;
               });
-            } catch {}
+            } catch { }
           }
         } catch (err) {
           console.warn(
@@ -411,7 +412,7 @@ export default function FinanzasEgresosVariables() {
         return next;
       });
     }
-    
+
     setShowModal(false);
     setForm(getDefaultForm());
   };
@@ -462,7 +463,7 @@ export default function FinanzasEgresosVariables() {
               saveExpenses("variables", next);
               return next;
             });
-          } catch {}
+          } catch { }
         }
       } catch (err) {
         console.warn(
@@ -505,35 +506,35 @@ export default function FinanzasEgresosVariables() {
   const saveStatusAsPending = async () => {
     if (!budgetWarn.open || budgetWarn.context !== 'status') return;
     const { idx } = budgetWarn.info || {};
-    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    if (idx === undefined || idx === null) { setBudgetWarn({ open: false, context: null, info: null }); return; }
     const item = rows[idx];
     const prev = item?.estatus;
     // Optimista a Pendiente
-    setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus:'Pendiente' } : r));
+    setRows(prevRows => prevRows.map((r, i) => i === idx ? { ...r, estatus: 'Pendiente' } : r));
     try {
-      if (item?.id) await updateGastoVariable(item.id, { estatus:'Pendiente' });
+      if (item?.id) await updateGastoVariable(item.id, { estatus: 'Pendiente' });
     } catch {
       // Revertir si falla
-      setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus: prev } : r));
+      setRows(prevRows => prevRows.map((r, i) => i === idx ? { ...r, estatus: prev } : r));
     }
-    setBudgetWarn({ open:false, context:null, info:null });
+    setBudgetWarn({ open: false, context: null, info: null });
   };
 
   const proceedStatusEvenIfExceed = async () => {
     if (!budgetWarn.open || budgetWarn.context !== 'status') return;
     const { idx } = budgetWarn.info || {};
-    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    if (idx === undefined || idx === null) { setBudgetWarn({ open: false, context: null, info: null }); return; }
     const item = rows[idx];
     const prev = item?.estatus;
     // Optimista a Pagado y persistir
-    setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus:'Pagado' } : r));
+    setRows(prevRows => prevRows.map((r, i) => i === idx ? { ...r, estatus: 'Pagado' } : r));
     try {
-      if (item?.id) await updateGastoVariable(item.id, { estatus:'Pagado' });
+      if (item?.id) await updateGastoVariable(item.id, { estatus: 'Pagado' });
     } catch {
       // Revertir si falla
-      setRows(prevRows => prevRows.map((r,i)=> i===idx ? { ...r, estatus: prev } : r));
+      setRows(prevRows => prevRows.map((r, i) => i === idx ? { ...r, estatus: prev } : r));
     }
-    setBudgetWarn({ open:false, context:null, info:null });
+    setBudgetWarn({ open: false, context: null, info: null });
   };
 
   return (
@@ -607,7 +608,7 @@ export default function FinanzasEgresosVariables() {
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
+            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
             <button
               onClick={handleExportExcel}
               disabled={exportExcelLoading}
@@ -626,15 +627,15 @@ export default function FinanzasEgresosVariables() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
-                <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+                <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta</label>
-                <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+                <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Método</label>
-                <select value={filterMetodo} onChange={e=>setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                <select value={filterMetodo} onChange={e => setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
                   <option value="">Todos</option>
                   <option value="Efectivo">Efectivo</option>
                   <option value="Transferencia">Transferencia</option>
@@ -643,7 +644,7 @@ export default function FinanzasEgresosVariables() {
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Estatus</label>
-                <select value={filterEstatus} onChange={e=>setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                <select value={filterEstatus} onChange={e => setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
                   <option value="">Todos</option>
                   <option value="Pagado">Pagado</option>
                   <option value="Pendiente">Pendiente</option>
@@ -797,11 +798,10 @@ export default function FinanzasEgresosVariables() {
                               setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: prevStatus } : x)));
                             }
                           }}
-                          className={`rounded-md text-xs px-2 py-1 border ${
-                            r.estatus === "Pagado"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-amber-200 bg-amber-50 text-amber-700"
-                          }`}
+                          className={`rounded-md text-xs px-2 py-1 border ${r.estatus === "Pagado"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                            }`}
                         >
                           <option value="Pendiente">Pendiente</option>
                           <option value="Pagado">Pagado</option>
@@ -837,11 +837,10 @@ export default function FinanzasEgresosVariables() {
                     {idx + 1}. {r.producto}
                   </div>
                   <select
-                    className={`rounded-md text-[11px] px-2 py-1 ${
-                      r.estatus === "Pagado"
-                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border border-amber-200 bg-amber-50 text-amber-700"
-                    }`}
+                    className={`rounded-md text-[11px] px-2 py-1 ${r.estatus === "Pagado"
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
                     value={r.estatus}
                     onClick={(e) => e.stopPropagation()}
                     onChange={async (e) => {
@@ -917,25 +916,32 @@ export default function FinanzasEgresosVariables() {
       </div>
 
       {/* Modal Nuevo gasto variable */}
-      {showModal && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 flex-shrink-0">
-              <h3 className="text-base font-semibold text-gray-900">
-                Nuevo gasto variable
-              </h3>
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-2 border-slate-300 overflow-hidden flex flex-col mx-auto animate-in fade-in zoom-in duration-300 max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  Nuevo Gasto Variable
+                </h3>
+                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-0.5">
+                  Registro detallado de egreso
+                </p>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <form onSubmit={submit} className="flex-1 flex flex-col min-h-0">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain flex-1 min-h-0 no-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+              <div className="px-6 py-6 overflow-y-auto overscroll-contain flex-1 no-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Fecha
                     </label>
                     <input
@@ -944,11 +950,11 @@ export default function FinanzasEgresosVariables() {
                       value={form.fecha}
                       onChange={onChange}
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Unidades
                     </label>
                     <input
@@ -957,12 +963,12 @@ export default function FinanzasEgresosVariables() {
                       onChange={onChangeUnidades}
                       placeholder="0"
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Producto/Servicio
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Producto / Servicio
                     </label>
                     <input
                       name="producto"
@@ -970,11 +976,11 @@ export default function FinanzasEgresosVariables() {
                       onChange={onChange}
                       placeholder="Material, comisión, etc."
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none"
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Descripción
                     </label>
                     <textarea
@@ -983,12 +989,12 @@ export default function FinanzasEgresosVariables() {
                       onChange={onChange}
                       rows={2}
                       maxLength={200}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
-                      placeholder="Notas o detalles (máx. 200 caracteres)"
+                      placeholder="Notas o detalles del gasto..."
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Entidad
                     </label>
                     <input
@@ -996,89 +1002,91 @@ export default function FinanzasEgresosVariables() {
                       value={form.entidad}
                       onChange={onChange}
                       placeholder="Proveedor / Persona"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Valor unitario
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Valor Unitario
                     </label>
-                    <input
-                      name="valorUnitario"
-                      value={form.valorUnitario}
-                      onChange={onChangeValorUnitario}
-                      placeholder="0.00"
-                      required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
-                    />
+                    <div className="relative group">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                      <input
+                        name="valorUnitario"
+                        value={form.valorUnitario}
+                        onChange={onChangeValorUnitario}
+                        placeholder="0.00"
+                        required
+                        className="w-full rounded-2xl border-2 border-slate-100 pl-8 pr-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Método de pago
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Método
                     </label>
                     <select
                       name="metodo"
                       value={form.metodo}
                       onChange={onChange}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-4 focus:ring-rose-50 focus:border-rose-500 transition-all outline-none cursor-pointer"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
                       <option value="Tarjeta">Tarjeta</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Estatus
                     </label>
                     <select
                       name="estatus"
                       value={form.estatus}
                       onChange={onChange}
-                      className={`w-full rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 ${
-                        form.estatus === "Pagado"
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
+                      className={`w-full rounded-2xl border-2 px-4 py-2.5 text-sm font-bold transition-all outline-none cursor-pointer ${form.estatus === "Pagado"
+                        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        : "border-amber-100 bg-amber-50 text-amber-700"
+                        }`}
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Pagado">Pagado</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Importe
-                    </label>
-                    <input
-                      name="importe"
-                      value={form.importe}
-                      readOnly
-                      placeholder="0.00"
-                      required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-gray-600"
-                      title="Se calcula automáticamente: unidades × valor unitario"
-                    />
+                  <div className="md:col-span-2 mt-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group overflow-hidden relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-rose-50/0 to-rose-50/50 translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+                    <div className="relative">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total calculado</p>
+                      <p className="text-2xl font-black text-rose-600">
+                        {formatCurrency(parseCurrency(form.importe))}
+                      </p>
+                    </div>
+                    <div className="relative text-right hidden sm:block">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Importe Final</p>
+                      <p className="text-xs font-bold text-slate-500 italic">IVA Incluido</p>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2 sticky bottom-0">
+              <div className="px-4 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-2 sticky bottom-0">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-all active:scale-95"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+                  className="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg shadow-md shadow-rose-200 hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   Guardar
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Toast Deshacer borrado */}
@@ -1148,57 +1156,115 @@ export default function FinanzasEgresosVariables() {
         </div>
       )}
 
-      {budgetWarn.open && (()=>{ const i = budgetWarn.info||{}; const b = i.snap || { budget:0, spent:0, leftover:0 }; const fmt = (n)=> new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0)); return (
-        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b flex items-center justify-between bg-amber-50/60">
-              <h3 className="text-base font-semibold text-amber-800">Presupuesto insuficiente</h3>
-              <button onClick={()=> setBudgetWarn({ open:false, context:null, info:null })} className="text-amber-600 hover:text-amber-800">✕</button>
-            </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
-              <p>El egreso marcado excede el presupuesto disponible del mes.</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Presupuesto</div><div className="font-semibold">{fmt(b.budget)}</div></div>
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Gastado</div><div className="font-semibold">{fmt(b.spent)}</div></div>
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Disponible</div><div className="font-semibold">{fmt(b.leftover)}</div></div>
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Egreso</div><div className="font-semibold text-rose-600">{fmt(i.amount)}</div></div>
+      {budgetWarn.open && (() => {
+        const i = budgetWarn.info || {};
+        const b = i.snap || { budget: 0, spent: 0, leftover: 0 };
+        const fmt = (n) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(n || 0));
+        return createPortal(
+          <div className="fixed inset-0 z-[10050] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-amber-100">
+              <div className="px-6 py-5 border-b border-amber-50 flex items-center justify-between bg-amber-50/50">
+                <div>
+                  <h3 className="text-xl font-bold text-amber-900">Presupuesto insuficiente</h3>
+                  <p className="text-xs text-amber-600 font-medium uppercase tracking-wider mt-1">Advertencia de saldo</p>
+                </div>
+                <button
+                  onClick={() => setBudgetWarn({ open: false, context: null, info: null })}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl text-amber-400 hover:text-amber-600 hover:bg-amber-100/50 transition-all"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">Continuar lo dejará en negativo por {fmt(i.exceed)}.</div>
+              <div className="px-6 py-6 text-sm text-gray-700 space-y-4">
+                <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-800">
+                  <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0 text-xl">⚠️</div>
+                  <p className="font-medium leading-relaxed">
+                    El egreso marcado excede el presupuesto disponible del mes. <br />
+                    <span className="text-xs font-bold opacity-80 uppercase">Continuar lo dejará en negativo por {fmt(i.exceed)}.</span>
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-50 shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Presupuesto</div>
+                    <div className="text-sm font-black text-slate-700">{fmt(b.budget)}</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-50 shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Gastado</div>
+                    <div className="text-sm font-black text-slate-700">{fmt(b.spent)}</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-50 shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Disponible</div>
+                    <div className="text-sm font-black text-slate-700">{fmt(b.leftover)}</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white border-2 border-rose-50 shadow-sm">
+                    <div className="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-1">Egreso</div>
+                    <div className="text-sm font-black text-rose-600">{fmt(i.amount)}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50">
+                {budgetWarn.context === 'create' ? (
+                  <>
+                    <button
+                      onClick={saveAsPendingInstead}
+                      className="px-5 py-2.5 text-xs font-black text-amber-700 bg-white border-2 border-amber-200 rounded-2xl hover:bg-amber-50 transition-all"
+                    >
+                      Guardar como Pendiente
+                    </button>
+                    <button
+                      onClick={proceedCreateEvenIfExceed}
+                      className="px-6 py-2.5 text-xs font-black text-white bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                    >
+                      Continuar y guardar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={saveStatusAsPending}
+                      className="px-5 py-2.5 text-xs font-black text-amber-700 bg-white border-2 border-amber-200 rounded-2xl hover:bg-amber-50 transition-all"
+                    >
+                      Guardar como Pendiente
+                    </button>
+                    <button
+                      onClick={proceedStatusEvenIfExceed}
+                      className="px-6 py-2.5 text-xs font-black text-white bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                    >
+                      Continuar y guardar
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="px-5 py-3 border-t flex items-center justify-end gap-2 bg-gray-50">
-              {budgetWarn.context==='create' ? (
-                <>
-                  <button onClick={saveAsPendingInstead} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
-                  <button onClick={proceedCreateEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={saveStatusAsPending} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
-                  <button onClick={proceedStatusEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      ); })()}
+          </div>,
+          document.getElementById('modal-root')
+        );
+      })()}
 
       {/* Modal Editar gasto variable */}
-      {editOpen && editData && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto pt-12 sm:pt-16 md:pt-20 pb-6 px-3 sm:px-4 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">
-                Editar gasto variable
-              </h3>
+      {editOpen && editData && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-2 border-slate-300 overflow-hidden flex flex-col mx-auto animate-in fade-in zoom-in duration-300 max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  Editar Gasto Variable
+                </h3>
+                <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">
+                  Modificar registro existente
+                </p>
+              </div>
               <button
                 onClick={() => {
                   setEditOpen(false);
                   setEditData(null);
                   setEditIndex(null);
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <form
@@ -1222,7 +1288,6 @@ export default function FinanzasEgresosVariables() {
                   });
                 } catch (error) {
                   console.error("Error al actualizar gasto variable:", error);
-                  // Fallback a la actualización local si la API falla
                   setRows((prev) => {
                     const next = [...prev];
                     next[editIndex] = updatedGasto;
@@ -1235,12 +1300,12 @@ export default function FinanzasEgresosVariables() {
                 setEditData(null);
                 setEditIndex(null);
               }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col min-h-0"
             >
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+              <div className="px-6 py-6 overflow-y-auto overscroll-contain flex-1 no-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Fecha
                     </label>
                     <input
@@ -1250,11 +1315,11 @@ export default function FinanzasEgresosVariables() {
                         setEditData((d) => ({ ...d, fecha: e.target.value }))
                       }
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Unidades
                     </label>
                     <input
@@ -1265,12 +1330,12 @@ export default function FinanzasEgresosVariables() {
                           unidades: e.target.value.replace(/[^\d]/g, ""),
                         }))
                       }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Producto/Servicio
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Producto / Servicio
                     </label>
                     <input
                       value={editData.producto}
@@ -1278,11 +1343,11 @@ export default function FinanzasEgresosVariables() {
                         setEditData((d) => ({ ...d, producto: e.target.value }))
                       }
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none"
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Descripción
                     </label>
                     <textarea
@@ -1295,11 +1360,11 @@ export default function FinanzasEgresosVariables() {
                           descripcion: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Entidad
                     </label>
                     <input
@@ -1307,12 +1372,12 @@ export default function FinanzasEgresosVariables() {
                       onChange={(e) =>
                         setEditData((d) => ({ ...d, entidad: e.target.value }))
                       }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Valor unitario
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Valor Unitario
                     </label>
                     <input
                       type="number"
@@ -1324,12 +1389,12 @@ export default function FinanzasEgresosVariables() {
                           valorUnitario: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Importe
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Importe Final
                     </label>
                     <input
                       type="number"
@@ -1338,27 +1403,27 @@ export default function FinanzasEgresosVariables() {
                       onChange={(e) =>
                         setEditData((d) => ({ ...d, importe: e.target.value }))
                       }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-black text-indigo-600 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none bg-slate-50"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Método de pago
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+                      Método
                     </label>
                     <select
                       value={editData.metodo}
                       onChange={(e) =>
                         setEditData((d) => ({ ...d, metodo: e.target.value }))
                       }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-2xl border-2 border-slate-100 px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all outline-none cursor-pointer"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
                       <option value="Tarjeta">Tarjeta</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                       Estatus
                     </label>
                     <select
@@ -1366,11 +1431,10 @@ export default function FinanzasEgresosVariables() {
                       onChange={(e) =>
                         setEditData((d) => ({ ...d, estatus: e.target.value }))
                       }
-                      className={`w-full rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 ${
-                        editData.estatus === "Pagado"
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
+                      className={`w-full rounded-2xl border-2 px-4 py-2.5 text-sm font-bold transition-all outline-none cursor-pointer ${editData.estatus === "Pagado"
+                        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        : "border-amber-100 bg-amber-50 text-amber-700"
+                        }`}
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Pagado">Pagado</option>
@@ -1378,14 +1442,14 @@ export default function FinanzasEgresosVariables() {
                   </div>
                 </div>
               </div>
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-between gap-2 sticky bottom-0">
+              <div className="px-4 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-2 sticky bottom-0">
                 <button
                   type="button"
                   onClick={() => {
                     setConfirmError("");
                     setConfirmOpen(true);
                   }}
-                  className="px-4 py-2 text-sm rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50"
+                  className="px-4 py-2 text-xs font-bold text-rose-600 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-all active:scale-95"
                 >
                   Borrar
                 </button>
@@ -1397,106 +1461,122 @@ export default function FinanzasEgresosVariables() {
                       setEditData(null);
                       setEditIndex(null);
                     }}
-                    className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-all active:scale-95"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+                    className="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-lg shadow-md shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all"
                   >
-                    Guardar
+                    Actualizar
                   </button>
                 </div>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Ver descripción */}
-      {descOpen && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)]">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">
-                Descripción
-              </h3>
+      {descOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/40 backdrop-blur-sm px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300 border border-slate-100">
+            <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  Descripción
+                </h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Detalles del registro</p>
+              </div>
               <button
                 onClick={() => setDescOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div className="px-4 sm:px-5 py-4 overflow-y-auto">
-              <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                {descText || "Sin descripción"}
+            <div className="px-6 py-8 overflow-y-auto">
+              <p className="text-base text-gray-700 underline decoration-slate-200 underline-offset-8 leading-relaxed italic">
+                {descText || "Sin descripción registrada."}
               </p>
             </div>
-            <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2 sticky bottom-0">
+            <div className="px-6 py-4 border-t border-slate-50 bg-slate-50/50 flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setDescOpen(false)}
-                className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                className="px-8 py-2.5 text-sm font-black text-white bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
               >
-                Cerrar
+                Entendido
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Confirmación de borrado */}
-      {confirmOpen && editIndex !== null && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">
-                Eliminar gasto variable
-              </h3>
+      {confirmOpen && editIndex !== null && createPortal(
+        <div className="fixed inset-0 z-[10100] bg-black/40 backdrop-blur-sm px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-slate-100">
+            <div className="px-4 py-3 border-b border-rose-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  Eliminar Gasto
+                </h3>
+                <p className="text-[9px] text-rose-500 font-bold uppercase tracking-widest mt-0.5">Esta acción es irreversible</p>
+              </div>
               <button
                 onClick={() => !confirmLoading && setConfirmOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
-              <p>
-                ¿Seguro que deseas eliminar este gasto variable? Esta acción no
-                se puede deshacer.
-              </p>
-              <div className="rounded-lg bg-gray-50 ring-1 ring-gray-200 p-3 text-xs">
-                <div>
-                  <span className="text-gray-500">Producto/Servicio:</span>{" "}
-                  <span className="text-gray-800 font-medium">
-                    {rows[editIndex]?.producto}
-                  </span>
+            <div className="px-4 py-3 text-sm text-gray-700 space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-rose-50/50 rounded-xl border border-rose-100/50">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 text-sm flex-shrink-0">🗑️</div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-800">
+                    ¿Eliminar este gasto variable?
+                  </p>
+                  <p className="text-[10px] text-rose-500 font-medium mt-0.5">Podrás deshacer después.</p>
                 </div>
-                <div>
-                  <span className="text-gray-500">Unidades:</span>{" "}
-                  <span className="text-gray-800">
-                    {rows[editIndex]?.unidades}
-                  </span>{" "}
-                  <span className="text-gray-500 ml-2">Importe:</span>{" "}
-                  <span className="text-gray-800 font-medium">
+              </div>
+
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-500 font-medium">Producto:</span>
+                  <span className="text-xs font-black text-slate-700">{rows[editIndex]?.producto}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-500 font-medium">Unidades:</span>
+                  <span className="text-xs font-black text-slate-700">{rows[editIndex]?.unidades}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/50">
+                  <span className="text-[10px] text-slate-500 font-medium">Importe:</span>
+                  <span className="text-xs font-black text-rose-600">
                     {formatCurrency(Number(rows[editIndex]?.importe) || 0)}
                   </span>
                 </div>
               </div>
               {confirmError ? (
-                <p className="text-[11px] text-rose-600">{confirmError}</p>
+                <p className="text-[10px] font-bold text-rose-600 text-center animate-pulse uppercase tracking-widest">{confirmError}</p>
               ) : null}
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
+            <div className="px-4 py-3 border-t border-slate-50 bg-slate-50/50 flex items-center justify-stretch gap-2">
               <button
                 type="button"
                 disabled={confirmLoading}
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="flex-1 px-3 py-2 text-xs font-black text-gray-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-60"
               >
-                Cancelar
+                No, cancelar
               </button>
               <button
                 type="button"
@@ -1504,12 +1584,12 @@ export default function FinanzasEgresosVariables() {
                   if (editIndex === null) return;
                   setConfirmLoading(true);
                   setConfirmError("");
-                  
+
                   const toRemove = rows[editIndex];
 
                   try {
                     await deleteGastoVariable(toRemove.id);
-                    
+
                     setRows((prev) => {
                       const next = prev.filter((_, i) => i !== editIndex);
                       saveExpenses("variables", next);
@@ -1528,18 +1608,19 @@ export default function FinanzasEgresosVariables() {
 
                   } catch (error) {
                     console.error("Error al eliminar gasto variable:", error);
-                    setConfirmError("No se pudo eliminar el gasto. Inténtalo de nuevo.");
+                    setConfirmError("Error de conexión. Reintenta.");
                     setConfirmLoading(false);
                   }
                 }}
-                className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-70"
+                className="flex-1 px-3 py-2 text-xs font-black text-white bg-rose-600 rounded-lg shadow-md shadow-rose-100 hover:bg-rose-700 active:scale-95 transition-all disabled:opacity-70"
                 disabled={confirmLoading}
               >
-                {confirmLoading ? "Eliminando…" : "Eliminar"}
+                {confirmLoading ? "..." : "Sí, eliminar"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
     </section>
   );

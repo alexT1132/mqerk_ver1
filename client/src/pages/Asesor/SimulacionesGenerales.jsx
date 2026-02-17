@@ -9,7 +9,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-        <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+      <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
       {/* Drawer móvil */}
       <MobileSidebar
         open={mobileOpen}
@@ -23,8 +23,10 @@ export default function Layout() {
         <div className="flex">
           <SidebarIconOnly active="inicio" onLogout={() => console.log("logout")} />
 
-          <main className="flex-1 min-h-[calc(100vh-3.5rem)] p-3 sm:p-6">
-            <SimuladoresGenerales />
+          <main className="flex-1 min-h-[calc(100vh-3.5rem)] p-3 sm:p-6 overflow-x-hidden">
+            <div className="w-full max-w-screen-2xl mx-auto">
+              <SimuladoresGenerales />
+            </div>
           </main>
         </div>
       </div>

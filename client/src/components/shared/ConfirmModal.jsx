@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
-const ConfirmModal = ({ 
-  isOpen, 
-  type = 'confirm', 
-  message, 
-  details, 
-  onConfirm, 
+const ConfirmModal = ({
+  isOpen,
+  type = 'confirm',
+  message,
+  details,
+  onConfirm,
   onCancel,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
@@ -85,8 +85,8 @@ const ConfirmModal = ({
 
   if (!isOpen) return null;
 
-  // Renderizar en portal (document.body) para aislar la capa modal
-  const container = typeof document !== 'undefined' ? document.body : null;
+  // Renderizar en portal #modal-root para aislar la capa modal
+  const container = typeof document !== 'undefined' ? document.getElementById('modal-root') : null;
   return container ? ReactDOM.createPortal(modalContent, container) : modalContent;
 };
 

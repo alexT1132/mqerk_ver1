@@ -63,7 +63,7 @@ export default function FeedbackDetail({ embedded = false }) {
       {/* Header band - Ocupa todo el ancho correctamente sin márgenes negativos */}
       <header className="relative isolate overflow-hidden bg-white border-b border-slate-200 shadow-sm w-full">
         {/* Contenedor interno con padding para el contenido */}
-        <div className="relative w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-10 sm:py-12">
+        <div className="relative w-full max-w-[1920px] mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-10 sm:py-12">
           <button
             onClick={() => navigate('/asesor/feedback')}
             className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-200"
@@ -71,7 +71,7 @@ export default function FeedbackDetail({ embedded = false }) {
           >
             <ArrowLeft className="size-4" /> Volver
           </button>
-          
+
           {/* Avatar + title */}
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="relative shrink-0">
@@ -105,7 +105,7 @@ export default function FeedbackDetail({ embedded = false }) {
 
       {/* Contenido principal - Ocupa todo el ancho con padding adecuado */}
       <main className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6 sm:py-8" aria-labelledby="feedback-title">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1920px] mx-auto">
           {loading && (
             <div className="flex items-center gap-2 text-sm text-purple-600 bg-white rounded-xl p-4 shadow-sm">
               <Loader2 className="size-4 animate-spin" /> Cargando alumno…
@@ -132,7 +132,7 @@ export default function FeedbackDetail({ embedded = false }) {
           <PhotoModal
             src={buildStaticUrl(alumno.foto)}
             alt={nombreCompleto}
-            onClose={()=> setShowPhotoModal(false)}
+            onClose={() => setShowPhotoModal(false)}
           />
         )}
       </>
@@ -165,14 +165,14 @@ export default function FeedbackDetail({ embedded = false }) {
         <PhotoModal
           src={buildStaticUrl(alumno.foto)}
           alt={nombreCompleto}
-          onClose={()=> setShowPhotoModal(false)}
+          onClose={() => setShowPhotoModal(false)}
         />
       )}
     </div>
   );
 }
 
-function PhotoModal({ src, alt, onClose }){
+function PhotoModal({ src, alt, onClose }) {
   // Close on ESC
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
@@ -185,12 +185,12 @@ function PhotoModal({ src, alt, onClose }){
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-  <div className="relative bg-white rounded-2xl shadow-2xl w-[92vw] sm:w-[88vw] max-w-2xl h-[72vh] overflow-hidden z-[71]" onClick={(e)=> e.stopPropagation()}>
+      <div className="relative bg-white rounded-2xl shadow-2xl w-[92vw] sm:w-[88vw] max-w-2xl h-[72vh] overflow-hidden z-[71]" onClick={(e) => e.stopPropagation()}>
         <div className="px-3 sm:px-4 py-2 bg-[#3d18c3] text-white flex items-center justify-between h-12">
           <div className="font-semibold text-xs sm:text-sm truncate">MQerk Academy · Foto de {alt}</div>
           <div>
             <button onClick={onClose} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs">
-              <X className="size-3.5"/> Cerrar
+              <X className="size-3.5" /> Cerrar
             </button>
           </div>
         </div>

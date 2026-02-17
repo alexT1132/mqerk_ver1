@@ -23,14 +23,14 @@ function HoverTooltip({ anchorRef, text, show }) {
     }
     const rect = anchorRef.current.getBoundingClientRect();
     const top = rect.top + rect.height / 2;
-    const left = rect.right + 15; 
+    const left = rect.right + 15;
 
     setStyle({
       position: 'fixed',
       top: `${top}px`,
       left: `${left}px`,
       transform: 'translateY(-50%)',
-      zIndex: 9999, 
+      zIndex: 9999,
       pointerEvents: 'none',
       whiteSpace: 'nowrap',
     });
@@ -50,21 +50,21 @@ function HoverTooltip({ anchorRef, text, show }) {
 /**
  * ElementoSideBar
  */
-function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, badge }) { 
-  const location = useLocation(); 
-  const navigate = useNavigate(); 
+function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, badge }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { logout: authLogout } = useAuth();
-  const isActive = location.pathname === to; 
-  const linkRef = useRef(null); 
+  const isActive = location.pathname === to;
+  const linkRef = useRef(null);
   const [hovered, setHovered] = useState(false);
 
-  const isMobileItem = !!mobileOnClick; 
+  const isMobileItem = !!mobileOnClick;
 
   const handleLinkClick = async (e) => {
     if (to === "/login") {
       e.preventDefault();
       if (mobileOnClick) mobileOnClick();
-      
+
       // Hacer logout en segundo plano sin bloquear la UI
       (async () => {
         try {
@@ -91,11 +91,11 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
       })();
       return;
     }
-    
+
     if (mobileOnClick) mobileOnClick();
 
-    if (isActive && to !== "/login") { 
-      e.preventDefault(); 
+    if (isActive && to !== "/login") {
+      e.preventDefault();
       navigate("/administrativo/bienvenida");
     }
   };
@@ -103,15 +103,15 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
   // =====================================================================
   // ESTILOS CORREGIDOS (MÓVIL VS PC)
   // =====================================================================
-  
+
   let containerClasses = "";
   let linkClasses = "flex items-center transition-all duration-300 ease-out relative select-none ";
 
   if (isMobileItem) {
     // --- MÓVIL (CORREGIDO) ---
     // Usamos px-3 y w-full para asegurar que llene el contenedor ampliado.
-    containerClasses = "w-full mb-1 px-3"; 
-    
+    containerClasses = "w-full mb-1 px-3";
+
     // Ajuste: gap-3 en vez de gap-4 para ganar espacio, padding equilibrado.
     linkClasses += "justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none ";
 
@@ -129,8 +129,8 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
 
   } else {
     // --- PC (RELIEVE MANTENIDO) ---
-    containerClasses = "group flex justify-center items-center relative z-10 min-h-[60px] w-full px-2";
-    linkClasses += "justify-center p-0 rounded-xl w-12 h-12 aspect-square ";
+    containerClasses = "group flex justify-center items-center relative z-10 min-h-[52px] w-full px-2";
+    linkClasses += "justify-center p-0 rounded-xl w-10 h-10 aspect-square ";
 
     if (isActive) {
       linkClasses += "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 transform scale-110 z-20 font-bold border-none ";
@@ -143,7 +143,7 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
     }
   }
 
-  let currentIconColor = svgColor; 
+  let currentIconColor = svgColor;
   if (to === "/login") currentIconColor = svgColorLogout;
   else if (isActive) currentIconColor = svgColorActive;
 
@@ -162,13 +162,13 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
           {React.cloneElement(Icono, {
             stroke: currentIconColor,
             color: currentIconColor,
-            fill: "none", 
+            fill: "none",
             // En móvil un poco más grande (24px) para que se vea bien
-            className: `transition-all duration-300 ${isMobileItem ? "w-6 h-6" : (isActive ? "w-6 h-6" : "w-5 h-5")}`,
+            className: `transition-all duration-300 ${isMobileItem ? "w-6 h-6" : (isActive ? "w-5 h-5" : "w-[18px] h-[18px]")}`,
             strokeWidth: isActive ? 2.5 : 2,
             ...(to === "/administrativo/lista-alumnos" && isActive ? { fill: "white" } : {})
           })}
-          
+
           {badge && badge > 0 && (
             <span className={`absolute bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm border border-white z-50 animate-pulse
               ${isMobileItem ? 'top-1/2 -translate-y-1/2 -right-2 min-w-[18px] h-[18px]' : '-top-1 -right-1 min-w-[18px] h-[18px]'}`}>
@@ -179,9 +179,9 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
 
         {/* Texto en Móvil - Ajustado tamaño de fuente */}
         {isMobileItem && (
-           <span className={`text-[15px] leading-none font-medium ml-1 truncate ${isActive ? 'text-white' : 'text-gray-700'}`}>
-             {NombreElemento}
-           </span>
+          <span className={`text-[15px] leading-none font-medium ml-1 truncate ${isActive ? 'text-white' : 'text-gray-700'}`}>
+            {NombreElemento}
+          </span>
         )}
 
         {/* Tooltip en PC */}
@@ -271,8 +271,8 @@ export function SideBarDesktop() {
       forceOpen={false}
       forceClosed={true}
       logoutPath="/login"
-      topOffset="84px"
-      heightOffset="84px"
+      topOffset="80px"
+      heightOffset="80px"
       badgeConfig={{
         loadFunction: async () => {
           try {

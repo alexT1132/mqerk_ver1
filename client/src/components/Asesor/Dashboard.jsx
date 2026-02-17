@@ -3,11 +3,32 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Calendar, Users, BookOpen, ArrowLeft, FileText, UserCheck, Clock, TrendingUp, Sparkles } from "lucide-react";
 import DashboardCard from "./DashboardCard";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function CursoBienvenida() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, loading } = useAuth();
   const [nombreCurso, setNombreCurso] = useState(null);
+
+  // Session validation - redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [loading, isAuthenticated, navigate]);
+  
+  // Show loading state while checking authentication
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-violet-600 font-medium">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Prioridad: 1) state (click en selección), 2) localStorage (curso previamente seleccionado)
   const nombreFromState = location.state?.curso ?? null;

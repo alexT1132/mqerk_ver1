@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { FaRegEye } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -10,11 +11,11 @@ import {
   getBudgetSnapshot,
 } from "../../utils/budgetStore.js";
 import { getResumenMensual } from "../../service/finanzasPresupuesto.js";
-import { 
-  listGastosFijos, 
-  createGastoFijo, 
-  updateGastoFijo, 
-  deleteGastoFijo 
+import {
+  listGastosFijos,
+  createGastoFijo,
+  updateGastoFijo,
+  deleteGastoFijo
 } from "../../service/finanzasGastosFijos.js";
 import {
   listPlantillas,
@@ -91,7 +92,7 @@ export default function FinanzasEgresosFijos() {
       try {
         setLoading(true);
         const data = await listGastosFijos();
-  setRows(Array.isArray(data) ? data.map(r => ({ ...r, calendarEventId: r.calendar_event_id ?? r.calendarEventId })) : []);
+        setRows(Array.isArray(data) ? data.map(r => ({ ...r, calendarEventId: r.calendar_event_id ?? r.calendarEventId })) : []);
         // También mantener en storage como backup
         saveExpenses("fijos", data);
         // Cargar resumen de presupuesto
@@ -100,7 +101,7 @@ export default function FinanzasEgresosFijos() {
         try {
           const pls = await listPlantillas({ activo: 1 });
           setPlantillas(Array.isArray(pls) ? pls : []);
-        } catch(e) { console.warn('No se pudieron cargar plantillas', e?.message || e); }
+        } catch (e) { console.warn('No se pudieron cargar plantillas', e?.message || e); }
       } catch (error) {
         console.error('Error al cargar gastos fijos:', error);
         // Fallback al storage local si falla la API
@@ -243,7 +244,7 @@ export default function FinanzasEgresosFijos() {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       a.href = url; a.download = `gastos-fijos-${ts}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -272,19 +273,19 @@ export default function FinanzasEgresosFijos() {
   const saveStatusAsPending = async () => {
     if (!budgetWarn.open || budgetWarn.context !== 'status') return;
     const { idx } = budgetWarn.info || {};
-    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    if (idx === undefined || idx === null) { setBudgetWarn({ open: false, context: null, info: null }); return; }
     try {
       await patchGasto(idx, { estatus: 'Pendiente' });
     } catch (_) {
       // silencioso: patchGasto ya hizo rollback si falla
     }
-    setBudgetWarn({ open:false, context:null, info:null });
+    setBudgetWarn({ open: false, context: null, info: null });
   };
 
   const proceedStatusEvenIfExceed = async () => {
     if (!budgetWarn.open || budgetWarn.context !== 'status') return;
     const { idx } = budgetWarn.info || {};
-    if (idx === undefined || idx === null) { setBudgetWarn({ open:false, context:null, info:null }); return; }
+    if (idx === undefined || idx === null) { setBudgetWarn({ open: false, context: null, info: null }); return; }
     try {
       await patchGasto(idx, { estatus: 'Pagado' });
       const month = dayjs(rows[idx]?.fecha).format('YYYY-MM');
@@ -292,7 +293,7 @@ export default function FinanzasEgresosFijos() {
     } catch (_) {
       // rollback ya aplicado en patchGasto si falla
     }
-    setBudgetWarn({ open:false, context:null, info:null });
+    setBudgetWarn({ open: false, context: null, info: null });
   };
 
   // Helper reutilizable para parches optimistas
@@ -385,18 +386,18 @@ export default function FinanzasEgresosFijos() {
         return; // esperar confirmación
       }
     }
-    
+
     try {
       // Crear gasto fijo en la API
       const createdGasto = await createGastoFijo(nuevo);
-      
+
       // Actualizar estado local
       setRows((prev) => {
         const next = [...prev, createdGasto];
         saveExpenses("fijos", next);
         return next;
       });
-      
+
       // Refrescar presupuesto si el gasto está marcado como Pagado
       if (nuevo.estatus === "Pagado") {
         const month = dayjs(nuevo.fecha).format("YYYY-MM");
@@ -439,7 +440,7 @@ export default function FinanzasEgresosFijos() {
               const updated = await updateGastoFijo(createdGasto.id, { calendar_event_id: evId });
               setRows(prev => prev.map(x => x.id === updated.id ? { ...updated, calendarEventId: updated.calendar_event_id ?? evId } : x));
               saveExpenses("fijos", rows);
-            } catch(_) {}
+            } catch (_) { }
           }
         } catch (err) {
           console.warn(
@@ -619,45 +620,45 @@ export default function FinanzasEgresosFijos() {
               </span>
             </p>
           </div>
-            <div className="flex items-center gap-2">
-              <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-                {showFilters ? 'Ocultar filtros' : 'Filtros'}
-              </button>
-              <button
-                onClick={handleExportExcel}
-                disabled={exportExcelLoading}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-              >
-                {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
-              </button>
-              <button
-                onClick={() => setPlantillaModalOpen(true)}
-                className="px-3 py-1.5 text-sm rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              >
-                Plantillas
-              </button>
-              <button
-                onClick={() => setShowModal(true)}
-                className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
-              >
-                Nuevo egreso fijo
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+              {showFilters ? 'Ocultar filtros' : 'Filtros'}
+            </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={exportExcelLoading}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            >
+              {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
+            </button>
+            <button
+              onClick={() => setPlantillaModalOpen(true)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+            >
+              Plantillas
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+            >
+              Nuevo egreso fijo
+            </button>
+          </div>
         </div>
         {showFilters && (
           <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
-                <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+                <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta</label>
-                <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+                <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Método</label>
-                <select value={filterMetodo} onChange={e=>setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                <select value={filterMetodo} onChange={e => setFilterMetodo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
                   <option value="">Todos</option>
                   <option value="Efectivo">Efectivo</option>
                   <option value="Transferencia">Transferencia</option>
@@ -666,7 +667,7 @@ export default function FinanzasEgresosFijos() {
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Estatus</label>
-                <select value={filterEstatus} onChange={e=>setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                <select value={filterEstatus} onChange={e => setFilterEstatus(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
                   <option value="">Todos</option>
                   <option value="Pagado">Pagado</option>
                   <option value="Pendiente">Pendiente</option>
@@ -675,7 +676,7 @@ export default function FinanzasEgresosFijos() {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Frecuencia</label>
-                <select value={filterFrecuencia} onChange={e=>setFilterFrecuencia(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                <select value={filterFrecuencia} onChange={e => setFilterFrecuencia(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
                   <option value="">Todas</option>
                   {FRECUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
@@ -802,7 +803,7 @@ export default function FinanzasEgresosFijos() {
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-3 text-gray-700 border-r border-gray-100 text-center">    
+                      <td className="px-4 py-3 text-gray-700 border-r border-gray-100 text-center">
                         {String(r.metodo || "").toLowerCase()}
                       </td>
                       <td className="px-4 py-3 text-right border-r border-gray-100">
@@ -884,11 +885,10 @@ export default function FinanzasEgresosFijos() {
                               // Aquí podrías añadir un toast de error
                             }
                           }}
-                          className={`rounded-md text-xs px-2 py-1 border ${
-                            r.estatus === "Pagado"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-amber-200 bg-amber-50 text-amber-700"
-                          }`}
+                          className={`rounded-md text-xs px-2 py-1 border ${r.estatus === "Pagado"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                            }`}
                         >
                           <option value="Pendiente">Pendiente</option>
                           <option value="Pagado">Pagado</option>
@@ -1048,11 +1048,10 @@ export default function FinanzasEgresosFijos() {
                         // Aquí podrías añadir un toast de error
                       }
                     }}
-                    className={`rounded-md text-[10px] px-1.5 py-0.5 border ${
-                      r.estatus === "Pagado"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-amber-200 bg-amber-50 text-amber-700"
-                    }`}
+                    className={`rounded-md text-[10px] px-1.5 py-0.5 border ${r.estatus === "Pagado"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
                   >
                     <option value="Pendiente">Pendiente</option>
                     <option value="Pagado">Pagado</option>
@@ -1065,112 +1064,97 @@ export default function FinanzasEgresosFijos() {
       </div>
 
       {/* Modal Nuevo egreso fijo */}
-      {showModal && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-20 sm:pt-24 md:pt-28 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 flex-shrink-0">
-              <h3 className="text-base font-semibold text-gray-900">
-                Nuevo gasto fijo
-              </h3>
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-2 border-slate-300 overflow-hidden flex flex-col mx-auto animate-in fade-in zoom-in duration-300 max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Nuevo gasto fijo</h3>
+                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-0.5">Registro de egresos</p>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <form onSubmit={submit} className="flex-1 flex flex-col min-h-0">
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain flex-1 min-h-0 no-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="px-6 py-6 overflow-y-auto overscroll-contain flex-1 no-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Fecha
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Fecha</label>
                     <input
                       type="date"
                       name="fecha"
                       value={form.fecha}
                       onChange={onChange}
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Hora
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Hora</label>
                     <input
                       type="time"
                       name="hora"
                       value={form.hora}
                       onChange={onChange}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Categoría
-                    </label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Categoría</label>
                     <input
                       name="categoria"
                       value={form.categoria}
                       onChange={onChange}
-                      placeholder="Renta, Nómina, Servicios…"
+                      placeholder="Renta, Nómina, Servicios..."
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Descripción
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Descripción</label>
                     <textarea
                       name="descripcion"
                       value={form.descripcion}
                       onChange={onChange}
                       rows={2}
                       maxLength={200}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
-                      placeholder="Notas o detalles (máx. 200 caracteres)"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none resize-none"
+                      placeholder="Notas o detalles..."
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Proveedor
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Proveedor</label>
                     <input
                       name="proveedor"
                       value={form.proveedor}
                       onChange={onChange}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Frecuencia
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Frecuencia</label>
                     <select
                       name="frecuencia"
                       value={form.frecuencia}
                       onChange={onChange}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     >
-                      {FRECUENCIAS.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
+                      {FRECUENCIAS.map((f) => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Método de pago
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Método</label>
                     <select
                       name="metodo"
                       value={form.metodo}
                       onChange={onChange}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
@@ -1178,9 +1162,7 @@ export default function FinanzasEgresosFijos() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Importe
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Importe</label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -1189,22 +1171,16 @@ export default function FinanzasEgresosFijos() {
                       onChange={onChangeImporte}
                       placeholder="0.00"
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none font-mono"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Estatus
-                    </label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Estatus</label>
                     <select
                       name="estatus"
                       value={form.estatus}
                       onChange={onChange}
-                      className={`w-full rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 ${
-                        form.estatus === "Pagado"
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
+                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-sm font-bold focus:ring-4 focus:ring-rose-100 transition-all duration-200 outline-none ${form.estatus === "Pagado" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Pagado">Pagado</option>
@@ -1212,422 +1188,733 @@ export default function FinanzasEgresosFijos() {
                   </div>
                 </div>
               </div>
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2 sticky bottom-0">
+              <div className="px-4 py-3 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end gap-2 sticky bottom-0">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-all active:scale-95"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+                  className="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg shadow-md shadow-rose-200 hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   Guardar
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Plantillas de gastos fijos */}
-      {plantillaModalOpen && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[96vw] sm:max-w-3xl rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">Plantillas de gastos fijos</h3>
-              <button onClick={() => setPlantillaModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+      {plantillaModalOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-4xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden text-left">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Plantillas de gastos fijos</h3>
+                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Gestión de recurrencia</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPlantillaModalOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="px-4 sm:px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Categoría</label>
-                  <input value={plantillaForm.categoria} onChange={e=>setPlantillaForm(f=>({...f,categoria:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+            <div className="p-6 overflow-y-auto space-y-8 no-scrollbar flex-1">
+              {/* Formulario para agregar nueva plantilla */}
+              <div className="bg-slate-50/50 rounded-3xl border-2 border-slate-100 p-6 space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">Nueva plantilla</h4>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Proveedor</label>
-                  <input value={plantillaForm.proveedor} onChange={e=>setPlantillaForm(f=>({...f,proveedor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Monto sugerido</label>
-                  <input value={plantillaForm.monto_sugerido} onChange={e=>setPlantillaForm(f=>({...f,monto_sugerido:e.target.value.replace(/[^\d.]/g,'')}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Frecuencia</label>
-                  <select value={plantillaForm.frecuencia} onChange={e=>setPlantillaForm(f=>({...f,frecuencia:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    {FRECUENCIAS.map(f=> <option key={f} value={f}>{f}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Método</label>
-                  <select value={plantillaForm.metodo} onChange={e=>setPlantillaForm(f=>({...f,metodo:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Día de pago (1-31, opcional)</label>
-                  <input type="number" min={1} max={31} value={plantillaForm.dia_pago} onChange={e=>setPlantillaForm(f=>({...f,dia_pago:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                  <p className="mt-1 text-[11px] text-gray-500">Se usa junto con la frecuencia para programar la fecha exacta.</p>
-                </div>
-
-                <div className="md:col-span-3">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Descripción (opcional)</label>
-                  <input value={plantillaForm.descripcion} onChange={e=>setPlantillaForm(f=>({...f,descripcion:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                </div>
-
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Hora preferida (opcional)</label>
-                  <input type="time" value={plantillaForm.hora_preferida} onChange={e=>setPlantillaForm(f=>({...f,hora_preferida:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de inicio (opcional)</label>
-                    <input type="date" value={plantillaForm.fecha_inicio} onChange={e=>setPlantillaForm(f=>({...f,fecha_inicio:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                    <p className="mt-1 text-[11px] text-gray-500">Si la estableces en hoy, se considera el primer registro hoy; si es futura, no se creará nada antes de esa fecha.</p>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Categoría</label>
+                    <input
+                      value={plantillaForm.categoria}
+                      onChange={e => setPlantillaForm(f => ({ ...f, categoria: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
-
-                {['Bimestral','Semestral','Anual'].includes(plantillaForm.frecuencia) ? (
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Mes de referencia</label>
-                    <input type="month" value={plantillaForm.cadencia_anchor} onChange={e=>setPlantillaForm(f=>({...f,cadencia_anchor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                    <p className="mt-1 text-[11px] text-gray-500">Ancla para calcular los meses que tocan (bimestral, semestral, anual). Si lo dejas vacío, usamos la fecha de creación.</p>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Proveedor</label>
+                    <input
+                      value={plantillaForm.proveedor}
+                      onChange={e => setPlantillaForm(f => ({ ...f, proveedor: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
-                ) : (
-                  <div className="hidden md:block"></div>
-                )}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Monto sugerido</label>
+                    <input
+                      value={plantillaForm.monto_sugerido}
+                      onChange={e => setPlantillaForm(f => ({ ...f, monto_sugerido: e.target.value.replace(/[^\d.]/g, '') }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none font-mono"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Recordar (min)</label>
-                  <input type="number" min={0} value={plantillaForm.recordar_minutos} onChange={e=>setPlantillaForm(f=>({...f,recordar_minutos:Number(e.target.value)||0}))} className="w-full md:w-28 rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Frecuencia</label>
+                    <select
+                      value={plantillaForm.frecuencia}
+                      onChange={e => setPlantillaForm(f => ({ ...f, frecuencia: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    >
+                      {FRECUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Método</label>
+                    <select
+                      value={plantillaForm.metodo}
+                      onChange={e => setPlantillaForm(f => ({ ...f, metodo: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    >
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Día de pago</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={plantillaForm.dia_pago}
+                      onChange={e => setPlantillaForm(f => ({ ...f, dia_pago: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
+                  </div>
 
-                <div className="md:col-span-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between mt-1">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={!!plantillaForm.auto_evento} onChange={e=>setPlantillaForm(f=>({...f,auto_evento:e.target.checked}))}/>
-                      Crear evento de calendario automático
-                    </label>
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={!!plantillaForm.auto_instanciar} onChange={e=>setPlantillaForm(f=>({...f,auto_instanciar:e.target.checked}))}/>
-                      Auto‑instanciar (crear egreso automáticamente según fecha)
-                    </label>
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Descripción</label>
+                    <input
+                      value={plantillaForm.descripcion}
+                      onChange={e => setPlantillaForm(f => ({ ...f, descripcion: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Hora preferida</label>
+                    <input
+                      type="time"
+                      value={plantillaForm.hora_preferida}
+                      onChange={e => setPlantillaForm(f => ({ ...f, hora_preferida: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Fecha de inicio</label>
+                    <input
+                      type="date"
+                      value={plantillaForm.fecha_inicio}
+                      onChange={e => setPlantillaForm(f => ({ ...f, fecha_inicio: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
+                  </div>
+
+                  {['Bimestral', 'Semestral', 'Anual'].includes(plantillaForm.frecuencia) ? (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Mes de referencia</label>
+                      <input
+                        type="month"
+                        value={plantillaForm.cadencia_anchor}
+                        onChange={e => setPlantillaForm(f => ({ ...f, cadencia_anchor: e.target.value }))}
+                        className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <div className="hidden md:block"></div>
+                  )}
+
+                  <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-2xl border-2 border-slate-100 space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!plantillaForm.auto_evento}
+                            onChange={e => setPlantillaForm(f => ({ ...f, auto_evento: e.target.checked }))}
+                            className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-slate-300 transition-all checked:bg-indigo-600 checked:border-indigo-600 focus:outline-none"
+                          />
+                          <svg className="absolute h-5 w-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Calendario automático</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!plantillaForm.auto_instanciar}
+                            onChange={e => setPlantillaForm(f => ({ ...f, auto_instanciar: e.target.checked }))}
+                            className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-slate-300 transition-all checked:bg-indigo-600 checked:border-indigo-600 focus:outline-none"
+                          />
+                          <svg className="absolute h-5 w-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Auto-instanciar</span>
+                      </label>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const anchor = plantillaForm.cadencia_anchor ? `${plantillaForm.cadencia_anchor}-01` : null;
+                          const payload = { ...plantillaForm, cadencia_anchor: anchor, monto_sugerido: Number((plantillaForm.monto_sugerido || '').replace(/,/g, '')) || 0, dia_pago: plantillaForm.dia_pago ? Number(plantillaForm.dia_pago) : null, recordar_minutos: Number(plantillaForm.recordar_minutos) || 30, auto_evento: !!plantillaForm.auto_evento, auto_instanciar: !!plantillaForm.auto_instanciar };
+                          if (!payload.categoria) return;
+                          const saved = await createPlantilla(payload);
+                          setPlantillas(prev => [saved, ...prev]);
+                          setPlantillaForm({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true, auto_instanciar: true, fecha_inicio: '', cadencia_anchor: '' });
+                        } catch (e) { console.error('crear plantilla', e); }
+                      }}
+                      className="h-full w-full bg-indigo-600 text-white font-extrabold rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 px-6 py-4 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Agregar plantilla
+                    </button>
                   </div>
                 </div>
-                <button onClick={async ()=>{
-                  try {
-                    // cadencia_anchor del input month llega como YYYY-MM; convertir a YYYY-MM-01 para el ancla
-                    const anchor = plantillaForm.cadencia_anchor ? `${plantillaForm.cadencia_anchor}-01` : null;
-                    const payload = { ...plantillaForm, cadencia_anchor: anchor, monto_sugerido: Number((plantillaForm.monto_sugerido||'').replace(/,/g,'')) || 0, dia_pago: plantillaForm.dia_pago?Number(plantillaForm.dia_pago):null, recordar_minutos: Number(plantillaForm.recordar_minutos)||30, auto_evento: !!plantillaForm.auto_evento, auto_instanciar: !!plantillaForm.auto_instanciar };
-                    if (!payload.categoria) return;
-                    const saved = await createPlantilla(payload);
-                    setPlantillas(prev=>[saved, ...prev]);
-                    setPlantillaForm({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true, auto_instanciar: true, fecha_inicio: '', cadencia_anchor: '' });
-                  } catch(e) { console.error('crear plantilla', e); }
-                }} className="rounded-lg bg-indigo-600 text-white px-3 py-2 text-sm">Agregar plantilla</button>
               </div>
-              <div className="border-t border-gray-100 pt-3">
-                <table className="w-full text-sm">
-                  <thead className="text-gray-600">
-                    <tr>
-                      <th className="text-left px-2 py-2">Categoría</th>
-                      <th className="text-left px-2 py-2">Proveedor</th>
-                      <th className="text-right px-2 py-2">Monto</th>
-                      <th className="text-left px-2 py-2">Frecuencia</th>
-                      <th className="px-2 py-2">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {plantillas.length===0 ? (
-                      <tr><td colSpan={5} className="text-center text-gray-500 px-2 py-4">Sin plantillas</td></tr>
-                    ) : plantillas.map(p => (
-                      <tr key={p.id} className="border-t">
-                        <td className="px-2 py-2">{p.categoria}</td>
-                        <td className="px-2 py-2">{p.proveedor || '-'}</td>
-                        <td className="px-2 py-2 text-right">{new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(p.monto_sugerido||0))}</td>
-                        <td className="px-2 py-2">{p.frecuencia}{p.dia_pago?` (${p.dia_pago})`:''}</td>
-                        <td className="px-2 py-2">
-                          <div className="flex items-center gap-2 justify-end">
-                            <button onClick={() => {
-                              const monthVal = p.cadencia_anchor ? String(p.cadencia_anchor).slice(0,7) : '';
-                              setPlantillaEdit({
-                                id: p.id,
-                                categoria: p.categoria || '',
-                                proveedor: p.proveedor || '',
-                                monto_sugerido: String(Number(p.monto_sugerido||0)),
-                                frecuencia: p.frecuencia || 'Mensual',
-                                metodo: p.metodo || 'Efectivo',
-                                descripcion: p.descripcion || '',
-                                dia_pago: p.dia_pago || '',
-                                hora_preferida: p.hora_preferida || '',
-                                recordar_minutos: Number(p.recordar_minutos)||30,
-                                auto_evento: !!p.auto_evento,
-                                auto_instanciar: !!p.auto_instanciar,
-                                fecha_inicio: p.fecha_inicio ? String(p.fecha_inicio).slice(0,10) : '',
-                                cadencia_anchor: monthVal,
-                              });
-                              setPlantillaEditOpen(true);
-                            }} className="text-indigo-700 hover:text-indigo-800 text-xs">Editar</button>
-                            <button onClick={async()=>{
-                              try {
-                                const nuevo = await updatePlantilla(p.id, { auto_instanciar: p.auto_instanciar ? 0 : 1 });
-                                setPlantillas(prev => prev.map(x => x.id === p.id ? { ...x, auto_instanciar: nuevo.auto_instanciar } : x));
-                                window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'info', message: nuevo.auto_instanciar? 'Plantilla activada (se generará automáticamente cuando toque)':'Plantilla desactivada' }}));
-                              } catch(e){ console.error('toggle auto_instanciar', e); window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'error', message:'Error cambiando estado'}})); }
-                            }} className="text-indigo-700 hover:text-indigo-800 text-xs">{p.auto_instanciar? 'Desactivar':'Activar'}</button>
-                            <button onClick={async(e)=>{
-                              e.stopPropagation();
-                              try {
-                                const gasto = await instanciarDesdePlantilla(p.id, {});
-                                setRows(prev=>[{ ...gasto, calendarEventId: gasto.calendar_event_id ?? gasto.calendarEventId }, ...prev]);
-                                if (p.auto_evento) {
-                                  try {
-                                    const hora = p.hora_preferida || getSmartEventTime(gasto.fecha);
-                                    const evRes = await api.post('/admin/calendar/events', {
-                                      titulo: `Pagar ${gasto.categoria}`,
-                                      descripcion: `Proveedor: ${gasto.proveedor||'-'} | Monto: ${formatCurrency(gasto.importe)} | Desde plantilla (manual)` ,
-                                      fecha: gasto.fecha,
-                                      hora,
-                                      tipo: 'finanzas',
-                                      prioridad: 'media',
-                                      recordarMinutos: Number(p.recordar_minutos)||30,
-                                      completado: false,
-                                    });
-                                    const ev = evRes?.data || {};
-                                    const evId = ev.id || ev.eventId || ev.event?.id;
-                                    if (evId && gasto?.id) {
-                                      try {
-                                        const updated = await updateGastoFijo(gasto.id, { calendar_event_id: evId });
-                                        setRows(prev => prev.map(x => x.id === updated.id ? { ...updated, calendarEventId: updated.calendar_event_id ?? evId } : x));
-                                        saveExpenses('fijos', rows);
-                                      } catch(_) {}
-                                    }
-                                  } catch(err) { console.warn('evento plantilla manual', err?.response?.status || err?.message || err); }
-                                }
-                                window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'success', message:`Egreso creado manual (${gasto.fecha})`}}));
-                              } catch(e){ console.error('instanciar manual', e); window.dispatchEvent(new CustomEvent('toast',{ detail:{ type:'error', message:'Error creando egreso manual'}})); }
-                            }} title="Forzar creación manual ahora" className="text-emerald-600 hover:text-emerald-700 text-xs">⚡</button>
-                            <button onClick={async()=>{
-                              try { await deletePlantilla(p.id); setPlantillas(prev=>prev.filter(x=>x.id!==p.id)); } catch(e) { console.error('delete plantilla', e); }
-                            }} className="text-rose-700 hover:text-rose-800 text-xs">Eliminar</button>
-                          </div>
-                        </td>
+
+              {/* Listado de plantillas existentes */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-6 bg-slate-300 rounded-full"></div>
+                  <h4 className="text-sm font-black text-slate-600 uppercase tracking-wider">Plantillas activas</h4>
+                </div>
+                <div className="border-2 border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b-2 border-slate-100">
+                      <tr>
+                        <th className="text-left px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Categoría</th>
+                        <th className="text-left px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Proveedor</th>
+                        <th className="text-right px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</th>
+                        <th className="text-left px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Frecuencia</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Acciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {plantillas.length === 0 ? (
+                        <tr><td colSpan={5} className="text-center text-slate-400 px-5 py-8 font-medium italic">No hay plantillas configuradas todavía.</td></tr>
+                      ) : plantillas.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-5 py-4 font-bold text-slate-700">{p.categoria}</td>
+                          <td className="px-5 py-4 font-medium text-slate-500">{p.proveedor || '-'}</td>
+                          <td className="px-5 py-4 text-right font-black text-indigo-600 font-mono italic">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(p.monto_sugerido || 0))}</td>
+                          <td className="px-5 py-4">
+                            <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-tight">
+                              {p.frecuencia}{p.dia_pago ? ` (Día ${p.dia_pago})` : ''}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1.5 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  const monthVal = p.cadencia_anchor ? String(p.cadencia_anchor).slice(0, 7) : '';
+                                  setPlantillaEdit({
+                                    id: p.id,
+                                    categoria: p.categoria || '',
+                                    proveedor: p.proveedor || '',
+                                    monto_sugerido: String(Number(p.monto_sugerido || 0)),
+                                    frecuencia: p.frecuencia || 'Mensual',
+                                    metodo: p.metodo || 'Efectivo',
+                                    descripcion: p.descripcion || '',
+                                    dia_pago: p.dia_pago || '',
+                                    hora_preferida: p.hora_preferida || '',
+                                    recordar_minutos: Number(p.recordar_minutos) || 30,
+                                    auto_evento: !!p.auto_evento,
+                                    auto_instanciar: !!p.auto_instanciar,
+                                    fecha_inicio: p.fecha_inicio ? String(p.fecha_inicio).slice(0, 10) : '',
+                                    cadencia_anchor: monthVal,
+                                  });
+                                  setPlantillaEditOpen(true);
+                                }}
+                                className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors"
+                                title="Editar"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const nuevo = await updatePlantilla(p.id, { auto_instanciar: p.auto_instanciar ? 0 : 1 });
+                                    setPlantillas(prev => prev.map(x => x.id === p.id ? { ...x, auto_instanciar: nuevo.auto_instanciar } : x));
+                                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'info', message: nuevo.auto_instanciar ? 'Plantilla activada' : 'Plantilla desactivada' } }));
+                                  } catch (e) { console.error('toggle auto_instanciar', e); }
+                                }}
+                                className={`p-2 rounded-xl transition-colors ${p.auto_instanciar ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                title={p.auto_instanciar ? 'Desactivar auto-creación' : 'Activar auto-creación'}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const gasto = await instanciarDesdePlantilla(p.id, {});
+                                    setRows(prev => [{ ...gasto, calendarEventId: gasto.calendar_event_id ?? gasto.calendarEventId }, ...prev]);
+                                    if (p.auto_evento) {
+                                      try {
+                                        const hora = p.hora_preferida || getSmartEventTime(gasto.fecha);
+                                        const evRes = await api.post('/admin/calendar/events', {
+                                          titulo: `Pagar ${gasto.categoria}`,
+                                          descripcion: `Proveedor: ${gasto.proveedor || '-'} | Monto: ${formatCurrency(gasto.importe)} | Desde plantilla (manual)`,
+                                          fecha: gasto.fecha,
+                                          hora,
+                                          tipo: 'finanzas',
+                                          prioridad: 'media',
+                                          recordarMinutos: Number(p.recordar_minutos) || 30,
+                                          completado: false,
+                                        });
+                                        const ev = evRes?.data || {};
+                                        const evId = ev.id || ev.eventId || ev.event?.id;
+                                        if (evId && gasto?.id) {
+                                          try {
+                                            const updated = await updateGastoFijo(gasto.id, { calendar_event_id: evId });
+                                            setRows(prev => prev.map(x => x.id === updated.id ? { ...updated, calendarEventId: updated.calendar_event_id ?? evId } : x));
+                                            saveExpenses('fijos', rows);
+                                          } catch (_) { }
+                                        }
+                                      } catch (err) { console.warn('evento plantilla manual', err?.response?.status || err?.message || err); }
+                                    }
+                                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: `Egreso creado manual` } }));
+                                  } catch (e) { console.error('instanciar manual', e); }
+                                }}
+                                className="p-2 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-colors"
+                                title="Crear registro ahora"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  try { await deletePlantilla(p.id); setPlantillas(prev => prev.filter(x => x.id !== p.id)); } catch (e) { console.error('delete plantilla', e); }
+                                }}
+                                className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
+                                title="Eliminar"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end sticky bottom-0">
+              <button
+                onClick={() => setPlantillaModalOpen(false)}
+                className="px-8 py-2.5 bg-slate-800 text-white font-black rounded-2xl hover:bg-slate-900 shadow-lg shadow-slate-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+              >
+                Cerrar gestión
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Editar plantilla */}
-      {plantillaEditOpen && plantillaEdit && (
-        <div className="fixed inset-0 z-[10000] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[96vw] sm:max-w-2xl rounded-2xl shadow-xl flex flex-col h-[70dvh] mx-auto my-6 sm:my-8">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">Editar plantilla</h3>
-              <button onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }} className="text-gray-500 hover:text-gray-700">✕</button>
+      {plantillaEditOpen && plantillaEdit && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-2xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Editar plantilla</h3>
+                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Configuración de gastos recurrentes</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="px-4 sm:px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-6 overflow-y-auto space-y-6 no-scrollbar flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Categoría</label>
-                  <input value={plantillaEdit.categoria} onChange={e=>setPlantillaEdit(f=>({...f,categoria:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Categoría</label>
+                  <input
+                    value={plantillaEdit.categoria}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, categoria: e.target.value }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Proveedor</label>
-                  <input value={plantillaEdit.proveedor} onChange={e=>setPlantillaEdit(f=>({...f,proveedor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Proveedor</label>
+                  <input
+                    value={plantillaEdit.proveedor}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, proveedor: e.target.value }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Monto sugerido</label>
-                  <input value={plantillaEdit.monto_sugerido} onChange={e=>setPlantillaEdit(f=>({...f,monto_sugerido:e.target.value.replace(/[^\d.]/g,'')}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Monto sugerido</label>
+                  <input
+                    value={plantillaEdit.monto_sugerido}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, monto_sugerido: e.target.value.replace(/[^\d.]/g, '') }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none font-mono"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Frecuencia</label>
-                  <select value={plantillaEdit.frecuencia} onChange={e=>setPlantillaEdit(f=>({...f,frecuencia:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    {FRECUENCIAS.map(f=> <option key={f} value={f}>{f}</option>)}
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Frecuencia</label>
+                  <select
+                    value={plantillaEdit.frecuencia}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, frecuencia: e.target.value }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  >
+                    {FRECUENCIAS.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Método</label>
-                  <select value={plantillaEdit.metodo} onChange={e=>setPlantillaEdit(f=>({...f,metodo:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Método</label>
+                  <select
+                    value={plantillaEdit.metodo}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, metodo: e.target.value }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  >
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Tarjeta">Tarjeta</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Día de pago (1-31, opcional)</label>
-                  <input type="number" min={1} max={31} value={plantillaEdit.dia_pago} onChange={e=>setPlantillaEdit(f=>({...f,dia_pago:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Día de pago</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={plantillaEdit.dia_pago}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, dia_pago: e.target.value }))}
+                    placeholder="1-31"
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
 
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Descripción (opcional)</label>
-                  <input value={plantillaEdit.descripcion} onChange={e=>setPlantillaEdit(f=>({...f,descripcion:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Descripción</label>
+                  <input
+                    value={plantillaEdit.descripcion}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, descripcion: e.target.value }))}
+                    placeholder="Nota opcional..."
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Hora preferida (opcional)</label>
-                  <input type="time" value={plantillaEdit.hora_preferida} onChange={e=>setPlantillaEdit(f=>({...f,hora_preferida:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Hora preferida</label>
+                  <input
+                    type="time"
+                    value={plantillaEdit.hora_preferida}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, hora_preferida: e.target.value }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de inicio (opcional)</label>
-                  <input type="date" value={plantillaEdit.fecha_inicio} onChange={e=>setPlantillaEdit(f=>({...f,fecha_inicio:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                  <p className="mt-1 text-[11px] text-gray-500">No se auto‑creará nada antes de esta fecha; si pones hoy, hoy será el primer registro.</p>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Fecha de inicio</label>
+                  <input
+                    type="date"
+                    value={plantillaEdit.fecha_inicio}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, fecha_inicio: e.target.value }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
 
-                {['Bimestral','Semestral','Anual'].includes(plantillaEdit.frecuencia) ? (
+                {['Bimestral', 'Semestral', 'Anual'].includes(plantillaEdit.frecuencia) ? (
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Mes de referencia</label>
-                    <input type="month" value={plantillaEdit.cadencia_anchor} onChange={e=>setPlantillaEdit(f=>({...f,cadencia_anchor:e.target.value}))} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
-                    <p className="mt-1 text-[11px] text-gray-500">Ancla para calcular los meses que tocan.</p>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Mes de referencia</label>
+                    <input
+                      type="month"
+                      value={plantillaEdit.cadencia_anchor}
+                      onChange={e => setPlantillaEdit(f => ({ ...f, cadencia_anchor: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                    />
                   </div>
                 ) : (
                   <div className="hidden md:block"></div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Recordar (min)</label>
-                  <input type="number" min={0} value={plantillaEdit.recordar_minutos} onChange={e=>setPlantillaEdit(f=>({...f,recordar_minutos:Number(e.target.value)||0}))} className="w-full md:w-28 rounded-lg border border-gray-200 px-3 py-2 text-sm"/>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Recordar (min)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={plantillaEdit.recordar_minutos}
+                    onChange={e => setPlantillaEdit(f => ({ ...f, recordar_minutos: Number(e.target.value) || 0 }))}
+                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 outline-none"
+                  />
                 </div>
 
-                <div className="md:col-span-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between mt-1">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={!!plantillaEdit.auto_evento} onChange={e=>setPlantillaEdit(f=>({...f,auto_evento:e.target.checked}))}/>
-                      Crear evento de calendario automático
-                    </label>
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={!!plantillaEdit.auto_instanciar} onChange={e=>setPlantillaEdit(f=>({...f,auto_instanciar:e.target.checked}))}/>
-                      Auto‑instanciar (crear egreso automáticamente según fecha)
-                    </label>
-                  </div>
+                <div className="md:col-span-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={!!plantillaEdit.auto_evento}
+                        onChange={e => setPlantillaEdit(f => ({ ...f, auto_evento: e.target.checked }))}
+                        className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-slate-300 transition-all checked:bg-indigo-600 checked:border-indigo-600 focus:outline-none"
+                      />
+                      <svg className="absolute h-5 w-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Crear evento de calendario automático</span>
+                      <p className="text-[10px] text-slate-500 font-medium">Sincroniza el gasto con tu agenda personal.</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={!!plantillaEdit.auto_instanciar}
+                        onChange={e => setPlantillaEdit(f => ({ ...f, auto_instanciar: e.target.checked }))}
+                        className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-slate-300 transition-all checked:bg-indigo-600 checked:border-indigo-600 focus:outline-none"
+                      />
+                      <svg className="absolute h-5 w-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Auto-instanciar egreso fijo</span>
+                      <p className="text-[10px] text-slate-500 font-medium">El registro se creará solo al llegar la fecha configurada.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
-            <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2">
-              <button onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }} className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
-              <button onClick={async () => {
-                try {
-                  const anchor = plantillaEdit.cadencia_anchor ? `${plantillaEdit.cadencia_anchor}-01` : null;
-                  const payload = {
-                    categoria: plantillaEdit.categoria,
-                    proveedor: plantillaEdit.proveedor,
-                    monto_sugerido: Number((plantillaEdit.monto_sugerido||'').replace(/,/g,'')) || 0,
-                    frecuencia: plantillaEdit.frecuencia,
-                    metodo: plantillaEdit.metodo,
-                    descripcion: plantillaEdit.descripcion,
-                    dia_pago: plantillaEdit.dia_pago ? Number(plantillaEdit.dia_pago) : null,
-                    hora_preferida: plantillaEdit.hora_preferida || null,
-                    recordar_minutos: Number(plantillaEdit.recordar_minutos)||30,
-                    auto_evento: !!plantillaEdit.auto_evento,
-                    auto_instanciar: !!plantillaEdit.auto_instanciar,
-                    fecha_inicio: plantillaEdit.fecha_inicio || null,
-                    cadencia_anchor: anchor,
-                  };
-                  const saved = await updatePlantilla(plantillaEdit.id, payload);
-                  setPlantillas(prev => prev.map(x => x.id === saved.id ? saved : x));
-                  setPlantillaEditOpen(false);
-                  setPlantillaEdit(null);
-                } catch(e) { console.error('update plantilla', e); }
-              }} className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Guardar cambios</button>
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end gap-3 sticky bottom-0">
+              <button
+                onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }}
+                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const anchor = plantillaEdit.cadencia_anchor ? `${plantillaEdit.cadencia_anchor}-01` : null;
+                    const payload = {
+                      categoria: plantillaEdit.categoria,
+                      proveedor: plantillaEdit.proveedor,
+                      monto_sugerido: Number((plantillaEdit.monto_sugerido || '').replace(/,/g, '')) || 0,
+                      frecuencia: plantillaEdit.frecuencia,
+                      metodo: plantillaEdit.metodo,
+                      descripcion: plantillaEdit.descripcion,
+                      dia_pago: plantillaEdit.dia_pago ? Number(plantillaEdit.dia_pago) : null,
+                      hora_preferida: plantillaEdit.hora_preferida || null,
+                      recordar_minutos: Number(plantillaEdit.recordar_minutos) || 30,
+                      auto_evento: !!plantillaEdit.auto_evento,
+                      auto_instanciar: !!plantillaEdit.auto_instanciar,
+                      fecha_inicio: plantillaEdit.fecha_inicio || null,
+                      cadencia_anchor: anchor,
+                    };
+                    const saved = await updatePlantilla(plantillaEdit.id, payload);
+                    setPlantillas(prev => prev.map(x => x.id === saved.id ? saved : x));
+                    setPlantillaEditOpen(false);
+                    setPlantillaEdit(null);
+                  } catch (e) { console.error('update plantilla', e); }
+                }}
+                className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+              >
+                Guardar cambios
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal presupuesto insuficiente (nuevo diseño unificado) */}
-      {budgetWarn.open && (()=>{ const i = budgetWarn.info||{}; const b = i.snap || { budget:0, spent:0, leftover:0 }; const fmt = (n)=> new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0)); return (
-        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4 pt-12 sm:pt-16 md:pt-20">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden max-h-[calc(100vh-14rem)] flex flex-col">
-            <div className="px-5 py-4 border-b flex items-center justify-between bg-amber-50/60">
-              <h3 className="text-base font-semibold text-amber-800">Presupuesto insuficiente</h3>
-              <button onClick={()=> setBudgetWarn({ open:false, context:null, info:null })} className="text-amber-600 hover:text-amber-800">✕</button>
-            </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
-              <p>El egreso marcado excede el presupuesto disponible del mes.</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Presupuesto</div><div className="font-semibold">{fmt(b.budget)}</div></div>
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Gastado</div><div className="font-semibold">{fmt(b.spent)}</div></div>
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Disponible</div><div className="font-semibold">{fmt(b.leftover)}</div></div>
-                <div className="p-2 rounded-lg bg-gray-50 border"><div className="text-gray-500">Egreso</div><div className="font-semibold text-rose-600">{fmt(i.amount)}</div></div>
+      {budgetWarn.open && createPortal(
+        (() => {
+          const i = budgetWarn.info || {};
+          const b = i.snap || { budget: 0, spent: 0, leftover: 0 };
+          const fmt = (n) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(n || 0));
+          return (
+            <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4 text-center">
+              <div className="relative mx-auto border-2 border-amber-300 w-full max-w-md shadow-2xl rounded-2xl bg-white overflow-hidden flex flex-col text-left">
+                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-amber-50/80 backdrop-blur-md z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-amber-900 tracking-tight">Presupuesto insuficiente</h3>
+                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-0.5">Control de gastos</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setBudgetWarn({ open: false, context: null, info: null })}
+                    className="p-2 hover:bg-amber-100/50 rounded-xl text-amber-400 hover:text-amber-600 transition-all duration-200"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="p-6 space-y-5">
+                  <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                    El egreso marcado excede el presupuesto disponible del mes configurado.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 shadow-sm">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Presupuesto</div>
+                      <div className="text-sm font-extrabold text-slate-800">{fmt(b.budget)}</div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 shadow-sm">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Gastado</div>
+                      <div className="text-sm font-extrabold text-slate-800">{fmt(b.spent)}</div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-indigo-50 border-2 border-indigo-100 shadow-sm">
+                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 leading-none">Disponible</div>
+                      <div className="text-sm font-extrabold text-indigo-700">{fmt(b.leftover)}</div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-100 shadow-sm">
+                      <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1 leading-none">Egreso</div>
+                      <div className="text-sm font-black text-rose-600">{fmt(i.amount)}</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 border-dashed flex items-start gap-3">
+                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs font-bold text-amber-800 leading-normal">
+                      Continuar con este registro dejará el balance en <span className="text-rose-600 underline decoration-2 underline-offset-2">{fmt(i.exceed)}</span> para este periodo.
+                    </p>
+                  </div>
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-end gap-3 sticky bottom-0">
+                  <button
+                    onClick={() => setBudgetWarn({ open: false, context: null, info: null })}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                  >
+                    Cerrar
+                  </button>
+                  {budgetWarn.context === 'create' ? (
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <button
+                        onClick={saveAsPendingInstead}
+                        className="flex-1 sm:flex-none px-4 py-2.5 bg-white border-2 border-amber-200 text-amber-700 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 text-sm"
+                      >
+                        Como Pendiente
+                      </button>
+                      <button
+                        onClick={proceedCreateEvenIfExceed}
+                        className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200 text-sm"
+                      >
+                        Continuar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <button
+                        onClick={saveStatusAsPending}
+                        className="flex-1 sm:flex-none px-4 py-2.5 bg-white border-2 border-amber-200 text-amber-700 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 text-sm"
+                      >
+                        Como Pendiente
+                      </button>
+                      <button
+                        onClick={proceedStatusEvenIfExceed}
+                        className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200 text-sm"
+                      >
+                        Continuar
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">Continuar lo dejará en negativo por {fmt(i.exceed)}.</div>
             </div>
-            <div className="px-5 py-3 border-t flex items-center justify-end gap-2 bg-gray-50">
-              {budgetWarn.context==='create' ? (
-                <>
-                  <button onClick={saveAsPendingInstead} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
-                  <button onClick={proceedCreateEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
-                </>
-              ) : (
-                <>
-                  {/* Estatus: ofrecer las mismas dos opciones que en Variables */}
-                  <button onClick={saveStatusAsPending} className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm">Guardar como Pendiente</button>
-                  <button onClick={proceedStatusEvenIfExceed} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Continuar y guardar</button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      ); })()}
+          );
+        })(),
+        document.getElementById('modal-root')
+      )}
 
       {/* Modal Ver descripción */}
-      {descOpen && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)]">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">
-                Descripción
-              </h3>
+      {descOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-lg shadow-2xl rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Descripción</h3>
               <button
                 onClick={() => setDescOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div className="px-4 sm:px-5 py-4 overflow-y-auto">
-              <p className="text-sm text-gray-800 whitespace-pre-wrap">
+            <div className="p-6">
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words min-h-[120px] shadow-inner">
                 {descText || "Sin descripción"}
-              </p>
+              </div>
             </div>
-            <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-end gap-2 sticky bottom-0">
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end sticky bottom-0">
               <button
-                type="button"
                 onClick={() => setDescOpen(false)}
-                className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all duration-200"
               >
                 Cerrar
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Editar egreso fijo */}
-      {editOpen && editData && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto p-3 sm:p-4 pt-12 sm:pt-16 md:pt-20 pb-6 bg-black/40">
-          <div className="bg-white w-full max-w-[95vw] sm:max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[calc(100vh-14rem)] mx-auto">
-            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-base font-semibold text-gray-900">
-                Editar gasto fijo
-              </h3>
+      {editOpen && editData && createPortal(
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border-2 border-slate-300 overflow-hidden flex flex-col mx-auto animate-in fade-in zoom-in duration-300 max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Editar gasto fijo</h3>
+                <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Modificar registro existente</p>
+              </div>
               <button
-                onClick={() => {
-                  setEditOpen(false);
-                  setEditData(null);
-                  setEditIndex(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
+                onClick={() => { setEditOpen(false); setEditData(null); setEditIndex(null); }}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <form
@@ -1636,9 +1923,7 @@ export default function FinanzasEgresosFijos() {
                 if (editIndex === null) return;
                 const amount = Number(editData.importe) || 0;
                 setRows((prev) => {
-                  const next = prev.map((x, i) =>
-                    i === editIndex ? { ...editData, importe: amount } : x
-                  );
+                  const next = prev.map((x, i) => i === editIndex ? { ...editData, importe: amount } : x);
                   saveExpenses("fijos", next);
                   return next;
                 });
@@ -1646,116 +1931,72 @@ export default function FinanzasEgresosFijos() {
                 setEditData(null);
                 setEditIndex(null);
               }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col min-h-0"
             >
-              <div className="px-4 sm:px-5 py-4 overflow-y-auto overscroll-contain">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="px-6 py-6 overflow-y-auto overscroll-contain flex-1 no-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Fecha
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Fecha</label>
                     <input
                       type="date"
                       value={editData.fecha}
-                      onChange={(e) =>
-                        setEditData((d) => ({ ...d, fecha: e.target.value }))
-                      }
+                      onChange={(e) => setEditData((d) => ({ ...d, fecha: e.target.value }))}
                       required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Hora
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Hora</label>
                     <input
                       type="time"
                       value={editData.hora || ""}
-                      onChange={(e) =>
-                        setEditData((d) => ({ ...d, hora: e.target.value }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Categoría
-                    </label>
-                    <input
-                      value={editData.categoria}
-                      onChange={(e) =>
-                        setEditData((d) => ({
-                          ...d,
-                          categoria: e.target.value,
-                        }))
-                      }
-                      required
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      onChange={(e) => setEditData((d) => ({ ...d, hora: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Descripción
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Categoría</label>
+                    <input
+                      value={editData.categoria}
+                      onChange={(e) => setEditData((d) => ({ ...d, categoria: e.target.value }))}
+                      required
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Descripción</label>
                     <textarea
                       rows={2}
                       maxLength={200}
                       value={editData.descripcion || ""}
-                      onChange={(e) =>
-                        setEditData((d) => ({
-                          ...d,
-                          descripcion: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
+                      onChange={(e) => setEditData((d) => ({ ...d, descripcion: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none resize-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Proveedor
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Proveedor</label>
                     <input
                       value={editData.proveedor || ""}
-                      onChange={(e) =>
-                        setEditData((d) => ({
-                          ...d,
-                          proveedor: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      onChange={(e) => setEditData((d) => ({ ...d, proveedor: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Frecuencia
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Frecuencia</label>
                     <select
                       value={editData.frecuencia}
-                      onChange={(e) =>
-                        setEditData((d) => ({
-                          ...d,
-                          frecuencia: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      onChange={(e) => setEditData((d) => ({ ...d, frecuencia: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     >
-                      {FRECUENCIAS.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
+                      {FRECUENCIAS.map((f) => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Método de pago
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Método</label>
                     <select
                       value={editData.metodo}
-                      onChange={(e) =>
-                        setEditData((d) => ({ ...d, metodo: e.target.value }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      onChange={(e) => setEditData((d) => ({ ...d, metodo: e.target.value }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
@@ -1763,36 +2004,21 @@ export default function FinanzasEgresosFijos() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Importe
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Importe</label>
                     <input
                       type="number"
                       step="0.01"
                       value={editData.importe}
-                      onChange={(e) =>
-                        setEditData((d) => ({
-                          ...d,
-                          importe: Number(e.target.value || 0),
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      onChange={(e) => setEditData((d) => ({ ...d, importe: Number(e.target.value || 0) }))}
+                      className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all duration-200 outline-none font-mono"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Estatus
-                    </label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Estatus</label>
                     <select
                       value={editData.estatus}
-                      onChange={(e) =>
-                        setEditData((d) => ({ ...d, estatus: e.target.value }))
-                      }
-                      className={`w-full rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 ${
-                        editData.estatus === "Pagado"
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
+                      onChange={(e) => setEditData((d) => ({ ...d, estatus: e.target.value }))}
+                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-sm font-bold focus:ring-4 focus:ring-rose-100 transition-all duration-200 outline-none ${editData.estatus === "Pagado" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Pagado">Pagado</option>
@@ -1800,32 +2026,28 @@ export default function FinanzasEgresosFijos() {
                   </div>
                 </div>
               </div>
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-between gap-2 sticky bottom-0">
+              <div className="px-4 py-3 border-t border-gray-100 bg-slate-50/80 flex items-center justify-between gap-2 sticky bottom-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setConfirmError("");
-                    setConfirmOpen(true);
-                  }}
-                  className="px-4 py-2 text-sm rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50"
+                  onClick={() => { setConfirmError(""); setConfirmOpen(true); }}
+                  className="px-4 py-2 border border-rose-200 text-rose-600 font-bold rounded-lg hover:bg-rose-50 transition-all active:scale-95 inline-flex items-center gap-2"
                 >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                   Borrar
                 </button>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setEditOpen(false);
-                      setEditData(null);
-                      setEditIndex(null);
-                    }}
-                    className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    onClick={() => { setEditOpen(false); setEditData(null); setEditIndex(null); }}
+                    className="px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-all active:scale-95"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+                    className="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg shadow-md shadow-rose-200 hover:scale-[1.02] active:scale-95 transition-all"
                   >
                     Guardar
                   </button>
@@ -1833,59 +2055,64 @@ export default function FinanzasEgresosFijos() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal Confirmación de borrado */}
-      {confirmOpen && editIndex !== null && (
-        <div className="fixed inset-0 z-[12000] bg-black/40 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">
-                Eliminar gasto fijo
-              </h3>
+      {confirmOpen && editIndex !== null && createPortal(
+        <div className="fixed inset-0 z-[12000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
+          <div className="relative mx-auto border border-rose-100 w-full max-w-sm shadow-2xl rounded-2xl bg-white overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-rose-50/30">
+              <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Eliminar gasto fijo</h3>
               <button
                 onClick={() => !confirmLoading && setConfirmOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-1.5 hover:bg-rose-100 rounded-lg text-rose-400 hover:text-rose-600 transition-all duration-200"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
-              <p>
-                ¿Seguro que deseas eliminar este egreso fijo? Esta acción no se
-                puede deshacer.
-              </p>
-              <div className="rounded-lg bg-gray-50 ring-1 ring-gray-200 p-3 text-xs">
-                <div>
-                  <span className="text-gray-500">Categoría:</span>{" "}
-                  <span className="text-gray-800 font-medium">
-                    {rows[editIndex]?.categoria}
-                  </span>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-rose-50/50 rounded-xl border border-rose-100/50">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 text-sm flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                 </div>
-                <div>
-                  <span className="text-gray-500">Fecha:</span>{" "}
-                  <span className="text-gray-800">
-                    {formatDate(rows[editIndex]?.fecha)}
-                  </span>{" "}
-                  <span className="text-gray-500 ml-2">Importe:</span>{" "}
-                  <span className="text-gray-800 font-medium">
-                    {formatCurrency(Number(rows[editIndex]?.importe) || 0)}
-                  </span>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-800">
+                    ¿Eliminar este egreso fijo?
+                  </p>
+                  <p className="text-[10px] text-rose-500 font-medium mt-0.5">Esta acción no se puede deshacer.</p>
                 </div>
               </div>
-              {confirmError ? (
-                <p className="text-[11px] text-rose-600">{confirmError}</p>
-              ) : null}
+              
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Categoría</span>
+                  <span className="text-xs font-extrabold text-slate-700">{rows[editIndex]?.categoria}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha</span>
+                  <span className="text-xs font-bold text-slate-600">{formatDate(rows[editIndex]?.fecha)}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-slate-100 pt-1.5 mt-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Importe</span>
+                  <span className="text-xs font-black text-rose-600">{formatCurrency(Number(rows[editIndex]?.importe) || 0)}</span>
+                </div>
+              </div>
+              {confirmError && <p className="text-[10px] font-bold text-rose-600 text-center uppercase tracking-widest mt-2">{confirmError}</p>}
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
+            <div className="px-4 py-3 border-t border-gray-100 bg-slate-50/80 flex items-center justify-stretch gap-2">
               <button
                 type="button"
                 disabled={confirmLoading}
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="flex-1 px-3 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all duration-200 disabled:opacity-60"
               >
-                Cancelar
+                No, cancelar
               </button>
               <button
                 type="button"
@@ -1893,76 +2120,41 @@ export default function FinanzasEgresosFijos() {
                   if (editIndex === null) return;
                   setConfirmLoading(true);
                   setConfirmError("");
-                  // Capturar item a eliminar para borrar en calendario si aplica
                   const toRemove = rows[editIndex];
                   try {
-                    // Eliminar de la API si tiene ID
-                    if (toRemove?.id) {
-                      await deleteGastoFijo(toRemove.id);
-                    }
-                    
-                    // Eliminar de la lista local + persistir + toast undo
+                    if (toRemove?.id) await deleteGastoFijo(toRemove.id);
                     setRows((prev) => {
                       const removed = prev[editIndex];
                       const next = prev.filter((_, i) => i !== editIndex);
                       saveExpenses("fijos", next);
                       if (undo.timer) clearTimeout(undo.timer);
-                      const t = setTimeout(
-                        () =>
-                          setUndo({
-                            show: false,
-                            item: null,
-                            index: null,
-                            timer: null,
-                          }),
-                        7000
-                      );
-                      setUndo({
-                        show: true,
-                        item: removed,
-                        index: editIndex,
-                        timer: t,
-                      });
+                      const t = setTimeout(() => setUndo({ show: false, item: null, index: null, timer: null }), 7000);
+                      setUndo({ show: true, item: removed, index: editIndex, timer: t });
                       return next;
                     });
-                    
-                    // Refrescar presupuesto si el gasto eliminado estaba Pagado
                     if (toRemove?.estatus === "Pagado") {
                       const month = dayjs(toRemove.fecha).format("YYYY-MM");
                       await refreshBudgetSummary(month);
                     }
-                    
-                    // Intentar borrar evento de calendario en background
                     try {
-                      if (toRemove?.calendarEventId) {
-                        await api.delete(
-                          `/admin/calendar/events/${toRemove.calendarEventId}`
-                        );
-                      }
-                    } catch (e) {
-                      console.warn(
-                        "No se pudo borrar evento calendario (fijo):",
-                        e?.response?.status || e?.message || e
-                      );
-                    }
-                  } catch (error) {
-                    console.error('Error al eliminar gasto fijo:', error);
-                    setConfirmError('Error al eliminar el gasto');
-                  }
+                      if (toRemove?.calendarEventId) await api.delete(`/admin/calendar/events/${toRemove.calendarEventId}`);
+                    } catch (e) { console.warn("No se pudo borrar evento calendario (fijo):", e?.response?.status || e?.message || e); }
+                  } catch (error) { console.error('Error al eliminar gasto fijo:', error); setConfirmError('Error al eliminar el gasto'); }
                   setConfirmLoading(false);
                   setConfirmOpen(false);
                   setEditOpen(false);
                   setEditIndex(null);
                   setEditData(null);
                 }}
-                className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-70"
+                className="flex-1 px-3 py-2 bg-rose-600 text-white font-extrabold rounded-lg shadow-md shadow-rose-200 hover:bg-rose-700 active:scale-95 transition-all duration-200 disabled:opacity-70"
                 disabled={confirmLoading}
               >
-                {confirmLoading ? "Eliminando…" : "Eliminar"}
+                {confirmLoading ? "Eliminando..." : "Sí, eliminar"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
       {/* Toast Deshacer borrado */}
       {undo.show && (

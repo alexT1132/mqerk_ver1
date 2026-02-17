@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { getBudget, setBudget, loadBudgets, saveBudgets, getBudgetSnapshot, rolloverIfNeeded, sumExpensesMonth } from '../../utils/budgetStore.js';
@@ -43,62 +44,62 @@ export default function FinanzasEgresosPresupuesto() {
       try {
         const rows = await listPresupuestos();
         if (Array.isArray(rows) && rows.length) {
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-6">
-          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Historial de presupuestos</h2>
-            <button onClick={()=> setShowFilters(s=>!s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
-          </div>
-          {showFilters && (
-            <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde (mes)</label>
-                  <input type="month" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta (mes)</label>
-                  <input type="month" value={filterTo} onChange={e=>setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                </div>
-                <div className="md:col-span-2 flex items-end gap-2">
-                  <button onClick={()=>{/* se filtra por memo automáticamente */}} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Aplicar</button>
-                  <button onClick={()=>{ setFilterFrom(''); setFilterTo(''); }} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Limpiar</button>
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-6">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Historial de presupuestos</h2>
+              <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
+            </div>
+            {showFilters && (
+              <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde (mes)</label>
+                    <input type="month" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Hasta (mes)</label>
+                    <input type="month" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  </div>
+                  <div className="md:col-span-2 flex items-end gap-2">
+                    <button onClick={() => {/* se filtra por memo automáticamente */ }} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Aplicar</button>
+                    <button onClick={() => { setFilterFrom(''); setFilterTo(''); }} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Limpiar</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div className="px-6 py-5">
-            <div className="overflow-x-auto">
-              <table className="min-w-[640px] w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="text-left font-semibold px-4 py-3">Mes</th>
-                    <th className="text-right font-semibold px-4 py-3">Presupuesto</th>
-                    <th className="text-right font-semibold px-4 py-3">Gastado</th>
-                    <th className="text-right font-semibold px-4 py-3">Disponible</th>
-                    <th className="text-right font-semibold px-4 py-3">Excedente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPresupuestos.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">Sin registros</td></tr>
-                  ) : filteredPresupuestos.slice().sort((a,b)=> a.mes.localeCompare(b.mes)).map(p => {
-                    const summary = summaries[p.mes] || { budget: p.monto||0, spent:0, leftover:(p.monto||0) };
-                    const exced = Math.max(0, Number(summary.spent||0) - Number(summary.budget||0));
-                    return (
-                      <tr key={p.mes} className="border-b last:border-b-0 border-gray-200">
-                        <td className="px-4 py-2 text-gray-700 font-medium">{p.mes}</td>
-                        <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(summary.budget||0)}</td>
-                        <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(summary.spent||0)}</td>
-                        <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(summary.leftover||0)}</td>
-                        <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(exced)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            )}
+            <div className="px-6 py-5">
+              <div className="overflow-x-auto">
+                <table className="min-w-[640px] w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="text-left font-semibold px-4 py-3">Mes</th>
+                      <th className="text-right font-semibold px-4 py-3">Presupuesto</th>
+                      <th className="text-right font-semibold px-4 py-3">Gastado</th>
+                      <th className="text-right font-semibold px-4 py-3">Disponible</th>
+                      <th className="text-right font-semibold px-4 py-3">Excedente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPresupuestos.length === 0 ? (
+                      <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">Sin registros</td></tr>
+                    ) : filteredPresupuestos.slice().sort((a, b) => a.mes.localeCompare(b.mes)).map(p => {
+                      const summary = summaries[p.mes] || { budget: p.monto || 0, spent: 0, leftover: (p.monto || 0) };
+                      const exced = Math.max(0, Number(summary.spent || 0) - Number(summary.budget || 0));
+                      return (
+                        <tr key={p.mes} className="border-b last:border-b-0 border-gray-200">
+                          <td className="px-4 py-2 text-gray-700 font-medium">{p.mes}</td>
+                          <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(summary.budget || 0)}</td>
+                          <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(summary.spent || 0)}</td>
+                          <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(summary.leftover || 0)}</td>
+                          <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(exced)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
           setPresupuestos(rows.map(r => ({ id: r.id ?? r.mes, mes: r.mes, monto: Number(r.monto || 0) })));
         } else {
           // fallback a local
@@ -172,10 +173,10 @@ export default function FinanzasEgresosPresupuesto() {
       ];
       ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: Math.max(12, c.header.length + 2) }));
       // Para cada mes listado, usar summaries ya precargados si existen; si no, llamar a getResumenMensual
-      for (const p of presupuestos.slice().sort((a,b)=>a.mes.localeCompare(b.mes))) {
+      for (const p of presupuestos.slice().sort((a, b) => a.mes.localeCompare(b.mes))) {
         let summary = summaries[p.mes];
         if (!summary) {
-          try { summary = await getResumenMensual(p.mes); } catch { summary = { budget: p.monto||0, spent: 0, leftover: (p.monto||0) }; }
+          try { summary = await getResumenMensual(p.mes); } catch { summary = { budget: p.monto || 0, spent: 0, leftover: (p.monto || 0) }; }
         }
         const budget = Number(summary?.budget ?? p.monto ?? 0);
         const spent = Number(summary?.spent ?? 0);
@@ -193,7 +194,7 @@ export default function FinanzasEgresosPresupuesto() {
         cell.border = { top: { style: 'thin', color: { argb: 'FFDBEAFE' } }, left: { style: 'thin', color: { argb: 'FFDBEAFE' } }, bottom: { style: 'thin', color: { argb: 'FFDBEAFE' } }, right: { style: 'thin', color: { argb: 'FFDBEAFE' } } };
       });
       // Formatos moneda
-      ['budget','spent','leftover','excedente'].forEach(k=>{ const col = ws.getColumn(k); col.numFmt = '#,##0.00'; col.alignment = { horizontal: 'right' }; });
+      ['budget', 'spent', 'leftover', 'excedente'].forEach(k => { const col = ws.getColumn(k); col.numFmt = '#,##0.00'; col.alignment = { horizontal: 'right' }; });
       ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
       ws.views = [{ state: 'frozen', ySplit: 1 }];
       ws.columns.forEach((col) => {
@@ -208,7 +209,7 @@ export default function FinanzasEgresosPresupuesto() {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       a.href = url; a.download = `presupuestos-${ts}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -257,25 +258,25 @@ export default function FinanzasEgresosPresupuesto() {
     let cancelled = false;
     const loadSnap = async () => {
       try {
-  const r = await getResumenMensual(mes);
-  // Combinar con gastos locales (fallback/merge) y pagos a asesores del mes
-  const localSpent = sumExpensesMonth(mes); // fijos + variables (local)
-  // Sumar pagos de asesores Pagado (API)
-  let asesorSpent = 0;
-  try {
-    const start = dayjs(mes + '-01').format('YYYY-MM-DD');
-    const end = dayjs(mes + '-01').endOf('month').format('YYYY-MM-DD');
-    const pagos = await listarPagos({ from: start, to: end, status: 'Pagado' });
-    asesorSpent = (pagos || []).reduce((acc, p) => acc + Number(p.ingreso_final || 0), 0);
-  } catch {}
-  // Budget efectivo: backend > listado > local
-  const backendBudget = Number(r.budget || 0);
-  const listBudget = presupuestos.find((x) => x.mes === mes)?.monto || 0;
-  const effectiveBudget = backendBudget > 0 ? backendBudget : (Number(listBudget) > 0 ? Number(listBudget) : getBudget(mes));
-  const backendSpent = Number(r.spent || 0);
-  const mergedSpent = Math.max(backendSpent, localSpent + asesorSpent);
-  const leftover = Math.max(0, effectiveBudget - mergedSpent);
-  if (!cancelled) setSnap({ budget: effectiveBudget, spent: mergedSpent, leftover });
+        const r = await getResumenMensual(mes);
+        // Combinar con gastos locales (fallback/merge) y pagos a asesores del mes
+        const localSpent = sumExpensesMonth(mes); // fijos + variables (local)
+        // Sumar pagos de asesores Pagado (API)
+        let asesorSpent = 0;
+        try {
+          const start = dayjs(mes + '-01').format('YYYY-MM-DD');
+          const end = dayjs(mes + '-01').endOf('month').format('YYYY-MM-DD');
+          const pagos = await listarPagos({ from: start, to: end, status: 'Pagado' });
+          asesorSpent = (pagos || []).reduce((acc, p) => acc + Number(p.ingreso_final || 0), 0);
+        } catch { }
+        // Budget efectivo: backend > listado > local
+        const backendBudget = Number(r.budget || 0);
+        const listBudget = presupuestos.find((x) => x.mes === mes)?.monto || 0;
+        const effectiveBudget = backendBudget > 0 ? backendBudget : (Number(listBudget) > 0 ? Number(listBudget) : getBudget(mes));
+        const backendSpent = Number(r.spent || 0);
+        const mergedSpent = Math.max(backendSpent, localSpent + asesorSpent);
+        const leftover = Math.max(0, effectiveBudget - mergedSpent);
+        if (!cancelled) setSnap({ budget: effectiveBudget, spent: mergedSpent, leftover });
       } catch {
         // fallback local
         if (!cancelled) setSnap(getBudgetSnapshot(mes));
@@ -301,7 +302,7 @@ export default function FinanzasEgresosPresupuesto() {
             const end = dayjs(m + '-01').endOf('month').format('YYYY-MM-DD');
             const pagos = await listarPagos({ from: start, to: end, status: 'Pagado' });
             asesorSpent = (pagos || []).reduce((acc, p) => acc + Number(p.ingreso_final || 0), 0);
-          } catch {}
+          } catch { }
           // Budget efectivo por fila
           const backendBudget = Number(r.budget || 0);
           const listBudget = presupuestos.find((x) => x.mes === m)?.monto || 0;
@@ -346,7 +347,7 @@ export default function FinanzasEgresosPresupuesto() {
       </header>
 
       {/* Resumen rápido */}
-  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
           <p className="text-xs text-gray-500">Mes seleccionado</p>
           <p className="text-2xl font-semibold text-gray-800">{dayjs(mes + '-01').format('MMMM YYYY')}</p>
@@ -381,13 +382,13 @@ export default function FinanzasEgresosPresupuesto() {
         <form onSubmit={savePresupuesto} className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Mes</label>
-            <input type="month" value={mes} onChange={(e)=>setMes(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Monto mensual</label>
             <input value={monto} onChange={onChangeMonto} placeholder="0.00" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             <label className="mt-2 inline-flex items-center gap-2 text-xs text-gray-600 select-none">
-              <input type="checkbox" checked={sumar} onChange={(e)=>setSumar(e.target.checked)} className="rounded border-gray-300" />
+              <input type="checkbox" checked={sumar} onChange={(e) => setSumar(e.target.checked)} className="rounded border-gray-300" />
               Sumar al presupuesto actual de este mes
             </label>
           </div>
@@ -411,25 +412,25 @@ export default function FinanzasEgresosPresupuesto() {
                   <th className="text-center font-semibold px-4 py-3">Acciones</th>
                 </tr>
               </thead>
-        <tbody>
+              <tbody>
                 {presupuestos.length === 0 ? (
                   <tr className="border-b border-gray-200"><td colSpan={6} className="px-4 py-6 text-center text-gray-500">No hay presupuestos a\u00fan.</td></tr>
                 ) : (
                   presupuestos
                     .slice()
-                    .sort((a,b)=>a.mes.localeCompare(b.mes))
-        .map((p)=>{
-      const snapRow = summaries[p.mes] || getBudgetSnapshot(p.mes);
-      const g = snapRow.spent;
-      const disp = snapRow.leftover;
-            const exced = Math.max(0, g - (snapRow.budget || 0));
+                    .sort((a, b) => a.mes.localeCompare(b.mes))
+                    .map((p) => {
+                      const snapRow = summaries[p.mes] || getBudgetSnapshot(p.mes);
+                      const g = snapRow.spent;
+                      const disp = snapRow.leftover;
+                      const exced = Math.max(0, g - (snapRow.budget || 0));
                       return (
                         <tr key={p.id} className="border-b border-gray-200">
-                          <td className="px-4 py-3 text-gray-800 border-r border-gray-100">{dayjs(p.mes+'-01').format('MMMM YYYY')}</td>
-              <td className="px-4 py-3 text-right text-gray-900 font-medium border-r border-gray-100">{formatCurrency(p.monto)}</td>
+                          <td className="px-4 py-3 text-gray-800 border-r border-gray-100">{dayjs(p.mes + '-01').format('MMMM YYYY')}</td>
+                          <td className="px-4 py-3 text-right text-gray-900 font-medium border-r border-gray-100">{formatCurrency(p.monto)}</td>
                           <td className="px-4 py-3 text-right text-rose-600 border-r border-gray-100">{formatCurrency(g)}</td>
                           <td className="px-4 py-3 text-right text-emerald-600 border-r border-gray-100">{formatCurrency(disp)}</td>
-                          <td className={`px-4 py-3 text-right ${exced>0?'text-rose-700':'text-gray-500'} border-r border-gray-100`}>{formatCurrency(exced)}</td>
+                          <td className={`px-4 py-3 text-right ${exced > 0 ? 'text-rose-700' : 'text-gray-500'} border-r border-gray-100`}>{formatCurrency(exced)}</td>
                           <td className="px-4 py-3">
                             <button
                               type="button"
@@ -446,47 +447,65 @@ export default function FinanzasEgresosPresupuesto() {
           </div>
         </div>
       </div>
+
       {/* Modal Confirmación eliminar presupuesto */}
-      {confirmOpen && confirmTarget && (
-        <div className="fixed inset-0 z-[10050] bg-black/40 p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Eliminar presupuesto</h3>
-              <button onClick={()=>!confirmLoading && setConfirmOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-            </div>
-            <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
-              <p>¿Seguro que deseas eliminar el presupuesto de este mes?</p>
-              <div className="rounded-lg bg-gray-50 ring-1 ring-gray-200 p-3 text-xs">
-                <div><span className="text-gray-500">Mes:</span> <span className="text-gray-800 font-medium">{dayjs(confirmTarget.mes+'-01').format('MMMM YYYY')}</span></div>
-                <div><span className="text-gray-500">Monto:</span> <span className="text-gray-800 font-medium">{formatCurrency(confirmTarget.monto)}</span></div>
+      {confirmOpen && confirmTarget && createPortal(
+        <div className="fixed inset-0 z-[10050] bg-black/40 backdrop-blur-sm p-3 sm:p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-slate-100">
+            <div className="px-4 py-3 border-b border-rose-50 flex items-center justify-between bg-rose-50/30">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Eliminar Presupuesto</h3>
+                <p className="text-[9px] text-rose-500 font-bold uppercase tracking-widest mt-0.5">Esta acción es irreversible</p>
               </div>
-              {confirmError ? (<p className="text-[11px] text-rose-600">{confirmError}</p>) : null}
+              <button onClick={() => !confirmLoading && setConfirmOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-100 transition-all active:scale-95">✕</button>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
+            <div className="px-4 py-3 text-sm text-gray-700 space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-rose-50/50 rounded-xl border border-rose-100/50">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 text-sm flex-shrink-0">🗑️</div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-800">
+                    ¿Eliminar el presupuesto de este mes?
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-500 font-medium tracking-tight">Mes:</span>
+                  <span className="text-xs font-black text-slate-700">{dayjs(confirmTarget.mes + '-01').format('MMMM YYYY')}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/50">
+                  <span className="text-[10px] text-slate-500 font-medium tracking-tight">Monto:</span>
+                  <span className="text-xs font-black text-rose-600">{formatCurrency(confirmTarget.monto)}</span>
+                </div>
+              </div>
+              {confirmError ? (<p className="text-[10px] font-bold text-rose-600 text-center animate-pulse uppercase tracking-widest">{confirmError}</p>) : null}
+            </div>
+            <div className="px-4 py-3 border-t border-slate-50 bg-slate-50/50 flex items-center justify-stretch gap-2">
               <button
                 type="button"
                 disabled={confirmLoading}
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="flex-1 px-3 py-2 text-xs font-black text-gray-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-60"
               >Cancelar</button>
               <button
                 type="button"
-                onClick={async()=>{
-                  if(!confirmTarget) return;
+                onClick={async () => {
+                  if (!confirmTarget) return;
                   setConfirmLoading(true); setConfirmError('');
                   try {
                     await removePresupuesto(confirmTarget.mes);
                     setConfirmOpen(false); setConfirmTarget(null);
                   } catch (e) {
-                    setConfirmError('No se pudo eliminar. Intenta de nuevo.');
+                    setConfirmError('Error de conexión. Reintenta.');
                   } finally { setConfirmLoading(false); }
                 }}
-                className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-70"
+                className="flex-1 px-3 py-2 text-xs font-black text-white bg-rose-600 rounded-lg shadow-md shadow-rose-100 hover:bg-rose-700 active:scale-95 transition-all disabled:opacity-70"
                 disabled={confirmLoading}
-              >{confirmLoading ? 'Eliminando…' : 'Eliminar'}</button>
+              >{confirmLoading ? '...' : 'Sí, eliminar'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
     </section>
   );

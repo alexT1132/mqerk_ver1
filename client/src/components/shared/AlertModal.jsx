@@ -68,13 +68,13 @@ export function AlertModal({ open, onClose, title, message, type = 'info', onCon
             <div className={`${iconColors[type]} rounded-full p-2 flex-shrink-0`}>
               {icons[type]}
             </div>
-            <h3 className="text-lg font-bold text-slate-900">{title || 'Aviso'}</h3>
+            <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Silo, sans-serif' }}>{title || 'Aviso'}</h3>
           </div>
         </div>
 
         {/* Content */}
         <div className="relative px-6 py-5">
-          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{message}</p>
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'Silo, sans-serif' }}>{message}</p>
         </div>
 
         {/* Footer */}
@@ -83,6 +83,7 @@ export function AlertModal({ open, onClose, title, message, type = 'info', onCon
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border-2 border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all duration-200"
+              style={{ fontFamily: 'Silo, sans-serif' }}
             >
               {cancelText}
             </button>
@@ -90,6 +91,7 @@ export function AlertModal({ open, onClose, title, message, type = 'info', onCon
           <button
             onClick={handleConfirm}
             className={`px-5 py-2 text-sm font-bold text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${buttonColors[type]}`}
+            style={{ fontFamily: 'Silo, sans-serif' }}
           >
             {confirmText}
           </button>

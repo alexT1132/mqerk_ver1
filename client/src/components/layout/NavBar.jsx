@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { XMarkIcon, ChevronDownIcon } from "@heroicons/react/24/outline"; // Asegúrate de tenerlos
 import Logo from "../../assets/MQerK_logo.png";
 
 export default function MobileMenu({ isOpen, onClose }) {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-[#3c26cc] flex flex-col font-sans">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-[#3c26cc] flex flex-col font-sans">
 
       {/* 1. CABECERA COMPACTA */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
@@ -71,7 +72,8 @@ export default function MobileMenu({ isOpen, onClose }) {
         </p>
 
       </div>
-    </div>
+    </div>,
+    document.getElementById('modal-root')
   );
 }
 

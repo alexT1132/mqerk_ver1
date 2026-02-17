@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAdminContext } from '../../context/AdminContext.jsx';
@@ -9,8 +10,8 @@ import studentService from '../../service/studentService.js';
 const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", studentName = "" }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-y-auto flex items-center justify-center p-4">
       <div className="fixed inset-0 backdrop-blur-md transition-all duration-300" onClick={onCancel}></div>
       <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full mx-auto transform transition-all duration-300 scale-100">
         <div className="p-6">
@@ -59,7 +60,8 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.getElementById('modal-root')
   );
 };
 
@@ -124,8 +126,8 @@ const CustomNotification = ({ message, type, isVisible, onClose }) => {
     }
   };
 
-  return (
-    <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out">
+  return createPortal(
+    <div className="fixed top-4 right-4 z-[100] transform transition-all duration-300 ease-in-out">
       <div className={`max-w-md p-4 rounded-lg border shadow-xl ${getNotificationStyles()}`}>
         <div className="flex items-start">
           <div className="flex-shrink-0">
@@ -146,7 +148,8 @@ const CustomNotification = ({ message, type, isVisible, onClose }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.getElementById('modal-root')
   );
 };
 
@@ -154,26 +157,26 @@ const CustomNotification = ({ message, type, isVisible, onClose }) => {
 
 // Componente para botones de categoría (cursos)
 function CategoryButton({ label, isActive, onClick }) {
-    // Función para obtener texto responsive
-    const getResponsiveText = (label) => {
-        const abbreviations = {
-            'DIGI-START': { short: 'DIGI', medium: 'DIGI-START' },
-            'MINDBRIDGE': { short: 'MIND', medium: 'MINDBRIDGE' },
-            'SPEAKUP': { short: 'SPEAK', medium: 'SPEAKUP' },
-            'EEAU': { short: 'EEAU', medium: 'EEAU' },
-            'EEAP': { short: 'EEAP', medium: 'EEAP' },
-            'PCE': { short: 'PCE', medium: 'PCE' }
-        };
-        
-        return abbreviations[label] || { short: label, medium: label };
+  // Función para obtener texto responsive
+  const getResponsiveText = (label) => {
+    const abbreviations = {
+      'DIGI-START': { short: 'DIGI', medium: 'DIGI-START' },
+      'MINDBRIDGE': { short: 'MIND', medium: 'MINDBRIDGE' },
+      'SPEAKUP': { short: 'SPEAK', medium: 'SPEAKUP' },
+      'EEAU': { short: 'EEAU', medium: 'EEAU' },
+      'EEAP': { short: 'EEAP', medium: 'EEAP' },
+      'PCE': { short: 'PCE', medium: 'PCE' }
     };
 
-    const textVariants = getResponsiveText(label);
+    return abbreviations[label] || { short: label, medium: label };
+  };
 
-    return (
-        <button
-            onClick={onClick}
-            className={`
+  const textVariants = getResponsiveText(label);
+
+  return (
+    <button
+      onClick={onClick}
+      className={`
                 relative overflow-hidden 
                 px-1 py-1.5 xs:px-2 xs:py-2 sm:px-3 sm:py-3 md:px-4 md:py-3
                 rounded-md xs:rounded-lg sm:rounded-xl 
@@ -187,62 +190,62 @@ function CategoryButton({ label, isActive, onClick }) {
                 hover:scale-105 hover:shadow-md
                 ring-1 ring-transparent hover:ring-purple-200/20
                 ${isActive
-                    ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white border-purple-500 shadow-md shadow-purple-500/30' 
-                    : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-400 shadow-sm hover:from-purple-600 hover:to-purple-700 hover:border-purple-500'
-                }
+          ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white border-purple-500 shadow-md shadow-purple-500/30'
+          : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-400 shadow-sm hover:from-purple-600 hover:to-purple-700 hover:border-purple-500'
+        }
             `}
-        >
-            {/* Texto para pantallas muy pequeñas */}
-            <span className="block xs:hidden relative z-10 tracking-tight text-center leading-tight break-words hyphens-auto px-1">
-                {textVariants.short}
-            </span>
-            {/* Texto para pantallas medianas y grandes */}
-            <span className="hidden xs:block relative z-10 tracking-tight text-center leading-tight break-words hyphens-auto px-1">
-                {textVariants.medium}
-            </span>
-        </button>
-    );
+    >
+      {/* Texto para pantallas muy pequeñas */}
+      <span className="block xs:hidden relative z-10 tracking-tight text-center leading-tight break-words hyphens-auto px-1">
+        {textVariants.short}
+      </span>
+      {/* Texto para pantallas medianas y grandes */}
+      <span className="hidden xs:block relative z-10 tracking-tight text-center leading-tight break-words hyphens-auto px-1">
+        {textVariants.medium}
+      </span>
+    </button>
+  );
 }
 
 // Botón de grupo con información de capacidad
 function GrupoButton({ label, isActive, onClick, grupo }) {
-    // Función para obtener estilos sobrios basados en el tipo de turno
-    const getGrupoStyles = (tipo, isActive) => {
-        const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-lg xs:rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border-2 hover:shadow-lg active:scale-95 touch-manipulation ring-2 ring-transparent hover:ring-opacity-50";
-        
-        switch (tipo) {
-            case 'vespertino':
-                return isActive 
-                    ? `${baseStyles} bg-purple-500 text-white border-purple-500 shadow-md`
-                    : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
-            
-            case 'matutino':
-                return isActive 
-                    ? `${baseStyles} bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md ring-blue-300/30`
-                    : `${baseStyles} bg-gradient-to-r from-blue-400/60 to-indigo-400/60 text-white border-blue-300/50 shadow-sm hover:from-blue-500/70 hover:to-indigo-500/70 hover:border-blue-400/60 hover:ring-blue-200/20`;
-            
-            case 'sabatino':
-                return isActive 
-                    ? `${baseStyles} bg-gradient-to-r from-green-600 to-teal-600 text-white border-green-500 shadow-md ring-green-300/30`
-                    : `${baseStyles} bg-gradient-to-r from-green-400/60 to-teal-400/60 text-white border-green-300/50 shadow-sm hover:from-green-500/70 hover:to-teal-500/70 hover:border-green-400/60 hover:ring-green-200/20`;
-            
-            default:
-                return isActive 
-                    ? `${baseStyles} bg-gradient-to-r from-gray-600 to-slate-600 text-white border-gray-500 shadow-md ring-gray-300/30`
-                    : `${baseStyles} bg-gradient-to-r from-gray-400/60 to-slate-400/60 text-white border-gray-300/50 shadow-sm hover:from-gray-500/70 hover:to-slate-500/70 hover:border-gray-400/60 hover:ring-gray-200/20`;
-        }
-    };
+  // Función para obtener estilos sobrios basados en el tipo de turno
+  const getGrupoStyles = (tipo, isActive) => {
+    const baseStyles = "relative overflow-hidden px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-3 rounded-lg xs:rounded-xl sm:rounded-2xl font-extrabold text-xs xs:text-sm sm:text-base transition-all duration-300 ease-out w-full min-w-[100px] max-w-[140px] h-10 xs:h-12 sm:h-14 flex flex-col items-center justify-center gap-0.5 border-2 hover:shadow-lg active:scale-95 touch-manipulation ring-2 ring-transparent hover:ring-opacity-50";
 
-   
+    switch (tipo) {
+      case 'vespertino':
+        return isActive
+          ? `${baseStyles} bg-purple-500 text-white border-purple-500 shadow-md`
+          : `${baseStyles} bg-white text-purple-600 border-purple-300 hover:bg-purple-50`;
 
-    return (
-        <button
-            onClick={onClick}
-            className={getGrupoStyles(grupo?.tipo, isActive)}
-        >
-            <span className="relative z-10 tracking-wide text-center leading-tight">{label}</span>
-        </button>
-    );
+      case 'matutino':
+        return isActive
+          ? `${baseStyles} bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md ring-blue-300/30`
+          : `${baseStyles} bg-gradient-to-r from-blue-400/60 to-indigo-400/60 text-white border-blue-300/50 shadow-sm hover:from-blue-500/70 hover:to-indigo-500/70 hover:border-blue-400/60 hover:ring-blue-200/20`;
+
+      case 'sabatino':
+        return isActive
+          ? `${baseStyles} bg-gradient-to-r from-green-600 to-teal-600 text-white border-green-500 shadow-md ring-green-300/30`
+          : `${baseStyles} bg-gradient-to-r from-green-400/60 to-teal-400/60 text-white border-green-300/50 shadow-sm hover:from-green-500/70 hover:to-teal-500/70 hover:border-green-400/60 hover:ring-green-200/20`;
+
+      default:
+        return isActive
+          ? `${baseStyles} bg-gradient-to-r from-gray-600 to-slate-600 text-white border-gray-500 shadow-md ring-gray-300/30`
+          : `${baseStyles} bg-gradient-to-r from-gray-400/60 to-slate-400/60 text-white border-gray-300/50 shadow-sm hover:from-gray-500/70 hover:to-slate-500/70 hover:border-gray-400/60 hover:ring-gray-200/20`;
+    }
+  };
+
+
+
+  return (
+    <button
+      onClick={onClick}
+      className={getGrupoStyles(grupo?.tipo, isActive)}
+    >
+      <span className="relative z-10 tracking-wide text-center leading-tight">{label}</span>
+    </button>
+  );
 }
 
 function ListaAlumnos_Admin_comp() {
@@ -265,7 +268,7 @@ function ListaAlumnos_Admin_comp() {
     title: '',
     message: '',
     studentName: '',
-    onConfirm: () => {}
+    onConfirm: () => { }
   });
   const [notification, setNotification] = useState({
     isVisible: false,
@@ -299,9 +302,9 @@ function ListaAlumnos_Admin_comp() {
   }, [openStatusMenu]);
 
   // ============= INTEGRACIÓN CON ADMINCONTEXT =============
-  
 
-  const { 
+
+  const {
     studentsData,
     isLoading,
     error,
@@ -312,37 +315,37 @@ function ListaAlumnos_Admin_comp() {
   } = useAdminContext();
 
   // ==================== CONFIGURACIÓN DE CURSOS Y GRUPOS ====================
-  
+
   // ❌ CURSOS FIJOS - HARDCODEADOS en el frontend
   // Estos NO cambian desde el backend, están definidos aquí:
   const cursosDisponibles = ['EEAU', 'EEAP', 'DIGI-START', 'MINDBRIDGE', 'SPEAKUP', 'PCE'];
-  
-  
+
+
   const [gruposPorCurso, setGruposPorCurso] = useState({
-   
+
     'EEAU': [
-  { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
-  { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
-  { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 }
+      { id: 1, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+      { id: 2, nombre: 'V2', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+      { id: 3, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 }
     ],
     'EEAP': [
-  { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
-  { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 30, alumnosActuales: 0 }
+      { id: 4, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+      { id: 5, nombre: 'S1', tipo: 'sabatino', capacidad: 30, alumnosActuales: 0 }
     ],
     'DIGI-START': [
-  { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
-  { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 }
+      { id: 6, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+      { id: 7, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 }
     ],
     'MINDBRIDGE': [
-  { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 }
+      { id: 8, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 }
     ],
     'SPEAKUP': [
-  { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
-  { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 }
+      { id: 9, nombre: 'V1', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 },
+      { id: 10, nombre: 'V2', tipo: 'vespertino', capacidad: 30, alumnosActuales: 0 }
     ],
     'PCE': [
-  { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 },
-  { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 30, alumnosActuales: 0 }
+      { id: 11, nombre: 'M1', tipo: 'matutino', capacidad: 30, alumnosActuales: 0 },
+      { id: 12, nombre: 'S1', tipo: 'sabatino', capacidad: 30, alumnosActuales: 0 }
     ]
   });
 
@@ -350,7 +353,7 @@ function ListaAlumnos_Admin_comp() {
 
 
   // ==================== UTILIDADES ====================
-  
+
   // Formato de folio consistente con ComprobanteRecibo.jsx
   function obtenerDosUltimosDigitosAnioSiguiente() {
     const fechaActual = new Date();
@@ -367,7 +370,7 @@ function ListaAlumnos_Admin_comp() {
   // Obtiene información del grupo seleccionado
   const getGrupoInfo = () => {
     if (!activeCategory || !activeTurno) return null;
-    
+
     const grupos = getGruposDisponibles();
     return grupos.find(grupo => grupo.nombre === activeTurno);
   };
@@ -402,10 +405,10 @@ function ListaAlumnos_Admin_comp() {
 
   // Enriquecer alumnos que no tienen nombre/telefono de tutor consultando el endpoint individual
   const enrichTutorData = async (list) => {
-  const toFetch = list.filter(a => (!a?.nombreTutor || !a?.telefonoTutor) && (a?.folioNumero || a?.folio));
+    const toFetch = list.filter(a => (!a?.nombreTutor || !a?.telefonoTutor) && (a?.folioNumero || a?.folio));
     if (!toFetch.length) return;
     try {
-  const results = await Promise.allSettled(toFetch.map(a => studentService.getStudent(a.folioNumero || a.folio)));
+      const results = await Promise.allSettled(toFetch.map(a => studentService.getStudent(a.folioNumero || a.folio)));
       const updates = {};
       results.forEach((res, idx) => {
         if (res.status === 'fulfilled' && res.value?.success && res.value.data) {
@@ -454,7 +457,7 @@ function ListaAlumnos_Admin_comp() {
     }
   };
 
-  
+
   const deleteStudentFromBackend = async (folio) => {
     try {
       if (deleteStudent && typeof deleteStudent === 'function') {
@@ -463,7 +466,7 @@ function ListaAlumnos_Admin_comp() {
           await fetchAlumnos(); // Recargar lista después de eliminar
           return { success: true, message: 'Estudiante eliminado (acceso revocado)' };
         }
-        return { success: false, message: res?.message || 'No se pudo eliminar (soft delete)'};
+        return { success: false, message: res?.message || 'No se pudo eliminar (soft delete)' };
       }
       throw new Error('Función de eliminación no disponible en AdminContext');
     } catch (error) {
@@ -492,7 +495,7 @@ function ListaAlumnos_Admin_comp() {
     if (activeCategory && activeTurno) {
       // Mostrar notificación de carga
       showNotification(`🔄 Cargando estudiantes de ${activeCategory} - ${activeTurno}...`, 'info');
-      
+
       fetchAlumnos().then((res) => {
         setTimeout(() => {
           const count = (Array.isArray(res) ? res.length : alumnos.length);
@@ -572,15 +575,15 @@ function ListaAlumnos_Admin_comp() {
       safe(alumno.nombres).includes(term) ||
       safe(alumno.apellidos).includes(term) ||
       safe(alumno.correoElectronico).includes(term) ||
-  safe(alumno.folio).includes(term) ||
-  safe(alumno.folio_formateado).includes(term) ||
-  safe(alumno.folioNumero).includes(term) ||
+      safe(alumno.folio).includes(term) ||
+      safe(alumno.folio_formateado).includes(term) ||
+      safe(alumno.folioNumero).includes(term) ||
       safe(alumno.municipioComunidad).includes(term);
-    
+
     const matchesCategory = activeCategory === null || alumno.curso === activeCategory;
     const matchesTurno = activeTurno === null || alumno.turno === activeTurno;
-    
-  return matchesSearch && matchesCategory && matchesTurno;
+
+    return matchesSearch && matchesCategory && matchesTurno;
   });
 
   // Manejar selección de categoría (curso)
@@ -593,7 +596,7 @@ function ListaAlumnos_Admin_comp() {
       setActiveCategory(categoria);
       setActiveTurno(null); // Reset grupo al cambiar curso
       setAlumnos([]); // ✅ Limpiar datos al cambiar curso
-  fetchGroupCounts(categoria);
+      fetchGroupCounts(categoria);
     }
   };
 
@@ -638,8 +641,8 @@ function ListaAlumnos_Admin_comp() {
       message: '¿Estás seguro de que quieres eliminar este estudiante? Esta acción no se puede deshacer.',
       studentName: `${alumno.nombres} ${alumno.apellidos}`,
       onConfirm: async () => {
-        setConfirmModal({ isOpen: false, title: '', message: '', studentName: '', onConfirm: () => {} });
-        
+        setConfirmModal({ isOpen: false, title: '', message: '', studentName: '', onConfirm: () => { } });
+
         const result = await deleteStudentFromBackend(alumno.folio);
         if (result.success) {
           showNotification('✅ ' + result.message, 'success');
@@ -713,7 +716,7 @@ function ListaAlumnos_Admin_comp() {
           <h2 className="text-xl font-bold text-red-600 mb-2">Error al cargar datos</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
-            <button 
+            <button
               onClick={handleRefreshData}
               disabled={isLoading}
               className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -738,12 +741,12 @@ function ListaAlumnos_Admin_comp() {
         message={confirmModal.message}
         studentName={confirmModal.studentName}
         onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal({ isOpen: false, title: '', message: '', studentName: '', onConfirm: () => {} })}
+        onCancel={() => setConfirmModal({ isOpen: false, title: '', message: '', studentName: '', onConfirm: () => { } })}
         confirmText="Eliminar"
         cancelText="Cancelar"
       />
 
-     
+
       <CustomNotification
         message={notification.message}
         type={notification.type}
@@ -752,417 +755,417 @@ function ListaAlumnos_Admin_comp() {
       />
 
       <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
-  
-      <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
-        <div className="w-full max-w-7xl mx-auto">
-          
-          <div className="text-center mb-4 xs:mb-6 sm:mb-8">
-            <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
+
+        <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
+          <div className="w-full max-w-7xl mx-auto">
+
+            <div className="text-center mb-4 xs:mb-6 sm:mb-8">
+              <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
               bg-gradient-to-r from-purple-600 to-purple-700
               bg-clip-text text-transparent
               mb-2 xs:mb-3 sm:mb-4 px-2">
-              Lista de Alumnos por Curso
-            </h1>
-            <div className="w-12 xs:w-16 sm:w-20 md:w-24 lg:w-28 h-0.5 xs:h-1 sm:h-1.5 bg-gradient-to-r from-purple-500/80 to-purple-600/80 mx-auto mb-2 xs:mb-3 sm:mb-4 rounded-full"></div>
-            <p className="text-xs xs:text-sm sm:text-base text-gray-700 font-semibold px-4">
-              Gestiona y supervisa a todos los estudiantes registrados por curso
-            </p>
-            
-         
-            {lastUpdated && (
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-3">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>
-                  Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-ES', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}
-                </span>
-                <button
-                  onClick={handleRefreshData}
-                  disabled={isLoading}
-                  className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
-                  title="Actualizar datos"
-                >
-                  <svg className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                Lista de Alumnos por Curso
+              </h1>
+              <div className="w-12 xs:w-16 sm:w-20 md:w-24 lg:w-28 h-0.5 xs:h-1 sm:h-1.5 bg-gradient-to-r from-purple-500/80 to-purple-600/80 mx-auto mb-2 xs:mb-3 sm:mb-4 rounded-full"></div>
+              <p className="text-xs xs:text-sm sm:text-base text-gray-700 font-semibold px-4">
+                Gestiona y supervisa a todos los estudiantes registrados por curso
+              </p>
+
+
+              {lastUpdated && (
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-3">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>{isLoading ? 'Actualizando...' : 'Actualizar'}</span>
-                </button>
-                {(activeCategory || activeTurno || searchTerm) && (
+                  <span>
+                    Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-ES', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
                   <button
-                    onClick={handleClearFilters}
-                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-lg hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
-                    title="Limpiar todos los filtros"
+                    onClick={handleRefreshData}
+                    disabled={isLoading}
+                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
+                    title="Actualizar datos"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <svg className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span>Limpiar</span>
+                    <span>{isLoading ? 'Actualizando...' : 'Actualizar'}</span>
                   </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Botones de categoría (filtros por curso) */}
-          <div className="mb-4 xs:mb-6 sm:mb-8">
-            <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
-              <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
-                Filtrar por Curso
-              </h2>
-              <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 md:gap-3 place-items-center">
-                {cursosDisponibles.map((cat) => (
-                  <CategoryButton
-                    key={cat}
-                    label={cat}
-                    isActive={activeCategory === cat}
-                    onClick={() => handleCategorySelect(cat)}
-                  />
-                ))}
-              </div>
+                  {(activeCategory || activeTurno || searchTerm) && (
+                    <button
+                      onClick={handleClearFilters}
+                      className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-lg hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 touch-manipulation font-semibold text-xs"
+                      title="Limpiar todos los filtros"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span>Limpiar</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Selector de grupos/turnos dinámico */}
-          {activeCategory && getGruposDisponibles().length > 0 && (
-            <div className="mb-3 xs:mb-4 sm:mb-6">
+            {/* Botones de categoría (filtros por curso) */}
+            <div className="mb-4 xs:mb-6 sm:mb-8">
               <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
                 <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
-                  Grupos Disponibles para {activeCategory}
+                  Filtrar por Curso
                 </h2>
-                <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center max-w-4xl mx-auto">
-                  {getGruposDisponibles().map((grupo) => (
-                    <GrupoButton
-                      key={grupo.id || grupo.nombre}
-                      label={`${grupo.nombre} (${grupo.alumnosActuales}/${grupo.capacidad})`}
-                      isActive={activeTurno === grupo.nombre}
-                      onClick={() => handleGrupoSelect(grupo.nombre)}
-                      grupo={grupo}
+                <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-6 md:grid-cols-6 gap-1 xs:gap-1.5 sm:gap-2 md:gap-3 place-items-center">
+                  {cursosDisponibles.map((cat) => (
+                    <CategoryButton
+                      key={cat}
+                      label={cat}
+                      isActive={activeCategory === cat}
+                      onClick={() => handleCategorySelect(cat)}
                     />
                   ))}
                 </div>
-                
-                {/* Leyenda de colores por tipo de turno */}
-                <div className="mt-4 xs:mt-5 sm:mt-6 flex flex-wrap gap-3 xs:gap-4 justify-center text-xs xs:text-sm">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-blue-500 rounded-full ring-1 ring-blue-300/30"></div>
-                    <span className="font-semibold text-blue-600">Matutino</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
-                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-purple-500 rounded-full ring-1 ring-purple-300/30"></div>
-                    <span className="font-semibold text-purple-600">Vespertino</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
-                    <div className="w-4 h-4 xs:w-5 xs:h-5 bg-green-500 rounded-full ring-1 ring-green-300/30"></div>
-                    <span className="font-semibold text-green-600">Sabatino</span>
-                  </div>
-                </div>
               </div>
             </div>
-          )}
 
-        </div>
-      </div>
-
-      {/* Información del grupo seleccionado */}
-      {activeCategory && activeTurno && (
-        <div className="px-2 xs:px-4 sm:px-6 mb-4 xs:mb-6">
-          <div className="w-full max-w-7xl mx-auto">
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg border-2 border-purple-400/40 ring-2 ring-purple-200/20">
-              <div className="text-center">
-                <p className="text-base xs:text-lg sm:text-xl md:text-2xl font-extrabold mb-2 xs:mb-3">
-                  Grupo Activo: {activeCategory} - {activeTurno}
-                </p>
-                <p className="text-xs xs:text-sm sm:text-base md:text-lg text-purple-50 font-semibold">
-                  Capacidad: <span className="font-extrabold text-white">{alumnos?.length || 0}/{getGrupoInfo()?.capacidad || 0}</span> estudiantes
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Contenido principal de la tabla */}
-      <div className="flex-1 px-2 xs:px-4 sm:px-6 pb-4 xs:pb-6">
-        <div className="w-full max-w-7xl mx-auto">
-          {/* Tabla de alumnos completa - Solo se muestra cuando hay curso Y turno seleccionados */}
-          {activeCategory && activeTurno ? (
-            <>
-              {/* Barra de búsqueda - Solo se muestra cuando hay curso seleccionado */}
-              <div className="mb-4 xs:mb-6">
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl p-3 xs:p-4 shadow-lg border border-gray-200">
-                  <div className="max-w-sm xs:max-w-md mx-auto">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Buscar por nombre, apellido, correo o folio..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 xs:px-4 py-2 xs:py-3 pl-8 xs:pl-10 pr-3 xs:pr-4 text-xs xs:text-sm border border-gray-300 rounded-md xs:rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            {/* Selector de grupos/turnos dinámico */}
+            {activeCategory && getGruposDisponibles().length > 0 && (
+              <div className="mb-3 xs:mb-4 sm:mb-6">
+                <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border border-gray-200">
+                  <h2 className="text-base xs:text-lg sm:text-xl font-extrabold text-gray-800 mb-3 xs:mb-4 sm:mb-5 text-center px-2">
+                    Grupos Disponibles para {activeCategory}
+                  </h2>
+                  <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-3 justify-center items-center max-w-4xl mx-auto">
+                    {getGruposDisponibles().map((grupo) => (
+                      <GrupoButton
+                        key={grupo.id || grupo.nombre}
+                        label={`${grupo.nombre} (${grupo.alumnosActuales}/${grupo.capacidad})`}
+                        isActive={activeTurno === grupo.nombre}
+                        onClick={() => handleGrupoSelect(grupo.nombre)}
+                        grupo={grupo}
                       />
-                      <div className="absolute inset-y-0 left-0 pl-2 xs:pl-3 flex items-center pointer-events-none">
-                        <svg className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                      </div>
+                    ))}
+                  </div>
+
+                  {/* Leyenda de colores por tipo de turno */}
+                  <div className="mt-4 xs:mt-5 sm:mt-6 flex flex-wrap gap-3 xs:gap-4 justify-center text-xs xs:text-sm">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="w-4 h-4 xs:w-5 xs:h-5 bg-blue-500 rounded-full ring-1 ring-blue-300/30"></div>
+                      <span className="font-semibold text-blue-600">Matutino</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="w-4 h-4 xs:w-5 xs:h-5 bg-purple-500 rounded-full ring-1 ring-purple-300/30"></div>
+                      <span className="font-semibold text-purple-600">Vespertino</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                      <div className="w-4 h-4 xs:w-5 xs:h-5 bg-green-500 rounded-full ring-1 ring-green-300/30"></div>
+                      <span className="font-semibold text-green-600">Sabatino</span>
                     </div>
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Tabla de alumnos */}
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-b border-gray-200 bg-gradient-to-r from-gray-100 to-gray-50">
-              <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800">
-                Lista Completa de Alumnos ({alumnosFiltrados.length})
-              </h3>
-              <p className="text-xs xs:text-sm text-gray-600 mt-1">
-                Información completa de todos los estudiantes registrados
-              </p>
+          </div>
+        </div>
+
+        {/* Información del grupo seleccionado */}
+        {activeCategory && activeTurno && (
+          <div className="px-2 xs:px-4 sm:px-6 mb-4 xs:mb-6">
+            <div className="w-full max-w-7xl mx-auto">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg border-2 border-purple-400/40 ring-2 ring-purple-200/20">
+                <div className="text-center">
+                  <p className="text-base xs:text-lg sm:text-xl md:text-2xl font-extrabold mb-2 xs:mb-3">
+                    Grupo Activo: {activeCategory} - {activeTurno}
+                  </p>
+                  <p className="text-xs xs:text-sm sm:text-base md:text-lg text-purple-50 font-semibold">
+                    Capacidad: <span className="font-extrabold text-white">{alumnos?.length || 0}/{getGrupoInfo()?.capacidad || 0}</span> estudiantes
+                  </p>
+                </div>
+              </div>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-gray-100 to-gray-50">
-                  <tr>
-                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-left text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      <div className="flex flex-col space-y-1">
-                        <span>Folio</span>
-                        <span className="text-gray-500 font-normal">ID</span>
-                      </div>
-                    </th>
-                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-left text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      <div className="flex flex-col space-y-1">
-                        <span>Estudiante</span>
-                        <span className="text-gray-500 font-normal">Información Básica</span>
-                      </div>
-                    </th>
-                    <th className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 text-left text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      <div className="flex flex-col space-y-1">
-                        <span>Tutor</span>
-                        <span className="text-gray-500 font-normal">Contacto</span>
-                      </div>
-                    </th>
-                    <th className="px-1 xs:px-2 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 w-20">
-                      <div className="flex flex-col space-y-1">
-                        <span>Estado</span>
-                      </div>
-                    </th>
-                    <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider w-40 sm:w-44 md:w-52">
-                      <div className="flex flex-col space-y-1">
-                        <span>Acciones</span>
-                        <span className="text-gray-500 font-normal">Gestionar</span>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {alumnosFiltrados.map((alumno, index) => (
-                    <tr key={alumno.folio} className={`hover:bg-gray-50 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                      {/* Columna Folio */}
-                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
-                        <div className="text-center">
-                          <div className="text-xs font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-md inline-block">
-                            {/* Mostrar folio formateado provisto por backend (folio ya se mapeó al formateado en AdminContext). */}
-                            {alumno.folio || alumno.folio_formateado || ''}
-                          </div>
-                          <div className="text-[10px] text-gray-400 mt-1">
-                            {alumno.fechaRegistro}
-                          </div>
+          </div>
+        )}
+
+        {/* Contenido principal de la tabla */}
+        <div className="flex-1 px-2 xs:px-4 sm:px-6 pb-4 xs:pb-6">
+          <div className="w-full max-w-7xl mx-auto">
+            {/* Tabla de alumnos completa - Solo se muestra cuando hay curso Y turno seleccionados */}
+            {activeCategory && activeTurno ? (
+              <>
+                {/* Barra de búsqueda - Solo se muestra cuando hay curso seleccionado */}
+                <div className="mb-4 xs:mb-6">
+                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl p-3 xs:p-4 shadow-lg border border-gray-200">
+                    <div className="max-w-sm xs:max-w-md mx-auto">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Buscar por nombre, apellido, correo o folio..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-3 xs:px-4 py-2 xs:py-3 pl-8 xs:pl-10 pr-3 xs:pr-4 text-xs xs:text-sm border border-gray-300 rounded-md xs:rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-2 xs:pl-3 flex items-center pointer-events-none">
+                          <svg className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
                         </div>
-                      </td>
-                      
-                      {/* Columna Estudiante */}
-                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
-                              <span className="text-sm font-bold text-white">
-                                {alumno.nombres.charAt(0)}{alumno.apellidos.charAt(0)}
-                              </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabla de alumnos */}
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                  <div className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-b border-gray-200 bg-gradient-to-r from-gray-100 to-gray-50">
+                    <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-800">
+                      Lista Completa de Alumnos ({alumnosFiltrados.length})
+                    </h3>
+                    <p className="text-xs xs:text-sm text-gray-600 mt-1">
+                      Información completa de todos los estudiantes registrados
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gradient-to-r from-gray-100 to-gray-50">
+                        <tr>
+                          <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-left text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                            <div className="flex flex-col space-y-1">
+                              <span>Folio</span>
+                              <span className="text-gray-500 font-normal">ID</span>
                             </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-gray-900">
-                              {alumno.nombres} {alumno.apellidos}
+                          </th>
+                          <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-left text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                            <div className="flex flex-col space-y-1">
+                              <span>Estudiante</span>
+                              <span className="text-gray-500 font-normal">Información Básica</span>
                             </div>
-                            <div className="text-xs text-gray-600 truncate">
-                              {alumno.correoElectronico}
+                          </th>
+                          <th className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 text-left text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                            <div className="flex flex-col space-y-1">
+                              <span>Tutor</span>
+                              <span className="text-gray-500 font-normal">Contacto</span>
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {alumno.municipioComunidad}
+                          </th>
+                          <th className="px-1 xs:px-2 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 w-20">
+                            <div className="flex flex-col space-y-1">
+                              <span>Estado</span>
                             </div>
-                            <div className="flex space-x-1 mt-1">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                {alumno.curso}
-                              </span>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTurnoBadgeStyles(alumno.turno)}`}>
-                                {alumno.turno}
-                              </span>
+                          </th>
+                          <th className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center text-xs xs:text-sm font-bold text-gray-700 uppercase tracking-wider w-40 sm:w-44 md:w-52">
+                            <div className="flex flex-col space-y-1">
+                              <span>Acciones</span>
+                              <span className="text-gray-500 font-normal">Gestionar</span>
                             </div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      {/* Columna Tutor */}
-                      <td className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-r border-gray-200">
-                        <ContactoTutorAlumno alumno={alumno} />
-                      </td>
-                      
-                      {/* Columna Estado */}
-                      <td className="px-1 xs:px-2 py-3 xs:py-4 border-r border-gray-200 w-24">
-                        <div className="flex flex-col items-center space-y-1" data-status-menu={alumno.folio}>
-                          {getStatusBadge(alumno.estatus)}
-                          {/* Dropdown para cambiar estatus (click/tap) */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              aria-haspopup="menu"
-                              aria-expanded={openStatusMenu === alumno.folio}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenStatusMenu(prev => prev === alumno.folio ? null : alumno.folio);
-                              }}
-                              onKeyDown={(e) => { if (e.key === 'Escape') setOpenStatusMenu(null); }}
-                              className="text-xs text-gray-600 hover:text-purple-600 transition-colors px-2 py-1 rounded-md hover:bg-gray-100"
-                            >
-                              Cambiar
-                            </button>
-                            {openStatusMenu === alumno.folio && (
-                              <div
-                                role="menu"
-                                className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl py-1 w-28 z-50 animate-[fadeIn_120ms_ease-out]"
-                                style={{ minWidth: '7rem' }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {alumno.estatus !== 'Activo' && (
-                                  <button
-                                    role="menuitem"
-                                    onClick={async () => {
-                                      await handleCambiarEstatus(alumno, 'Activo');
-                                      setOpenStatusMenu(null);
-                                    }}
-                                    className="block w-full text-left px-3 py-1.5 text-xs text-green-700 hover:bg-green-50"
-                                  >
-                                    ✅ Activar
-                                  </button>
-                                )}
-                                {/* Inactivar eliminado: dejamos solo Activar y Suspender */}
-                                {alumno.estatus !== 'Suspendido' && (
-                                  <button
-                                    role="menuitem"
-                                    onClick={async () => {
-                                      await handleCambiarEstatus(alumno, 'Suspendido');
-                                      setOpenStatusMenu(null);
-                                    }}
-                                    className="block w-full text-left px-3 py-1.5 text-xs text-red-700 hover:bg-red-50"
-                                  >
-                                    ❌ Suspender
-                                  </button>
-                                )}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {alumnosFiltrados.map((alumno, index) => (
+                          <tr key={alumno.folio} className={`hover:bg-gray-50 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                            {/* Columna Folio */}
+                            <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
+                              <div className="text-center">
+                                <div className="text-xs font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-md inline-block">
+                                  {/* Mostrar folio formateado provisto por backend (folio ya se mapeó al formateado en AdminContext). */}
+                                  {alumno.folio || alumno.folio_formateado || ''}
+                                </div>
+                                <div className="text-[10px] text-gray-400 mt-1">
+                                  {alumno.fechaRegistro}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      
-                      {/* Columna Acciones */}
-                      <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center w-40 sm:w-44 md:w-52">
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
-                          <button
-                            onClick={() => handleVerPerfil(alumno)}
-                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
-                            title="Ver perfil completo del estudiante"
-                          >
-                            <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span className="hidden xs:inline">Ver Perfil</span>
-                          </button>
+                            </td>
 
-                          <button
-                            onClick={() => {
-                              sessionStorage.setItem('listAlumnos_scrollPosition', window.pageYOffset.toString());
-                              navigate(`/administrativo/student/${alumno.folio}/pagos`);
-                            }}
-                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-green-700 text-white hover:bg-green-800 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
-                            title="Ver plan de pagos y recibo"
-                          >
-                            <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              {/* Billete de dinero */}
-                              <rect x="3" y="7" width="18" height="10" rx="2" ry="2" strokeWidth={2} />
-                              {/* Símbolo de dólar  */}
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v4" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 11.5a2 2 0 013 0m-3 1a2 2 0 003 0" />
-                            </svg>
-                            <span className="hidden xs:inline">Ver Pagos</span>
-                          </button>
+                            {/* Columna Estudiante */}
+                            <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 border-r border-gray-200">
+                              <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+                                    <span className="text-sm font-bold text-white">
+                                      {alumno.nombres.charAt(0)}{alumno.apellidos.charAt(0)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {alumno.nombres} {alumno.apellidos}
+                                  </div>
+                                  <div className="text-xs text-gray-600 truncate">
+                                    {alumno.correoElectronico}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {alumno.municipioComunidad}
+                                  </div>
+                                  <div className="flex space-x-1 mt-1">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                      {alumno.curso}
+                                    </span>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTurnoBadgeStyles(alumno.turno)}`}>
+                                      {alumno.turno}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
 
-                          <button
-                            onClick={() => handleEliminarAlumno(alumno)}
-                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                            title="Dar de baja (eliminar)"
-                          >
-                            <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            <span className="hidden xs:inline">Eliminar</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                            {/* Columna Tutor */}
+                            <td className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-r border-gray-200">
+                              <ContactoTutorAlumno alumno={alumno} />
+                            </td>
 
-            {/* Estado vacío */}
-            {alumnosFiltrados.length === 0 && (
-              <div className="text-center py-8 xs:py-12 bg-gray-50">
-                <svg className="mx-auto h-8 xs:h-12 w-8 xs:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4m-4 0H9m11 0a2 2 0 01-2 2M7 13a2 2 0 01-2-2V9a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15a2 2 0 012 2v2a2 2 0 01-2 2H7z" />
-                </svg>
-                <h3 className="mt-2 xs:mt-4 text-base xs:text-lg font-medium text-gray-900">No se encontraron alumnos</h3>
-                <p className="mt-1 xs:mt-2 text-xs xs:text-sm text-gray-500 px-4">
-                  {searchTerm || activeCategory !== null || activeTurno !== null ? 
-                    'No se encontraron alumnos con los filtros seleccionados.' : 
-                    'Selecciona un curso y turno para ver los estudiantes.'
-                  }
-                </p>
-               
+                            {/* Columna Estado */}
+                            <td className="px-1 xs:px-2 py-3 xs:py-4 border-r border-gray-200 w-24">
+                              <div className="flex flex-col items-center space-y-1" data-status-menu={alumno.folio}>
+                                {getStatusBadge(alumno.estatus)}
+                                {/* Dropdown para cambiar estatus (click/tap) */}
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    aria-haspopup="menu"
+                                    aria-expanded={openStatusMenu === alumno.folio}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenStatusMenu(prev => prev === alumno.folio ? null : alumno.folio);
+                                    }}
+                                    onKeyDown={(e) => { if (e.key === 'Escape') setOpenStatusMenu(null); }}
+                                    className="text-xs text-gray-600 hover:text-purple-600 transition-colors px-2 py-1 rounded-md hover:bg-gray-100"
+                                  >
+                                    Cambiar
+                                  </button>
+                                  {openStatusMenu === alumno.folio && (
+                                    <div
+                                      role="menu"
+                                      className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl py-1 w-28 z-50 animate-[fadeIn_120ms_ease-out]"
+                                      style={{ minWidth: '7rem' }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {alumno.estatus !== 'Activo' && (
+                                        <button
+                                          role="menuitem"
+                                          onClick={async () => {
+                                            await handleCambiarEstatus(alumno, 'Activo');
+                                            setOpenStatusMenu(null);
+                                          }}
+                                          className="block w-full text-left px-3 py-1.5 text-xs text-green-700 hover:bg-green-50"
+                                        >
+                                          ✅ Activar
+                                        </button>
+                                      )}
+                                      {/* Inactivar eliminado: dejamos solo Activar y Suspender */}
+                                      {alumno.estatus !== 'Suspendido' && (
+                                        <button
+                                          role="menuitem"
+                                          onClick={async () => {
+                                            await handleCambiarEstatus(alumno, 'Suspendido');
+                                            setOpenStatusMenu(null);
+                                          }}
+                                          className="block w-full text-left px-3 py-1.5 text-xs text-red-700 hover:bg-red-50"
+                                        >
+                                          ❌ Suspender
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Columna Acciones */}
+                            <td className="px-2 xs:px-3 sm:px-4 py-3 xs:py-4 text-center w-40 sm:w-44 md:w-52">
+                              <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
+                                <button
+                                  onClick={() => handleVerPerfil(alumno)}
+                                  className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+                                  title="Ver perfil completo del estudiante"
+                                >
+                                  <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>
+                                  <span className="hidden xs:inline">Ver Perfil</span>
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    sessionStorage.setItem('listAlumnos_scrollPosition', window.pageYOffset.toString());
+                                    navigate(`/administrativo/student/${alumno.folio}/pagos`);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-green-700 text-white hover:bg-green-800 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                                  title="Ver plan de pagos y recibo"
+                                >
+                                  <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    {/* Billete de dinero */}
+                                    <rect x="3" y="7" width="18" height="10" rx="2" ry="2" strokeWidth={2} />
+                                    {/* Símbolo de dólar  */}
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v4" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 11.5a2 2 0 013 0m-3 1a2 2 0 003 0" />
+                                  </svg>
+                                  <span className="hidden xs:inline">Ver Pagos</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleEliminarAlumno(alumno)}
+                                  className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                                  title="Dar de baja (eliminar)"
+                                >
+                                  <svg className="w-4 h-4 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  <span className="hidden xs:inline">Eliminar</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Estado vacío */}
+                  {alumnosFiltrados.length === 0 && (
+                    <div className="text-center py-8 xs:py-12 bg-gray-50">
+                      <svg className="mx-auto h-8 xs:h-12 w-8 xs:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4m-4 0H9m11 0a2 2 0 01-2 2M7 13a2 2 0 01-2-2V9a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15a2 2 0 012 2v2a2 2 0 01-2 2H7z" />
+                      </svg>
+                      <h3 className="mt-2 xs:mt-4 text-base xs:text-lg font-medium text-gray-900">No se encontraron alumnos</h3>
+                      <p className="mt-1 xs:mt-2 text-xs xs:text-sm text-gray-500 px-4">
+                        {searchTerm || activeCategory !== null || activeTurno !== null ?
+                          'No se encontraron alumnos con los filtros seleccionados.' :
+                          'Selecciona un curso y turno para ver los estudiantes.'
+                        }
+                      </p>
+
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              // Mensaje cuando no se han seleccionado curso y turno
+              <div className="text-center py-8 xs:py-12 bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl shadow-lg border border-gray-200">
+                <div className="max-w-xs xs:max-w-md mx-auto px-4">
+                  <svg className="mx-auto h-12 xs:h-16 w-12 xs:w-16 text-purple-400 mb-3 xs:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <h3 className="text-lg xs:text-xl font-bold text-gray-800 mb-1 xs:mb-2">
+                    {!activeCategory
+                      ? "Selecciona un Curso de Inglés"
+                      : "Selecciona un Turno"
+                    }
+                  </h3>
+                  <p className="text-xs xs:text-base text-gray-600 mb-3 xs:mb-4">
+                    {!activeCategory
+                      ? "Para gestionar los alumnos, primero debes seleccionar el curso que deseas revisar desde las opciones de arriba."
+                      : `Ahora selecciona el turno específico para ver los estudiantes de ${activeCategory}.`
+                    }
+                  </p>
+
+                </div>
               </div>
             )}
           </div>
-          </>
-          ) : (
-            // Mensaje cuando no se han seleccionado curso y turno
-            <div className="text-center py-8 xs:py-12 bg-gradient-to-br from-gray-50 to-white rounded-lg xs:rounded-xl shadow-lg border border-gray-200">
-              <div className="max-w-xs xs:max-w-md mx-auto px-4">
-                <svg className="mx-auto h-12 xs:h-16 w-12 xs:w-16 text-purple-400 mb-3 xs:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                <h3 className="text-lg xs:text-xl font-bold text-gray-800 mb-1 xs:mb-2">
-                  {!activeCategory 
-                    ? "Selecciona un Curso de Inglés"
-                    : "Selecciona un Turno"
-                  }
-                </h3>
-                <p className="text-xs xs:text-base text-gray-600 mb-3 xs:mb-4">
-                  {!activeCategory 
-                    ? "Para gestionar los alumnos, primero debes seleccionar el curso que deseas revisar desde las opciones de arriba."
-                    : `Ahora selecciona el turno específico para ver los estudiantes de ${activeCategory}.`
-                  }
-                </p>
-              
-              </div>
-            </div>
-          )}
         </div>
       </div>
-    </div>
     </>
   );
 }
@@ -1173,10 +1176,10 @@ function ContactoTutorAlumno({ alumno }) {
     if (!tel) return '';
     const digits = String(tel).replace(/\D/g, '');
     if (digits.length === 10) {
-      return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     }
     if (digits.length === 8) {
-      return `${digits.slice(0,4)}-${digits.slice(4)}`;
+      return `${digits.slice(0, 4)}-${digits.slice(4)}`;
     }
     return tel; // fallback original
   };

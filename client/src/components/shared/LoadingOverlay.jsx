@@ -1,8 +1,9 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 export default function LoadingOverlay({ message = 'Cargando...', subMessage = 'Por favor espera...', transparent = false }) {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center" role="status" aria-live="polite" aria-busy="true">
+  const content = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto" role="status" aria-live="polite" aria-busy="true">
       {!transparent && (
         <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px]"></div>
       )}
@@ -18,4 +19,7 @@ export default function LoadingOverlay({ message = 'Cargando...', subMessage = '
       </div>
     </div>
   );
+
+  return createPortal(content, document.getElementById('modal-root'));
 }
+

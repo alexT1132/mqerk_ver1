@@ -96,11 +96,11 @@ const StatPill = ({ value, label }) => (
 
 /* ------------------------ tarjeta de perfil ----------------------- */
 
-const ProfileCard = ({ user, stats = {}, onEdit, editing }) => {
+const ProfileCard = ({ user, stats = {}, onEdit, editing, onSave, onCancel, saving }) => {
   const { cursos = 0, estudiantes = 0, certificados = 0, generaciones = 0 } = stats;
 
   return (
-    <aside className="rounded-3xl border-2 border-violet-200/70 bg-gradient-to-br from-violet-50/50 via-indigo-50/50 to-purple-50/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 ring-2 ring-violet-100/50">
+    <aside className="rounded-3xl border-2 border-violet-200/70 bg-gradient-to-br from-violet-50/50 via-indigo-50/50 to-purple-50/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 ring-2 ring-violet-100/50 sticky top-24">
       <div className="rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 p-5 sm:p-6 text-white ring-4 ring-white/20 shadow-2xl">
         {/* avatar + nombre */}
         <div className="flex flex-col items-center text-center">
@@ -135,26 +135,38 @@ const ProfileCard = ({ user, stats = {}, onEdit, editing }) => {
         </div>
       </div>
 
-      <button
-        onClick={onEdit}
-        disabled={editing}
-        className={`mt-5 w-full rounded-2xl px-4 py-3.5 font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ring-2 ${editing
-            ? 'bg-slate-400 text-white cursor-not-allowed ring-slate-300'
-            : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] ring-violet-200'
-          }`}
-      >
-        {editing ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin flex-shrink-0" />
-            <span className="whitespace-nowrap">Editando...</span>
-          </>
-        ) : (
-          <>
-            <Edit className="h-5 w-5 flex-shrink-0" />
-            <span className="whitespace-nowrap">Editar perfil</span>
-          </>
-        )}
-      </button>
+      {editing ? (
+        <div className="mt-5 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            className="w-full rounded-2xl px-3 py-3.5 font-bold shadow-md transition-all duration-200 flex items-center justify-center gap-2 border-2 border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-400 hover:text-slate-800 hover:shadow-lg disabled:opacity-50"
+          >
+            <X className="h-5 w-5 flex-shrink-0" />
+            <span className="whitespace-nowrap">Cancelar</span>
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="w-full rounded-2xl px-3 py-3.5 font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white ring-2 ring-violet-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+          >
+            {saving ? (
+              <Loader2 className="h-5 w-5 animate-spin flex-shrink-0" />
+            ) : (
+              <Save className="h-5 w-5 flex-shrink-0" />
+            )}
+            <span className="whitespace-nowrap">{saving ? '...' : 'Guardar'}</span>
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={onEdit}
+          className="mt-5 w-full rounded-2xl px-4 py-3.5 font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white ring-2 ring-violet-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <Edit className="h-5 w-5 flex-shrink-0" />
+          <span className="whitespace-nowrap">Editar perfil</span>
+        </button>
+      )}
     </aside>
   );
 };
@@ -423,7 +435,7 @@ export default function AsesorPerfil() {
   return (
     <div className="w-full min-h-screen relative">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
@@ -477,52 +489,14 @@ export default function AsesorPerfil() {
         )}
 
         {perfilData && (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* columna izquierda (info) */}
-            <div className="xl:col-span-2 space-y-6">
-              {/* Barra de acciones en modo edición */}
-              {editing && (
-                <div className="flex items-center justify-between p-5 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-3xl border-2 border-violet-200 shadow-lg ring-2 ring-violet-100">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-2 shadow-md ring-2 ring-violet-200">
-                      <Edit className="h-5 w-5 text-white" />
-                    </div>
-                    <span className="text-violet-700 font-extrabold text-lg">Modo edición</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleCancel}
-                      disabled={saving}
-                      className="px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 font-bold hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 disabled:opacity-50 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
-                    >
-                      <X className="h-5 w-5" />
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-extrabold hover:from-violet-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] ring-2 ring-violet-200"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-5 w-5" />
-                          Guardar cambios
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
 
               {/* Datos personales */}
               <SectionCard title="Datos personales">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <ul>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ul className="space-y-1">
                     <Row icon={Mail} label="Correo electrónico" value={fmt(perfilData?.preregistro?.correo)}
                       editing={editing} name="correo" type="email" onChange={handleChange}
                       placeholder="correo@ejemplo.com" />
@@ -539,7 +513,7 @@ export default function AsesorPerfil() {
                       value={fmtDate(perfilData?.perfil?.nacimiento)}
                       editing={editing} name="nacimiento" type="date" onChange={handleChange} />
                   </ul>
-                  <ul>
+                  <ul className="space-y-1">
                     <Row icon={User2} label="Nombres" value={fmt(perfilData?.preregistro?.nombres)}
                       editing={editing} name="nombres" onChange={handleChange}
                       placeholder="Nombres" />
@@ -561,7 +535,7 @@ export default function AsesorPerfil() {
 
               {/* Datos académicos */}
               <SectionCard title="Datos académicos">
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                   <Row icon={GraduationCap} label="Nivel máximo de estudios"
                     value={fmt(perfilData?.perfil?.nivel_estudios)}
                     editing={editing} name="nivel_estudios" onChange={handleChange}
@@ -583,7 +557,7 @@ export default function AsesorPerfil() {
 
               {/* Datos profesionales */}
               <SectionCard title="Datos profesionales">
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                   <Row icon={BriefcaseBusiness} label="Experiencia laboral"
                     value={fmt(perfilData?.perfil?.experiencia_rango)}
                     editing={editing} name="experiencia_rango" onChange={handleChange}
@@ -617,12 +591,15 @@ export default function AsesorPerfil() {
             </div>
 
             {/* columna derecha (tarjeta) */}
-            <div className="xl:col-span-1">
+            <div className="lg:col-span-1 order-1 lg:order-2">
               <ProfileCard
                 user={userCard}
                 stats={stats}
                 editing={editing}
                 onEdit={() => setEditing(true)}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                saving={saving}
               />
             </div>
           </div>

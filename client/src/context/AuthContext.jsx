@@ -150,15 +150,6 @@ export const AuthProvider = ({ children }) => {
         } catch { }
     }
 
-    // const getUsuarios = async () => {
-    //     try {
-    //         const res = await ObtenerUsuarios();
-    //         setUsers(res.data.data);
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
-
     useEffect(() => {
         if (errors.length > 0) {
             const timer = setTimeout(() => {
@@ -170,38 +161,99 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const initRef = authInitRef.current;
-        if (initRef.started && initRef.completed) return; // ya completado anteriormente
-        // Permitimos segunda ejecución si StrictMode desmontó antes de completar
-        initRef.started = true;
-        debug('init effect start');
 
         let cancelled = false;
         let attempt = 0;
-        const maxNetworkAttempts = 3; // después de este número de intentos salimos del estado Loading
+        const maxNetworkAttempts = 3;
         let retryTimer = null;
         const remember = localStorage.getItem('rememberMe') === '1';
-        const currentPath = (typeof window !== 'undefined' && window.location?.pathname) || '';
 
-        // Carga optimista desde localStorage para evitar parpadeo si backend tarda
-        if (remember && !user) {
-            try {
-                const cached = localStorage.getItem('mq_user');
-                if (cached) {
-                    const parsed = JSON.parse(cached);
-                    setUser(parsed);
-                    setIsAuthenticated(true);
-                }
-            } catch { }
-        }
+        // Detectar si la navegación fue mediante botones de atrás/adelante del navegador
+        const isBackForward = performance.getEntriesByType &&
+            performance.getEntriesByType('navigation').length > 0 &&
+            performance.getEntriesByType('navigation')[0].type === 'back_forward';
 
-        const scheduleRetry = (delayMs) => {
+        const verifyFlow = async (label = 'initial') => {
             if (cancelled) return;
-            if (retryTimer) clearTimeout(retryTimer);
-            retryTimer = setTimeout(() => verifyFlow(), delayMs);
-        };
 
-        // Hard fallback: liberar loading si algo bloquea (p.ej. backend caído) tras 12s
-        const hardTimeout = setTimeout(() => { if (!cancelled && loading) setLoading(false); }, 12000);
+            const currentPath = window.location.pathname;
+            const publicNoAuthRoutes = ['/login', '/pre_registro', '/recuperar', '/resetear', '/setup'];
+            const protectedRoutes = ['/asesor', '/alumno', '/admin', '/administrativo'];
+            const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+            const isPublicRoute = publicNoAuthRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'));
+
+            // Si es una ruta protegida, forzar estado de carga antes de verificar
+            if (isProtectedRoute) {
+                setLoading(true);
+            }
+
+            if (isPublicRoute && !isProtectedRoute) {
+                debug('skip verify (public route)', currentPath);
+                setLoading(false);
+                initRef.completed = true;
+                return;
+            }
+
+            try {
+                debug('calling /verify', label);
+                const res = await Promise.race([
+                    verifyTokenRequest(),
+                    new Promise((_r, rej) => setTimeout(() => rej(new Error('verify-timeout')), 8000))
+                ]);
+
+                if (!cancelled) {
+                    if (res.data?.usuario) {
+                        applyUser(res.data);
+                        debug('/verify success user id=%s role=%s', res.data.usuario?.id, res.data.usuario?.role);
+                    } else {
+                        // No autenticado
+                        setIsAuthenticated(false);
+                        setUser(null);
+                        setAlumno(null);
+                        debug('/verify no user payload (reason=%s) -> guest', res.data?.reason || 'none');
+                    }
+                    setLoading(false);
+                    initRef.completed = true;
+                }
+            } catch (e) {
+                if (e.message === 'verify-timeout') {
+                    handleNetworkError();
+                    return;
+                }
+
+                const reason = e?.response?.data?.reason;
+                const isNetwork = !e.response;
+
+                if (isNetwork) {
+                    handleNetworkError();
+                    return;
+                }
+
+                // Manejo de tokens inválidos o expirados con rememberMe
+                if (remember && (reason === 'expired' || reason === 'invalid-token')) {
+                    try {
+                        const axios = (await import('../api/axios.js')).default;
+                        await axios.post('/token/refresh');
+                        const res2 = await verifyTokenRequest();
+                        if (!cancelled && res2.data?.usuario) {
+                            applyUser(res2.data);
+                        } else if (!cancelled) {
+                            setIsAuthenticated(false); setUser(null); setAlumno(null);
+                        }
+                    } catch (e2) {
+                        if (!cancelled) {
+                            setIsAuthenticated(false); setUser(null); setAlumno(null);
+                            localStorage.removeItem('rememberMe'); localStorage.removeItem('mq_user');
+                        }
+                    } finally {
+                        if (!cancelled) { setLoading(false); initRef.completed = true; }
+                    }
+                } else if (!cancelled) {
+                    setIsAuthenticated(false); setUser(null); setAlumno(null);
+                    setLoading(false); initRef.completed = true;
+                }
+            }
+        };
 
         const applyUser = (data) => {
             const u = data.usuario;
@@ -212,103 +264,65 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(true);
             setUser(u);
             if (data.estudiante) setAlumno(data.estudiante);
+
+            // Actualizar caché si remember está activo
+            if (remember) {
+                localStorage.setItem('mq_user', JSON.stringify(u));
+            }
         };
 
         const handleNetworkError = () => {
             attempt += 1;
-            const backoff = Math.min(30000, 2000 * attempt); // 2s,4s,6s... máx 30s
+            const backoff = Math.min(30000, 2000 * attempt);
             if (attempt > maxNetworkAttempts) {
-                // Cortamos el bucle: asumimos modo offline / invitado pero liberamos la UI
-                debug('max network attempts reached -> giving up verify, loading=false');
                 setLoading(false);
                 return;
             }
-            debug('network error attempt %d scheduling retry in %dms', attempt, backoff);
             scheduleRetry(backoff);
         };
 
-        const verifyFlow = async (label = 'initial') => {
+        const scheduleRetry = (delayMs) => {
             if (cancelled) return;
-            // Si estamos en rutas públicas, siempre saltar /verify para evitar 401 visibles
-            const publicNoAuthRoutes = ['/login', '/pre_registro'];
-            if (publicNoAuthRoutes.some(r => currentPath.startsWith(r))) {
-                debug('skip verify (public route)');
-                setLoading(false); initRef.completed = true;
-                return;
-            }
-            try {
-                debug('calling /verify', label);
-                const res = await Promise.race([
-                    verifyTokenRequest(),
-                    new Promise((_r, rej) => setTimeout(() => rej(new Error('verify-timeout')), 8000))
-                ]);
-                if (!cancelled) {
-                    if (res.data?.usuario) {
-                        applyUser(res.data);
-                        debug('/verify success user id=%s role=%s', res.data.usuario?.id, res.data.usuario?.role);
-                    } else {
-                        // 200 sin usuario o con reason => no autenticado => estado invitado
-                        const reason = res.data?.reason;
-                        setIsAuthenticated(false); setUser(null); setAlumno(null);
-                        debug('/verify no user payload (status=%s, reason=%s) -> guest', res.status, reason || 'none');
-                    }
-                    setLoading(false); initRef.completed = true; debug('loading=false after verify response');
-                }
-            } catch (e) {
-                if (e.message === 'verify-timeout') {
-                    debug('verify timeout');
-                    handleNetworkError();
-                    return;
-                }
-                const status = e?.response?.status;
-                const reason = e?.response?.data?.reason;
-                const isNetwork = !e.response; // ECONNREFUSED, timeout, etc.
-                if (isNetwork) {
-                    debug('network error on verify', e?.message);
-                    if (!cancelled) handleNetworkError();
-                    return; // loading se mantiene true hasta primer éxito o desistimos
-                }
-                // Si no hay token y tampoco remember, terminar silenciosamente sin marcar error
-                if (!remember && (reason === 'no-token' || reason === 'invalid-token')) {
-                    if (!cancelled) {
-                        debug('no token & no remember -> guest');
-                        setIsAuthenticated(false); setUser(null); setAlumno(null); setLoading(false);
-                    }
-                    return;
-                }
-                if (remember) {
-                    try {
-                        const axios = (await import('../api/axios.js')).default;
-                        debug('trying refresh after reason=%s status=%s', reason, status);
-                        await axios.post('/token/refresh');
-                        const res2 = await verifyTokenRequest();
-                        if (!cancelled && res2.data?.usuario) {
-                            applyUser(res2.data);
-                            debug('refresh+verify success');
-                        } else if (!cancelled) {
-                            setIsAuthenticated(false); setUser(null); setAlumno(null);
-                            debug('refresh+verify failed no user');
-                        }
-                    } catch (e2) {
-                        debug('refresh failed', e2?.response?.data || e2?.message);
-                        if (!cancelled) {
-                            setIsAuthenticated(false); setUser(null); setAlumno(null);
-                            try { localStorage.removeItem('rememberMe'); localStorage.removeItem('mq_user'); } catch { }
-                        }
-                    } finally {
-                        if (!cancelled) { setLoading(false); initRef.completed = true; debug('loading=false after refresh flow'); }
-                    }
-                } else if (!cancelled) {
-                    setIsAuthenticated(false); setUser(null); setAlumno(null);
-                    setLoading(false); initRef.completed = true; debug('unauthenticated final');
-                }
-            }
+            if (retryTimer) clearTimeout(retryTimer);
+            retryTimer = setTimeout(() => verifyFlow('retry'), delayMs);
         };
 
-        verifyFlow();
-        // Exponer helper para depuración manual desde consola
-        if (typeof window !== 'undefined') window._mq_forceVerify = () => verifyFlow('manual');
-        return () => { cancelled = true; if (retryTimer) clearTimeout(retryTimer); clearTimeout(hardTimeout); };
+        const hardTimeout = setTimeout(() => { if (!cancelled && loading) setLoading(false); }, 12000);
+
+        // --- MANEJO DE SEGURIDAD EN CARGA ---
+
+        // 1. Carga optimista inmediata (solo si no es navegación atrás/adelante)
+        if (!isBackForward) {
+            try {
+                const cached = localStorage.getItem('mq_user');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    setUser(parsed);
+                    setIsAuthenticated(true);
+                    // Pero mantenemos loading=true para que la ruta protegida verifique con el servidor
+                }
+            } catch { }
+        } else {
+            // Si es navegación atrás/adelante, forzar limpieza de estado y verificación obligatoria
+            debug('back_forward detected - cleaning optimistic state');
+            if (!remember) {
+                setUser(null);
+                setIsAuthenticated(false);
+                setAlumno(null);
+            }
+        }
+
+        // Iniciar flujo de verificación inicial
+        verifyFlow('mount');
+
+        // Exponer helper para depuración
+        window._mq_forceVerify = () => verifyFlow('manual');
+
+        return () => {
+            cancelled = true;
+            if (retryTimer) clearTimeout(retryTimer);
+            clearTimeout(hardTimeout);
+        };
     }, []);
 
     return (

@@ -170,7 +170,7 @@ export default function Layout({ embedded = false }) {
   const clearFilters = () => { setSearch(''); setDateFrom(''); setDateTo(''); };
 
   const content = (
-    <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6">
+    <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6">
       <div className="mx-auto mb-6 sm:mb-8">
         <div className="relative overflow-hidden rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-5 sm:px-7 py-5 sm:py-6">
           <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />

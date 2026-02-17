@@ -1,5 +1,6 @@
 // BACKEND: Página separada para responder quizzes (runner/review)
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { crearSesionQuiz, listPreguntasQuiz, enviarRespuestasSesion, finalizarSesionQuiz } from '../../api/simulaciones';
@@ -1009,8 +1010,8 @@ export default function Quizz_Review() {
       )}
 
       {/* MODAL: Cambio de Pestaña */}
-      {showWarningModal && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      {showWarningModal && createPortal(
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all animate-fade-in-up relative">
             <AlertTriangle className="w-14 h-14 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Has Salido de la Pestaña del Quiz</h2>
@@ -1028,12 +1029,13 @@ export default function Quizz_Review() {
               Entendido, continuar
             </button>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* MODAL: Bloqueo por tamaño de ventana */}
-      {isWindowTooSmall && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      {isWindowTooSmall && createPortal(
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all animate-fade-in-up relative">
             <Maximize2 className="w-14 h-14 text-indigo-600 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Maximiza la Ventana para Continuar</h2>
@@ -1041,12 +1043,13 @@ export default function Quizz_Review() {
               Para asegurar una experiencia de examen justa, el quiz se pausará hasta que la ventana ocupe la pantalla completa.
             </p>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* MODAL: Bloqueo final por advertencias */}
-      {showFinalWarning && (
-        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      {showFinalWarning && createPortal(
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all animate-fade-in-up">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Límite de Advertencias Excedido</h2>
@@ -1060,7 +1063,8 @@ export default function Quizz_Review() {
               <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mx-auto" />
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
     </div>
   );

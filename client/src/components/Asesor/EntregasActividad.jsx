@@ -299,7 +299,7 @@ export default function EntregasActividad() {
       {/* Fondo fijo independiente del scroll */}
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-      <div className="relative z-10 mx-auto max-w-[95rem] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="relative z-10 mx-auto max-w-[1920px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header mejorado */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

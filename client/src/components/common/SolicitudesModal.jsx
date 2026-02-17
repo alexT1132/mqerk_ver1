@@ -1,5 +1,5 @@
-
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Inbox, CheckCircle2, XCircle, Clock, User } from "lucide-react";
 
 /* --- Card View Component for "Ver Todas" --- */
@@ -17,8 +17,8 @@ function RequestsManager({ rows, status, setStatus, onApprove, onDeny, areaNames
     return rows.filter(r => r.status === status);
   }, [rows, status]);
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center sm:items-start sm:pt-36 justify-center p-4" role="dialog" aria-modal="true">
+  const content = (
+    <div className="fixed inset-0 z-[100] flex items-center sm:items-start sm:pt-36 justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div className="relative w-full max-w-3xl max-h-[75vh] flex flex-col bg-white rounded-[2rem] shadow-2xl ring-1 ring-black/5 overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-10 shrink-0">
@@ -95,6 +95,8 @@ function RequestsManager({ rows, status, setStatus, onApprove, onDeny, areaNames
       </div>
     </div>
   );
+
+  return createPortal(content, document.getElementById('modal-root'));
 }
 
 function RequestCard({ data, areaNamesMap, status, onApprove, onDeny }) {
@@ -174,59 +176,28 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
     try {
       const params = new URLSearchParams();
       if (status) params.set('status', status);
-      // Solo filtrar por area_id en el backend si existe
       if (areaId) params.set('area_id', String(areaId));
       params.set('area_type', areaType);
-
-
 
       const res = await fetchWithRefresh(`/api/advisor/area-requests?${params.toString()}`);
       if (!res || !res.ok) throw new Error(`HTTP ${res?.status || 'fetch error'}`);
       const json = await res.json();
       let data = Array.isArray(json?.data) ? json.data : [];
 
-      // Si no hay area_id pero sí hay areaName, filtrar en el cliente por nombre
       if (!areaId && areaName) {
         const normalize = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         const normalizedAreaName = normalize(areaName);
 
-
-
         data = data.filter(request => {
-          // Obtener el nombre del área de la solicitud
           let requestAreaName = request.area_name;
-
-          // Si no tiene area_name pero tiene area_id, buscar en el mapa
           if (!requestAreaName && request.area_id && areaNamesMap) {
             requestAreaName = areaNamesMap[String(request.area_id)];
           }
-
-          // Si aún no tenemos nombre, no podemos filtrar correctamente - rechazar
-          if (!requestAreaName) {
-            console.log('❌ No area name found for request:', request);
-            return false;
-          }
-
+          if (!requestAreaName) return false;
           const normalizedRequestAreaName = normalize(requestAreaName);
-
-          // Coincidencia más estricta: debe contener el nombre completo o viceversa
-          // Evitamos coincidencias vacías
-          if (!normalizedAreaName || !normalizedRequestAreaName) {
-            return false;
-          }
-
-          const matches = normalizedRequestAreaName.includes(normalizedAreaName) ||
-            normalizedAreaName.includes(normalizedRequestAreaName);
-
-          if (matches) {
-          }
-
-          return matches;
+          if (!normalizedAreaName || !normalizedRequestAreaName) return false;
+          return normalizedRequestAreaName.includes(normalizedAreaName) || normalizedAreaName.includes(normalizedRequestAreaName);
         });
-
-
-      } else {
-
       }
 
       setRows(data);
@@ -282,11 +253,10 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
   if (!open) return null;
   if (viewAll) return <RequestsManager rows={rows} status={status} setStatus={setStatus} onApprove={approve} onDeny={deny} areaNamesMap={areaNamesMap} loading={loading} onClose={onClose} areaName={areaName} areaId={areaId} setViewAll={setViewAll} />;
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-center items-center p-4" role="dialog" aria-modal="true">
+  const mainContent = (
+    <div className="fixed inset-0 z-[100] flex justify-center items-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-sm rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden transition-all">
-        {/* Header Compacto */}
         <div className="sticky top-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-white/95 backdrop-blur z-10">
           <div className="min-w-0 flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100"><Inbox className="w-5 h-5" /></span>
@@ -300,7 +270,6 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
           <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 font-bold transition-colors">✕</button>
         </div>
 
-        {/* Filtros + Botón Ver Todas */}
         <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between gap-2">
           <div className="flex gap-1.5">
             {['pending', 'approved', 'denied'].map(s => (
@@ -320,7 +289,6 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
           <button onClick={() => setViewAll(true)} className="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">Ver todas</button>
         </div>
 
-        {/* Body Ultra-Compacto (Estilo Fila) */}
         <div className="px-2 pb-3 min-h-[100px] max-h-[420px] overflow-y-auto custom-scrollbar scrollbar-thin scrollbar-thumb-slate-200">
           {loading && <div className="py-10 flex flex-col items-center justify-center text-slate-500 gap-2"><div className="size-6 rounded-full border-2 border-slate-100 border-t-violet-600 animate-spin" /><span className="text-[10px]">Cargando...</span></div>}
           {error && <div className="m-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 px-3 py-2 text-[10px] font-medium">{error}</div>}
@@ -364,8 +332,8 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
         </div>
       </div>
 
-      {showDenyModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      {showDenyModal && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setShowDenyModal(false)} />
           <div className="relative w-full max-w-md rounded-[1.5rem] bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-10 shrink-0">
@@ -401,8 +369,11 @@ export default function SolicitudesModal({ open, onClose, areaId = null, areaNam
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
     </div>
   );
+
+  return createPortal(mainContent, document.getElementById('modal-root'));
 }

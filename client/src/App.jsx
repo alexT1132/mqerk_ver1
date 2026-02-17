@@ -82,13 +82,13 @@ export default function App() {
     // Árbol de proveedores de contexto y enrutador principal
     <AuthProvider>
       <AsesorProvider>
-        <InactivityHandler />
         <EstudiantesProvider>
           <ComprobanteProvider>
             <StudentProvider>
               <CursosProvider>
                 <PreviewProvider>
                   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <InactivityHandler />
                     <ScrollToTop />
                     <ErrorBoundary fallback={<Error500 />}>
                       <Routes>

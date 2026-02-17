@@ -98,7 +98,7 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
 
   return (
     <article
-      className="group relative overflow-hidden rounded-[2rem] p-5 sm:p-6 shadow-lg bg-white border-2 border-slate-900 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col"
+      className="group relative overflow-hidden rounded-[1.5rem] p-4 sm:p-5 shadow-lg bg-white border-2 border-slate-900 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col"
     >
       {/* Tint de fondo */}
       <div className={`pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br ${tintColor} opacity-50 group-hover:opacity-70 transition-opacity duration-300`} />
@@ -107,10 +107,10 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
       <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/10 group-hover:to-transparent transition-all duration-300" />
 
       {/* Contenedor del Icono con Glow */}
-      <div className="relative w-14 h-14 mb-4">
-        <div className={`absolute inset-0 blur-2xl opacity-60 bg-gradient-to-br ${gradientClasses} rounded-2xl group-hover:opacity-80 transition-opacity duration-300`} />
-        <div className={`relative w-14 h-14 rounded-2xl grid place-items-center text-white shadow-xl ring-2 ring-white/50 bg-gradient-to-br ${gradientClasses}`}>
-          <div className="scale-110">
+      <div className="relative w-12 h-12 mb-3">
+        <div className={`absolute inset-0 blur-2xl opacity-60 bg-gradient-to-br ${gradientClasses} rounded-xl group-hover:opacity-80 transition-opacity duration-300`} />
+        <div className={`relative w-12 h-12 rounded-xl grid place-items-center text-white shadow-xl ring-2 ring-white/50 bg-gradient-to-br ${gradientClasses}`}>
+          <div className="scale-100">
             {Icon ? (
               React.isValidElement(Icon) ? Icon : <Icon className="w-5 h-5" />
             ) : (
@@ -127,10 +127,10 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
         )}
       </div>
 
-      <h3 className="text-lg sm:text-xl font-bold leading-tight text-slate-900 min-h-[2.5rem]">
+      <h3 className="text-base sm:text-lg font-bold leading-tight text-slate-900 min-h-[2.5rem]">
         {title}
       </h3>
-      <p className="mt-2 text-sm text-slate-600 font-medium leading-relaxed mb-4 h-10 overflow-hidden line-clamp-2">
+      <p className="mt-1.5 text-sm text-slate-600 font-medium leading-relaxed mb-3 h-10 overflow-hidden line-clamp-2">
         {desc}
       </p>
 
@@ -138,7 +138,7 @@ function AreaCard({ item, onOpenSolicitudes, badgeCount, to, state }) {
         <Link
           to={to}
           state={state}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-md hover:shadow-lg group"
+          className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-md hover:shadow-lg group"
         >
           Explorar
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
@@ -412,7 +412,7 @@ export default function ModulosEspecificos({
   return (
     <div className="min-h-screen relative">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
-      <section className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-32">
+      <section className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-32 max-w-[1920px] mx-auto">
         <SectionBadge
           title={header.title}
           subtitle={header.subtitle}
@@ -422,7 +422,7 @@ export default function ModulosEspecificos({
           isRefreshing={isRefreshing}
         />
 
-        <div className="mx-auto max-w-8xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
+        <div className="mx-auto w-full grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6">
           {items.map((item, i) => {
             const link = _buildAccessLink(item);
             const { to, state } = normalizeToState(link);

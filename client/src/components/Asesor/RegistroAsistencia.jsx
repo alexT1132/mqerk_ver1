@@ -322,7 +322,7 @@ export default function RegistroAsistencia() {
   return (
     <div className="min-h-screen relative p-4 sm:p-6 lg:p-8">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1920px] mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">

@@ -130,8 +130,11 @@ function GrupoButton({ label, isActive, onClick, grupo }) {
 
 function ValidacionPagos_Admin_comp() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-  // Modal pequeña de generación (loading) (mover dentro del componente para evitar invalid hook call)
-  const [genModal, setGenModal] = useState({ open: false, alumno: null, startedAt: 0, countdown: 5, preliminar: false });
+
+  // Estados para feedbacks y modales
+  const [genModal, setGenModal] = useState({ open: false, alumno: null, startedAt: 0, countdown: 0, preliminar: false });
+  const [deleteModal, setDeleteModal] = useState({ open: false, pago: null, processing: false });
+  const [uploadingState, setUploadingState] = useState({}); // { [id]: boolean }
 
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeTurno, setActiveTurno] = useState(null);
@@ -147,21 +150,12 @@ function ValidacionPagos_Admin_comp() {
     nombreArchivo: ''
   });
 
-  const [showContratoModal, setShowContratoModal] = useState(false);
-  const [selectedAlumno, setSelectedAlumno] = useState(null);
-  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
   const [contractModal, setContractModal] = useState({
     isOpen: false,
     type: '', // 'confirm' | 'success' | 'error'
     alumno: null,
     message: '',
     details: ''
-  });
-  // Modal específica para eliminar contrato
-  const [deleteModal, setDeleteModal] = useState({
-    open: false,
-    pago: null,
-    processing: false
   });
 
   // ============= INTEGRACIÓN CON ADMINCONTEXT =============
@@ -222,7 +216,7 @@ function ValidacionPagos_Admin_comp() {
       const pagosBase = grupoFiltrado.map(est => ({
         id: est.id,
         folio: est.folio,
-        folioNumero: est.folioNumero || est.folioNumeroOriginal || est.folioNumero || est.folioNumeroRaw || est.folioNumero,
+        folioNumero: est.folioNumero || est.folio,
         alumno: `${est.nombres || ''} ${est.apellidos || ''}`.trim(),
         correoElectronico: est.correoElectronico || est.email || '',
         categoria: est.curso || activeCategory,
@@ -344,7 +338,6 @@ function ValidacionPagos_Admin_comp() {
       message: '',
       details: ''
     });
-    setIsGeneratingContract(false);
   };
 
   // Abrir modal de confirmación para generar contrato
@@ -520,7 +513,7 @@ function ValidacionPagos_Admin_comp() {
         // Usar las mismas opciones que el modo debug para asegurar consistencia en campos rellenados
         const pdfOptions = {
           debug: true, // mantener true para logs y trazabilidad visual (no agrega marcadores visibles salvo debugMarkers)
-          templateUrl: '/public/CONTRATO_C_E_E_A.pdf',
+          templateUrl: '/CONTRATO_C_E_E_A.pdf',
           allowBlankFallback: true,
           showMissingTemplateBanner: false,
           preliminar: usoFallback403,
@@ -580,8 +573,6 @@ function ValidacionPagos_Admin_comp() {
 
   // Función para confirmar la generación de contrato usando AdminContext
   const handleConfirmarGeneracionContrato = async () => {
-    setIsGeneratingContract(true);
-
     try {
       // Obtener el alumno del modal actual (guardar referencia ANTES de cerrar)
       const alumnoRef = contractModal?.alumno;
@@ -647,8 +638,6 @@ function ValidacionPagos_Admin_comp() {
         details: `No se pudo crear el contrato PDF para ${contractModal?.alumno?.alumno || '(Alumno desconocido)'}. Error: ${pdfError.message}`
       });
     }
-
-    setIsGeneratingContract(false);
   };
 
   // Función para manejar selección de turno/grupo
@@ -693,6 +682,7 @@ function ValidacionPagos_Admin_comp() {
       }
 
       // Subir directamente al backend nuevo endpoint
+      setUploadingState(prev => ({ ...prev, [id]: true }));
       const formData = new FormData();
       formData.append('contrato', file);
       const folio = alumno.folioNumero || alumno.folio;
@@ -701,9 +691,11 @@ function ValidacionPagos_Admin_comp() {
         const resp = await api.post(`/admin/estudiantes/folio/${folio}/contrato`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         data = resp.data;
       } catch (e) {
+        setUploadingState(prev => ({ ...prev, [id]: false }));
         throw new Error(e?.response ? (`${e.response.status} ${e.response.statusText}`) : (e.message || 'Error desconocido subida'));
       }
       const urlArchivo = data.archivo || null;
+      setUploadingState(prev => ({ ...prev, [id]: false }));
 
       // Optimistic update local
       setPagos(prev => prev.map(p => p.id === id ? {
@@ -902,7 +894,7 @@ function ValidacionPagos_Admin_comp() {
     <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
       { /* Util para construir nombre de descarga */}
       { /* NOTA: se define como función local, no como nodo React */}
-      {  }
+      { }
       {(() => {
         const tipoMap = {
           'contrato-local-preview': 'Contrato',
@@ -912,10 +904,10 @@ function ValidacionPagos_Admin_comp() {
         };
         // Adjuntar a una ref local en closure accessible por handlers via inline const
         // Guardamos en un objeto en scope del render
-         
+
       })()}
       {/* Helper local para nombre de archivo (no se renderiza nada) */}
-      {  }
+      { }
       {(() => { /* noop placeholder to keep consistent structure */ })()}
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message={showLoadingScreen ? "Cargando contratos.." : "Cargando..."} />
@@ -1120,36 +1112,36 @@ function ValidacionPagos_Admin_comp() {
                 </p>
               </div>
 
-              {/* Vista Desktop - Tabla responsive */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+              {/* Vista Desktop - Tabla responsive sin scroll horizontal */}
+              <div className="hidden lg:block overflow-hidden">
+                <table className="w-full divide-y divide-gray-200 table-fixed">
                   <thead className="bg-gradient-to-r from-gray-100 to-gray-50">
                     <tr>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-16 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Folio
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-32 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Alumno
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-24 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Fecha
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-28 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Plan
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-32 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Pago
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-28 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-left text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Método
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-center text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-32 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-center text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Contrato
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-center text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      <th className="w-28 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-center text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Subir
                       </th>
-                      <th className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-center text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="w-32 px-1 xs:px-2 sm:px-4 py-2 xs:py-3 text-center text-[10px] xs:text-xs font-bold text-gray-700 uppercase tracking-wider">
                         Visualizar
                       </th>
                     </tr>
@@ -1194,24 +1186,36 @@ function ValidacionPagos_Admin_comp() {
                           {pago.metodoPago || '—'}
                         </td>
                         <td className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 border-r border-gray-200 text-center">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center justify-center gap-1.5">
                             {pago.contratoGenerado ? (
-                              <button
-                                onClick={() => handleVisualizarContrato(pago.contratoUrl, pago)}
-                                className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-green-600 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-green-700 transition-colors duration-150"
-                              >
-                                <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Descargar
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleVisualizarContrato(pago.contratoUrl, pago)}
+                                  className="w-full max-w-[100px] inline-flex items-center justify-center px-2 py-1 bg-emerald-600 text-white text-[9px] sm:text-[10px] font-semibold rounded shadow-sm hover:bg-emerald-700 transition-colors"
+                                >
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Descargar
+                                </button>
+                                <button
+                                  onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
+                                  disabled={genModal.open}
+                                  className="text-[8px] text-gray-500 hover:text-purple-600 font-medium underline underline-offset-2 flex items-center gap-0.5"
+                                >
+                                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 9a7.5 7.5 0 0113.418-3.418M19 15a7.5 7.5 0 01-13.418 3.418" />
+                                  </svg>
+                                  Regenerar
+                                </button>
+                              </>
                             ) : (
                               <button
                                 onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
                                 disabled={genModal.open}
-                                className="btn-generar inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-gray-700 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-gray-800 transition-colors duration-150"
+                                className="btn-generar w-full max-w-[100px] inline-flex items-center justify-center px-2 py-1.5 bg-gray-800 text-white text-[9px] sm:text-[10px] font-bold rounded shadow-md hover:bg-black transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                               >
-                                <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 Generar
@@ -1220,21 +1224,36 @@ function ValidacionPagos_Admin_comp() {
                           </div>
                         </td>
                         <td className="px-1 xs:px-2 sm:px-4 py-2 xs:py-3 border-r border-gray-200 text-center">
-                          {pago.contratoSubido ? (
-                            <div className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-green-100 text-green-700 text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md border border-green-200">
-                              <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          {uploadingState[pago.id] ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <svg className="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              Subido
-                              <button onClick={() => openDeleteContrato(pago)} title="Eliminar contrato" className="ml-1 text-red-600 hover:text-red-700">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              <span className="text-[7px] font-bold text-blue-600 uppercase">Subiendo</span>
+                            </div>
+                          ) : pago.contratoSubido ? (
+                            <div className="flex flex-col items-center gap-1.5 pt-1">
+                              <div className="inline-flex items-center px-1.5 py-0.5 bg-green-100 text-green-700 text-[8px] sm:text-[9px] font-bold rounded border border-green-200 shadow-sm leading-tight">
+                                <svg className="w-2 h-2 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
+                                SUBIDO
+                              </div>
+                              <button
+                                onClick={() => openDeleteContrato(pago)}
+                                title="Eliminar contrato para volver a subir"
+                                className="flex items-center gap-0.5 text-[8px] text-red-500 hover:text-red-700 font-bold uppercase transition-colors"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Eliminar
                               </button>
                             </div>
                           ) : (
-                            <label className="inline-flex items-center px-1 xs:px-2 sm:px-3 py-0.5 xs:py-1 sm:py-2 bg-blue-600 text-white text-[8px] xs:text-[10px] sm:text-xs font-medium rounded-md hover:bg-blue-700 transition-colors duration-150 cursor-pointer">
-                              <svg className="w-2 xs:w-3 sm:w-4 h-2 xs:h-3 sm:h-4 mr-0.5 xs:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <label className="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-[9px] sm:text-[10px] font-bold rounded shadow-sm hover:bg-blue-700 transition-all cursor-pointer transform hover:translate-y-[-1px] active:translate-y-0">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                               </svg>
                               Subir
@@ -1332,54 +1351,77 @@ function ValidacionPagos_Admin_comp() {
                           {/* Generar/Descargar contrato */}
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-700">Contrato:</span>
-                            {pago.contratoGenerado ? (
-                              <button
-                                onClick={() => handleVisualizarContrato(pago.contratoUrl, pago)}
-                                className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors duration-150"
-                              >
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Descargar
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
-                                disabled={genModal.open}
-                                className="btn-generar inline-flex items-center px-3 py-1 bg-gray-700 text-white text-xs font-medium rounded-md hover:bg-gray-800 transition-colors duration-150"
-                              >
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Generar
-                              </button>
-                            )}
+                            <div className="flex flex-col items-end gap-1">
+                              {pago.contratoGenerado ? (
+                                <>
+                                  <button
+                                    onClick={() => handleVisualizarContrato(pago.contratoUrl, pago)}
+                                    className="inline-flex items-center px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm"
+                                  >
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Descargar
+                                  </button>
+                                  <button
+                                    onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
+                                    className="text-[10px] text-gray-500 font-medium underline"
+                                  >
+                                    Regenerar contrato
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => !genModal.open && handleGenerarContrato(pago.id)}
+                                  disabled={genModal.open}
+                                  className="inline-flex items-center px-3 py-1.5 bg-gray-800 text-white text-xs font-bold rounded shadow-md"
+                                >
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Generar contrato
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Subir contrato */}
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">Subir:</span>
-                            {pago.contratoSubido ? (
-                              <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-md border border-green-200">
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Subido
-                                <button onClick={() => openDeleteContrato(pago)} title="Eliminar contrato" className="ml-2 text-red-600 hover:text-red-700">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <span className="text-sm font-medium text-gray-700">Subir firmado:</span>
+                            <div className="flex items-center gap-2">
+                              {uploadingState[pago.id] ? (
+                                <div className="flex items-center gap-2 text-blue-600">
+                                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              <label className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors duration-150 cursor-pointer">
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                Subir
-                                <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleSubirContrato(pago.id, e.target.files[0])} />
-                              </label>
-                            )}
+                                  <span className="text-xs font-bold uppercase">Subiendo...</span>
+                                </div>
+                              ) : pago.contratoSubido ? (
+                                <div className="flex flex-col items-end gap-1">
+                                  <div className="inline-flex items-center px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded border border-green-200">
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    SUBIDO
+                                  </div>
+                                  <button
+                                    onClick={() => openDeleteContrato(pago)}
+                                    className="text-[10px] text-red-500 font-bold uppercase"
+                                  >
+                                    Eliminar y volver a subir
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded shadow-sm cursor-pointer">
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                  </svg>
+                                  Subir PDF
+                                  <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleSubirContrato(pago.id, e.target.files[0])} />
+                                </label>
+                              )}
+                            </div>
                           </div>
 
                           {/* Visualizar documentos */}
@@ -1432,13 +1474,13 @@ function ValidacionPagos_Admin_comp() {
       </div>
 
       {/* Componente Modal para visualizar PDF (versión compacta) */}
-      {modalPDF.isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center p-1.5 sm:p-3">
+      {modalPDF.isOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex justify-center items-center p-1.5 sm:p-3">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setModalPDF({ isOpen: false, url: '', alumno: null, tipo: '' })}
           />
-          <div className="relative flex flex-col w-full max-w-[820px] h-[82vh] rounded-md sm:rounded-lg translate-y-6 sm:translate-y-10 bg-white shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform">
+          <div className="relative flex flex-col w-full max-w-[820px] h-[82vh] rounded-md sm:rounded-lg bg-white shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform">
             {/* Header */}
             <div className="flex items-center justify-between gap-2 px-2 sm:px-2.5 py-1.5 border-b bg-white/95 backdrop-blur z-10 h-[42px]">
               <div className="flex items-center gap-3 min-w-0">
@@ -1571,7 +1613,8 @@ function ValidacionPagos_Admin_comp() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Modal de confirmación para generar contrato */}
@@ -1588,7 +1631,7 @@ function ValidacionPagos_Admin_comp() {
 
       {/* Portal global para la modal de generación */}
       {genModal.open && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-auto select-none">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto select-none">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
           <div className="relative bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-purple-200 w-full max-w-xs p-5 animate-fade-in">
             <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg flex items-center justify-center ring-4 ring-white">
@@ -1634,12 +1677,12 @@ function ValidacionPagos_Admin_comp() {
             </div>
           </div>
         </div>,
-        document.body
+        document.getElementById('modal-root')
       )}
 
       {/* Modal personalizada para eliminar contrato */}
       {deleteModal.open && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={cancelDeleteContrato} />
           <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-rose-200 overflow-hidden animate-fade-in">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-100 rounded-full opacity-40 blur-2xl" />
@@ -1695,7 +1738,7 @@ function ValidacionPagos_Admin_comp() {
             </div>
           </div>
         </div>,
-        document.body
+        document.getElementById('modal-root')
       )}
     </div>
   );

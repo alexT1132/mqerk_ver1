@@ -147,7 +147,28 @@ const InicioAlumnoDashboard = ({
     forceCompleteReset,
     goToWelcome
   } = useStudent();
+  
+  // Session validation
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [loading, isAuthenticated, navigate]);
+  
+  // Show loading state while checking authentication
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-purple-600 font-medium">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   const { user, alumno: DatosAlumno } = useAuth();
 

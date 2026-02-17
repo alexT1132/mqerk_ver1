@@ -14,6 +14,19 @@ export default function LoginResponsive() {
   const [showPwd, setShowPwd] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const justLoggedInRef = useRef(false);
+  
+  // Check for timeout message in URL
+  const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+  
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const reason = urlParams.get('reason');
+    if (reason === 'timeout') {
+      setShowTimeoutMessage(true);
+      // Clear the parameter from URL
+      navigate('/login', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   // Cargar usuario guardado al montar el componente
   useEffect(() => {
@@ -226,6 +239,18 @@ export default function LoginResponsive() {
                 <div className="mb-5 text-center">
                   <p className="text-sm text-zinc-600 dark:text-zinc-300">Inicia sesión para continuar.</p>
                 </div>
+
+                {/* Timeout Message */}
+                {showTimeoutMessage && (
+                  <div className="mb-4 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 text-sm dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Tu sesión expiró por inactividad. Por favor inicia sesión nuevamente.
+                    </div>
+                  </div>
+                )}
 
                 {/* Errores */}
                 {Array.isArray(errors) && errors.length > 0 && (
