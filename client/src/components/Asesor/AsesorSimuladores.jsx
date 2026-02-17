@@ -128,7 +128,7 @@ export default function Simuladores() {
             </div>
           </header>
 
-          <section className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2 max-w-7xl mx-auto w-full">
+          <section className="grid grid-cols-1 gap-4 sm:gap-5 lg:gap-8 xl:gap-12 lg:grid-cols-2 max-w-6xl mx-auto w-full">
             <SimCard
               icon={Target}
               title="Simulador por"

@@ -17,7 +17,7 @@ export default function CursoBienvenida() {
       navigate('/login', { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
-  
+
   // Show loading state while checking authentication
   if (loading || !isAuthenticated) {
     return (
@@ -83,7 +83,7 @@ export default function CursoBienvenida() {
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
       {/* Header mejorado */}
       <header className="relative w-full bg-gradient-to-r from-violet-100/50 via-indigo-100/50 to-purple-100/50 border-b-2 border-violet-200 shadow-lg backdrop-blur-sm">
-        <div className="w-full pl-4 sm:pl-6 md:pl-8 lg:pl-12 pr-4 sm:pr-6 md:pr-8 lg:pr-12 py-8 sm:py-10 lg:py-12">
+        <div className="w-full max-w-[1920px] mx-auto pl-4 sm:pl-6 md:pl-8 lg:pl-12 pr-4 sm:pr-6 md:pr-8 lg:pr-12 py-8 sm:py-10 lg:py-12">
           <button
             onClick={() => navigate('/asesor/inicio')}
             className="mb-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-100 to-indigo-100 hover:from-violet-200 hover:to-indigo-200 px-4 py-2.5 text-sm font-bold text-violet-700 transition-all duration-200 hover:shadow-md hover:scale-105 border border-violet-200"
@@ -133,7 +133,7 @@ export default function CursoBienvenida() {
       <main className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8 lg:py-12 relative z-10" aria-labelledby="panel-title">
         <h2 id="panel-title" className="sr-only">Panel del asesor</h2>
 
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1920px] mx-auto">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
             {/* Sección Principal - Izquierda */}
             <section className="space-y-6">

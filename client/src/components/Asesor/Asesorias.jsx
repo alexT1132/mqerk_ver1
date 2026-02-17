@@ -447,7 +447,7 @@ export default function DashboardAsesorias() {
       {/* Fondo fijo independiente del scroll */}
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-      <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl mx-auto relative z-10">
+      <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-[1920px] mx-auto relative z-10">
         {/* Header con título grande */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">

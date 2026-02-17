@@ -2157,7 +2157,7 @@ export function Simulaciones_Alumno_comp() {
         </div>
 
         {/* Vista móvil - Cards de simulaciones - Mejoradas */}
-        <div className={`${viewMode === 'cards' ? 'block' : 'hidden'} space-y-4 sm:space-y-5`}>
+        <div className={`${viewMode === 'cards' ? 'block' : 'hidden'} grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 lg:gap-6`}>
           {filteredSimulaciones.length > 0 ? (
             filteredSimulaciones.map((simulacion, index) => (
               <div

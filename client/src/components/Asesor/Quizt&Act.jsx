@@ -14,8 +14,8 @@ export default function ActividadesQuizzesPage() {
   // 2) Persistir en sessionStorage para que sobreviva a refresh/navegación directa
   const [areaTitle, setAreaTitle] = useState(
     incomingTitle ||
-      sessionStorage.getItem("selectedAreaTitle") ||
-      "Español y redacción indirecta"
+    sessionStorage.getItem("selectedAreaTitle") ||
+    "Español y redacción indirecta"
   );
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function ActividadesQuizzesPage() {
   return (
     <section className="px-3 sm:px-6 lg:px-10 py-6 sm:py-8">
       {/* Header superior */}
-  <header className="-mt-1 sm:-mt-2 md:-mt-3 rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-4 sm:px-7 py-5 sm:py-6 mb-8 relative overflow-hidden">
+      <header className="-mt-1 sm:-mt-2 md:-mt-3 rounded-3xl border-2 border-violet-200/60 bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-4 sm:px-7 py-5 sm:py-6 mb-8 relative overflow-hidden">
         {/* blobs */}
         <div className="pointer-events-none absolute -left-10 -top-14 h-64 w-64 rounded-full bg-violet-200/50 blur-3xl" />
         <div className="pointer-events-none absolute -right-10 -bottom-14 h-64 w-64 rounded-full bg-indigo-200/50 blur-3xl" />
@@ -62,7 +62,7 @@ export default function ActividadesQuizzesPage() {
       </header>
 
       {/* Banner intermedio */}
-  <div className="relative mt-2 sm:mt-3 md:mt-4 rounded-3xl border-2 border-violet-200/60 bg-gradient-to-br from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-4 sm:px-7 py-5 sm:py-6 mb-10 sm:mb-14 overflow-hidden">
+      <div className="relative mt-2 sm:mt-3 md:mt-4 rounded-3xl border-2 border-violet-200/60 bg-gradient-to-br from-violet-50/80 via-indigo-50/80 to-purple-50/80 shadow-xl ring-2 ring-slate-100/50 px-4 sm:px-7 py-5 sm:py-6 mb-10 sm:mb-14 overflow-hidden">
         <div className="pointer-events-none absolute -left-10 -top-10 h-48 w-48 rounded-full bg-violet-200/50 blur-2xl" />
         <div className="pointer-events-none absolute -right-10 -bottom-10 h-48 w-48 rounded-full bg-indigo-200/50 blur-2xl" />
         <div className="relative z-10 flex items-center gap-4 sm:gap-5 justify-center text-center">
@@ -84,7 +84,7 @@ export default function ActividadesQuizzesPage() {
       </div>
 
       {/* Grid de tarjetas */}
-  <div className="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+      <div className="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 xl:gap-16">
         {/* Card Actividades */}
         <article className="group relative rounded-3xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-white shadow-xl ring-2 ring-slate-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:ring-blue-200/50">
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-50/0 to-indigo-50/0 group-hover:from-blue-50/30 group-hover:to-indigo-50/30 transition-all duration-300" />

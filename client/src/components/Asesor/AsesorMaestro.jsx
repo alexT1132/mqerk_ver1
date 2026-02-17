@@ -311,13 +311,13 @@ export default function AsesorDashboard({
 
           {/* Grid de cursos */}
           {loadingData && cursosMostrar.length === 0 ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="w-full h-[140px] sm:h-[150px] md:h-[160px] animate-pulse rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-200 to-indigo-200 border-2 border-violet-300 shadow-lg"></div>
               ))}
             </div>
           ) : cursosMostrar.length > 0 ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5 lg:gap-6" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
               {cursosMostrar.map((c, i) => (
                 <div key={c.id ?? i} className="w-full" style={{ minHeight: '140px' }}>
                   <CourseChip
