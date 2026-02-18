@@ -89,6 +89,5 @@ server/.env
 client/.env
 
 
-# Si no existe, añade esta regla para evitar commitear backups en el futuro:
-echo "_backups/" >> .gitignore
-git add .gitignore
+# Evitar commitear backups
+_backups/
