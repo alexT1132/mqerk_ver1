@@ -1,4 +1,5 @@
-// AsesorPerfil.jsx (conectado a backend)
+// AsesorPerfil.jsx (conectado a backend) - (ajuste responsive)
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMiPerfil, updateMiPerfil, getMisEstudiantes } from "../../api/asesores.js";

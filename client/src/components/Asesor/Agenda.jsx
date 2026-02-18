@@ -1,3 +1,4 @@
+// Agenda.jsx (calendario) - (ajuste responsive)
 import React, { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Calendar as CalendarIcon, Plus, Edit2, Trash2, X, Clock, Tag, AlertCircle, CheckCircle2, Search, Filter, Users, User, Loader2, ChevronLeft, ChevronRight } from "lucide-react";

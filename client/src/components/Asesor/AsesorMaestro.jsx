@@ -1,4 +1,5 @@
-// AsesorDashboard.jsx - Página de inicio
+// AsesorDashboard.jsx - Página de inicio (ajuste responsive)
+
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { BookOpen, GraduationCap, Sparkles, ArrowRight } from "lucide-react";
