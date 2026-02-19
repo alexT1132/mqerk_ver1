@@ -68,15 +68,15 @@ export default function FinanzasEgresosPresupuesto() {
               </div>
             )}
             <div className="px-6 py-5">
-              <div className="overflow-x-auto">
-                <table className="min-w-[640px] w-full text-sm">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full min-w-0 min-[1920px]:min-w-[640px] text-sm table-fixed min-[1920px]:table-auto">
                   <thead className="bg-gray-50 text-gray-600">
                     <tr>
-                      <th className="text-left font-semibold px-4 py-3">Mes</th>
-                      <th className="text-right font-semibold px-4 py-3">Presupuesto</th>
-                      <th className="text-right font-semibold px-4 py-3">Gastado</th>
-                      <th className="text-right font-semibold px-4 py-3">Disponible</th>
-                      <th className="text-right font-semibold px-4 py-3">Excedente</th>
+                      <th className="text-left font-semibold px-4 py-3 w-[22%] min-[1920px]:w-auto">Mes</th>
+                      <th className="text-right font-semibold px-4 py-3 w-[19%] min-[1920px]:w-auto">Presupuesto</th>
+                      <th className="text-right font-semibold px-4 py-3 w-[19%] min-[1920px]:w-auto">Gastado</th>
+                      <th className="text-right font-semibold px-4 py-3 w-[19%] min-[1920px]:w-auto">Disponible</th>
+                      <th className="text-right font-semibold px-4 py-3 w-[21%] min-[1920px]:w-auto">Excedente</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -330,7 +330,7 @@ export default function FinanzasEgresosPresupuesto() {
   }, [snap, totalMesSeleccionado]);
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto">
+    <section className="px-2 xs:px-3 sm:px-6 lg:px-6 xl:px-8 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto w-full">
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">Presupuesto de egresos</h1>
@@ -372,8 +372,8 @@ export default function FinanzasEgresosPresupuesto() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden w-full">
+        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">Asignar presupuesto mensual</h2>
         </div>
         {exportExcelError && (
@@ -398,18 +398,18 @@ export default function FinanzasEgresosPresupuesto() {
           </div>
         </form>
 
-        <div className="px-6 pb-6">
+        <div className="px-3 xs:px-4 sm:px-6 pb-6">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Histórico de presupuestos</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-[760px] w-full text-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-0 min-[1920px]:min-w-[760px] text-sm table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">Mes</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">Monto</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">Gastado</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">Disponible</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">Excedente</th>
-                  <th className="text-center font-semibold px-4 py-3">Acciones</th>
+                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Mes</th>
+                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Monto</th>
+                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Gastado</th>
+                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Disponible</th>
+                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Excedente</th>
+                  <th className="text-center font-semibold px-4 py-3 w-[10%] min-[1920px]:w-auto">Acciones</th>
                 </tr>
               </thead>
               <tbody>

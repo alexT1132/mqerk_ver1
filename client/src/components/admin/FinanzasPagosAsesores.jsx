@@ -350,7 +350,7 @@ export default function FinanzasPagosAsesores() {
   }, [pagos]);
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto">
+    <section className="px-2 xs:px-3 sm:px-6 lg:px-6 xl:px-8 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto w-full">
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">Pagos de asesores</h1>
@@ -383,8 +383,8 @@ export default function FinanzasPagosAsesores() {
         </div>
       </header>
       {showFilters && (
-        <div className="mb-6 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+        <div className="mb-6 bg-white rounded-xl shadow border border-gray-200 overflow-hidden w-full">
+          <div className="px-3 xs:px-4 sm:px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
@@ -464,8 +464,8 @@ export default function FinanzasPagosAsesores() {
 
       {error && <div className="mb-4 p-3 rounded bg-rose-100 text-rose-700 text-sm">{error}</div>}
 
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden w-full">
+        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">Registro de pagos a asesores</h2>
           <div className="flex items-center gap-2">
             <button onClick={handleExportExcel} disabled={exportExcelLoading} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
@@ -475,21 +475,21 @@ export default function FinanzasPagosAsesores() {
         {exportExcelError && (
           <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
         )}
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-0 min-[1920px]:min-w-[1100px] text-sm table-fixed min-[1920px]:table-auto">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">ID_Pago</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Asesor</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Tipo de servicio</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Monto base</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Horas trabajadas</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Honorarios / Comisión</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Ingreso final</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Fecha de pago</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Método de pago</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200">Nota</th>
-                <th className="px-3 py-2 text-center font-semibold">Status</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[6%] min-[1920px]:w-auto">ID_Pago</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Asesor</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[14%] min-[1920px]:w-auto">Tipo de servicio</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Monto base</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Horas trabajadas</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Honorarios / Comisión</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Ingreso final</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Fecha de pago</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Método de pago</th>
+                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[6%] min-[1920px]:w-auto">Nota</th>
+                <th className="px-3 py-2 text-center font-semibold w-[6%] min-[1920px]:w-auto">Status</th>
                 {/* Columna de acciones removida: edición por click en fila, eliminación dentro del modal */}
               </tr>
             </thead>

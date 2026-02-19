@@ -195,8 +195,8 @@ export default function SolicitudesAsesores() {
       <MetricsBar pendientes={pendientes.length} aprobados={aprobados.length} total={lista.length} recargar={cargar} loading={loading} />
 
       {/* Header + búsqueda */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden w-full">
+        <div className="px-3 xs:px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
           <h3 className="text-lg font-semibold text-gray-800">{titulo}</h3>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:flex-initial">
@@ -208,13 +208,19 @@ export default function SolicitudesAsesores() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-[11px] xs:text-xs sm:text-sm">
+        {/* Tabla: hasta 1920px table-fixed para llenar ancho (monitores chicos) */}
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-0 min-[1920px]:min-w-[1100px] text-[11px] xs:text-xs sm:text-sm table-fixed min-[1920px]:table-auto">
             <thead>
               <tr className="bg-gray-900 text-white select-none">
-                {['ID', 'Nombre', 'Correo', 'Área', 'Grupos', 'Status', 'Fecha', 'Estado'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] last:border-r-0">{h}</th>
-                ))}
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[6%] min-[1920px]:w-auto">ID</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[14%] min-[1920px]:w-auto">Nombre</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[16%] min-[1920px]:w-auto">Correo</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[10%] min-[1920px]:w-auto">Área</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[18%] min-[1920px]:w-auto">Grupos</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[10%] min-[1920px]:w-auto">Status</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] w-[12%] min-[1920px]:w-auto">Fecha</th>
+                <th className="px-4 py-3 text-left font-semibold tracking-wide text-[10px] xs:text-[11px] sm:text-xs uppercase whitespace-nowrap border-r border-[#1f2937] last:border-r-0 w-[14%] min-[1920px]:w-auto">Estado</th>
               </tr>
             </thead>
             <tbody className="bg-white">

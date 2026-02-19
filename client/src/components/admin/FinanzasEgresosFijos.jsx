@@ -545,7 +545,7 @@ export default function FinanzasEgresosFijos() {
   };
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 lg:pt-12 xl:pt-14 2xl:pt-14 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto">
+    <section className="px-2 xs:px-3 sm:px-6 lg:px-6 xl:px-8 2xl:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 lg:pt-12 xl:pt-14 2xl:pt-14 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto w-full">
       <header className="flex items-center justify-between gap-4 mb-6 lg:mb-8 xl:mb-8 2xl:mb-8 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-extrabold tracking-tight text-gray-900">
@@ -607,8 +607,8 @@ export default function FinanzasEgresosFijos() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-6 lg:p-8 xl:p-8 2xl:p-10 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden w-full">
+        <div className="p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-8 2xl:p-10 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h2 className="text-base sm:text-lg lg:text-xl xl:text-xl 2xl:text-2xl font-semibold text-gray-900">
               Registro de gastos fijos
@@ -646,7 +646,7 @@ export default function FinanzasEgresosFijos() {
           </div>
         </div>
         {showFilters && (
-          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+          <div className="px-3 xs:px-4 sm:px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
@@ -692,42 +692,22 @@ export default function FinanzasEgresosFijos() {
           <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
         )}
 
-        {/* Tabla desktop */}
-        <div className="hidden sm:block">
-          <div className="overflow-x-auto max-h-[60vh]">
-            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm lg:text-base xl:text-base 2xl:text-base">
+        {/* Tabla desktop: hasta 1920px table-fixed para llenar ancho (monitores chicos) */}
+        <div className="hidden sm:block w-full">
+          <div className="overflow-x-auto max-h-[60vh] w-full">
+            <table className="w-full min-w-0 min-[1920px]:min-w-[1260px] text-sm lg:text-base xl:text-base 2xl:text-base table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    #
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Fecha
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Hora
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Categoría
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[60px]">
-                    Descripción
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Proveedor
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Frecuencia
-                  </th>
-                  <th className="text-center font-semibold px-1 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Método de pago
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
-                    Importe
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4">
-                    Estatus
-                  </th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[4%] min-[1920px]:w-auto">#</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Fecha</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[6%] min-[1920px]:w-auto">Hora</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Categoría</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Descripción</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[14%] min-[1920px]:w-auto">Proveedor</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Frecuencia</th>
+                  <th className="text-center font-semibold px-1 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Método de pago</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Importe</th>
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 w-[14%] min-[1920px]:w-auto">Estatus</th>
                 </tr>
               </thead>
               <tbody>

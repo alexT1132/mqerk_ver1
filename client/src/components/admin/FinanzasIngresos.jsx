@@ -682,7 +682,7 @@ export default function FinanzasIngresos() {
 
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl 2xl:max-w-none mx-auto">
+    <section className="px-2 xs:px-3 sm:px-6 lg:px-6 xl:px-8 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl 2xl:max-w-none mx-auto w-full">
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">Ingresos</h1>
@@ -727,8 +727,8 @@ export default function FinanzasIngresos() {
       </div>
 
       {/* Registro de ingresos */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden w-full">
+        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Registro de ingresos</h2>
           </div>
@@ -759,7 +759,7 @@ export default function FinanzasIngresos() {
           </div>
         </div>
         {showFilters && (
-          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
+          <div className="px-3 xs:px-4 sm:px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
@@ -877,24 +877,24 @@ export default function FinanzasIngresos() {
           ))}
         </div>
 
-        {/* Vista desktop/tablet (tabla) */}
-        <div className="hidden sm:block">
-          <div className="overflow-x-auto max-h-[60vh]">
-            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm">
+        {/* Vista desktop/tablet (tabla): hasta 1920px table-fixed para llenar ancho (monitores chicos) */}
+        <div className="hidden sm:block w-full">
+          <div className="overflow-x-auto max-h-[60vh] w-full">
+            <table className="w-full min-w-0 min-[1920px]:min-w-[1260px] text-sm table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">#</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Alumno</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Curso / Asesoría</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Fecha</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Hora</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Asesor</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Pago</th>
-                  <th className="text-right font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Importe</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0">Estatus</th>
-                  <th className="text-center font-semibold px-2 py-3 border-r border-gray-200 last:border-r-0 w-[60px] min-w-[60px] max-w-[60px] whitespace-nowrap">Desc.</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 whitespace-nowrap">Asistencia</th>
-                  <th className="text-left font-semibold px-4 py-3">Acciones</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[3%] min-[1920px]:w-auto">#</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[11%] min-[1920px]:w-auto">Alumno</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[13%] min-[1920px]:w-auto">Curso / Asesoría</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Fecha</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[5%] min-[1920px]:w-auto">Hora</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[9%] min-[1920px]:w-auto">Asesor</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Pago</th>
+                  <th className="text-right font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Importe</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Estatus</th>
+                  <th className="text-center font-semibold px-2 py-3 border-r border-gray-200 last:border-r-0 w-[5%] min-[1920px]:w-auto whitespace-nowrap">Desc.</th>
+                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[8%] min-[1920px]:w-auto whitespace-nowrap">Asistencia</th>
+                  <th className="text-left font-semibold px-4 py-3 w-[11%] min-[1920px]:w-auto">Acciones</th>
                 </tr>
               </thead>
               <tbody>

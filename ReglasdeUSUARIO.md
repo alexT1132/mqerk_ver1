@@ -4,6 +4,54 @@ Este archivo documenta de forma detallada cada cambio realizado en el proyecto, 
 
 ---
 
+## 2025-02-19 – Gastos variables: tabla a ancho completo en monitores chicos (p. ej. Huawei 13.6" 2160×1440)
+
+### Objetivo
+En monitores chicos como la Huawei 13.6" (2160×1440), la tabla de Registro de gastos variables no usaba todo el ancho disponible y se veía espacio vacío a los lados. Cada píxel cuenta en ese tamaño.
+
+### Cambios en FinanzasEgresosVariables.jsx
+- **Section:** padding lateral reducido en lg/xl: `lg:px-10` → `lg:px-6 xl:px-8`.
+- **Tabla:** Por debajo de 1920px la tabla usa siempre `table-fixed` y `w-full` con `min-w-0`; desde `min-[1920px]` se usa `table-auto` y `min-w-[1260px]`.
+- **Columnas (thead th):** En viewports &lt; 1920px anchos en porcentaje (# 5%, Unidades 8%, Producto/Servicio 18%, Desc. 7%, Entidad 14%, Valor unitario 12%, Método 12%, Importe 12%, Estatus 12%); desde 1920px `min-[1920px]:w-auto`.
+
+### Resultado esperado
+En viewports tipo 1280–1919px (p. ej. Huawei 13.6" 2160×1440) la tabla llena todo el ancho; en pantallas ≥ 1920px se mantiene table-auto.
+
+---
+
+## 2025-02-19 – Todas las tablas de Finanzas: mismo criterio (ancho completo hasta 1920px)
+
+### Objetivo
+Aplicar el mismo comportamiento de tabla a ancho completo en monitores chicos (hasta 1920px) en **todas** las vistas de la sección Finanzas: Gastos variables (ya aplicado), Gastos fijos, Ingresos, Pagos de asesores, Presupuesto de egresos y vista principal Egresos.
+
+### Archivos y cambios
+
+- **FinanzasEgresosFijos.jsx:** Section `lg:px-10 xl:px-12` → `lg:px-6 xl:px-8`. Tabla `w-full min-w-0 min-[1920px]:min-w-[1260px] table-fixed min-[1920px]:table-auto`; columnas con anchos % hasta 1920px (# 4%, Fecha 10%, Hora 6%, Categoría 12%, Descripción 8%, Proveedor 14%, Frecuencia 10%, Método 12%, Importe 10%, Estatus 14%).
+- **FinanzasIngresos.jsx:** Section `lg:px-10` → `lg:px-6 xl:px-8`. Tabla mismo patrón; columnas # 3%, Alumno 11%, Curso 13%, Fecha 7%, Hora 5%, Asesor 9%, Pago 7%, Importe 7%, Estatus 7%, Desc. 5%, Asistencia 8%, Acciones 11%.
+- **FinanzasPagosAsesores.jsx:** Section `px-4 sm:px-6 lg:px-10` → `px-2 xs:px-3 sm:px-6 lg:px-6 xl:px-8`, `w-full`. Card y panel filtros con padding reducido en chicas (`p-3 xs:p-4 sm:p-6`, `px-3 xs:px-4 sm:px-6`). Tabla `w-full min-w-0 min-[1920px]:min-w-[1100px] table-fixed min-[1920px]:table-auto`; columnas con % (ID_Pago 6%, Asesor 12%, Tipo servicio 14%, Monto base 8%, Horas 8%, Honorarios 12%, Ingreso final 10%, Fecha pago 10%, Método 8%, Nota 6%, Status 6%).
+- **FinanzasEgresosPresupuesto.jsx:** Section mismo patrón de padding; card `w-full` y header con padding reducido. Tabla "Histórico de presupuestos": `w-full min-w-0 min-[1920px]:min-w-[760px] table-fixed min-[1920px]:table-auto` con columnas % (Mes, Monto, Gastado, Disponible, Excedente, Acciones). Tabla del modal Cargar presupuestos: `w-full min-w-0 min-[1920px]:min-w-[640px] table-fixed min-[1920px]:table-auto` con columnas % (Mes 22%, Presupuesto 19%, Gastado 19%, Disponible 19%, Excedente 21%).
+- **FinanzasEgresos.jsx** (vista principal Egresos): Section `lg:px-10` → `lg:px-6 xl:px-8`, `w-full` y `2xl:max-w-none`. Card `w-full`, header `p-3 xs:p-4 sm:p-6`. Tabla `w-full min-w-0 min-[1920px]:min-w-[1260px] table-fixed min-[1920px]:table-auto`; columnas # 5%, Concepto 22%, Fecha 12%, Método 12%, Importe 12%, Estatus 12%, Descripción 25%.
+
+### Resultado esperado
+En cualquier vista de Finanzas (Gastos variables, Gastos fijos, Ingresos, Pagos asesores, Presupuesto, Egresos), en viewports &lt; 1920px (p. ej. Huawei 13.6" 2160×1440) las tablas ocupan el 100% del ancho disponible sin huecos laterales; desde 1920px se usa table-auto y min-width según tabla.
+
+---
+
+## 2025-02-19 – Asesores (Solicitudes / Administrar): tabla a ancho completo hasta 1920px
+
+### Objetivo
+Aplicar el mismo criterio de tablas a ancho completo en monitores chicos en la sección Administrar Asesores (Solicitudes de asesores).
+
+### Archivos modificados
+
+- **AdministrarAsesores.jsx:** Contenedor wrapper: `px-4 lg:px-8` → `px-2 xs:px-3 sm:px-6 lg:px-6 xl:px-8`; añadido `w-full`.
+- **SolicitudesAsesores.jsx:** Card de la tabla: añadido `w-full`. Header del card: `px-6` → `px-3 xs:px-4 sm:px-6`. Contenedor de la tabla: `overflow-x-auto w-full`. Tabla: `w-full min-w-[1100px]` → `w-full min-w-0 min-[1920px]:min-w-[1100px] table-fixed min-[1920px]:table-auto`. Columnas (thead): anchos en % hasta 1920px (ID 6%, Nombre 14%, Correo 16%, Área 10%, Grupos 18%, Status 10%, Fecha 12%, Estado 14%); desde 1920px `min-[1920px]:w-auto`.
+
+### Resultado esperado
+En viewports &lt; 1920px la tabla de solicitudes de asesores ocupa el 100% del ancho disponible; desde 1920px se mantiene table-auto.
+
+---
+
 ## 2025-02-19 – Modal Egresos: breakpoint 1920px “el doble” para 15.6"
 
 ### Objetivo
