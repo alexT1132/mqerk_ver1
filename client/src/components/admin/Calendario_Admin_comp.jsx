@@ -366,7 +366,7 @@ export function Calendario_Admin_comp() {
   };
   return (
     <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6 lg:pb-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
 
         <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 shadow-xl p-5 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -31,7 +31,7 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            
+
             <div className="absolute inset-0 opacity-5 pointer-events-none">
                 <div className="w-full h-full bg-repeat bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2740%27%20height%3D%2740%27%20viewBox%3D%270%200%2040%2040%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cg%20fill%3D%27%23000000%27%20fill-opacity%3D%270.1%27%3E%3Cpath%20d%3D%27M20%2020c0-1%201-2%202-2s2%201%202%202-1%202-2%202-2-1-2-2z%27/%3E%3C/g%3E%3C/svg%3E')]"></div>
             </div>
@@ -47,9 +47,9 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
                         group-hover:scale-110 group-hover:rotate-3
                         ring-2 ring-white/50
                     `}>
-                       
+
                         <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        
+
                         <div className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
                             {icon}
                         </div>
@@ -88,7 +88,7 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
                     {isLoading ? 'Cargando datos...' : description}
                 </p>
 
-                
+
                 <div className={`
                     w-full h-1 xs:h-1.5 sm:h-2 rounded-full overflow-hidden transition-all duration-500 shadow-inner
                     ${colorScheme.accentBar}
@@ -110,24 +110,24 @@ function MetricCard({ title, value, icon, description, onClick, isClickable = fa
 // Componente principal del dashboard de métricas
 function DashboardMetrics() {
     // Integración con el backend - usa el contexto AdminContext
-    const { 
-        dashboardData, 
-        isLoading, 
-        error, 
+    const {
+        dashboardData,
+        isLoading,
+        error,
         refreshDashboard,
-        lastUpdated 
+        lastUpdated
     } = useAdminContext();
     const navigate = useNavigate();
-    
+
     // Session validation
     const { isAuthenticated, loading } = useAuth();
-    
+
     useEffect(() => {
         if (!loading && !isAuthenticated) {
             navigate('/login', { replace: true });
         }
     }, [loading, isAuthenticated, navigate]);
-    
+
     // Show loading state while checking authentication
     if (loading || !isAuthenticated) {
         return (
@@ -188,35 +188,35 @@ function DashboardMetrics() {
     const icons = {
         ingresos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-emerald-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.9 0 2.50-.87 2.50-2.05 0-1.33-.73-1.94-2.78-2.73-2.24-.83-3.55-1.85-3.55-3.96 0-1.82 1.29-3.16 3.1-3.46V4h2.67v1.8c1.79.30 2.88 1.26 3.02 3.05h-1.94c-.12-.79-.62-1.76-2.33-1.76-1.06 0-2.31.56-2.31 1.85 0 .97.74 1.60 2.70 2.37 2.24.87 3.64 1.87 3.64 4.19 0 1.78-1.15 3.09-3.14 3.59z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.9 0 2.50-.87 2.50-2.05 0-1.33-.73-1.94-2.78-2.73-2.24-.83-3.55-1.85-3.55-3.96 0-1.82 1.29-3.16 3.1-3.46V4h2.67v1.8c1.79.30 2.88 1.26 3.02 3.05h-1.94c-.12-.79-.62-1.76-2.33-1.76-1.06 0-2.31.56-2.31 1.85 0 .97.74 1.60 2.70 2.37 2.24.87 3.64 1.87 3.64 4.19 0 1.78-1.15 3.09-3.14 3.59z" />
             </svg>
         ),
         pagos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-amber-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
-                <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+                <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
             </svg>
         ),
         alumnos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4.5c0-1.1.9-2 2-2s2 .9 2 2V18h3v-7.5c0-1.1.9-2 2-2s2 .9 2 2V18h3v-6c0-.8.7-1.5 1.5-1.5S21 11.2 21 12v6h1v2H2v-2h2z"/>
-                <path d="M12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5z"/>
-                <path d="M5.5 6.5C6.33 6.5 7 5.83 7 5S6.33 3.5 5.5 3.5 4 4.17 4 5s.67 1.5 1.5 1.5z"/>
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4.5c0-1.1.9-2 2-2s2 .9 2 2V18h3v-7.5c0-1.1.9-2 2-2s2 .9 2 2V18h3v-6c0-.8.7-1.5 1.5-1.5S21 11.2 21 12v6h1v2H2v-2h2z" />
+                <path d="M12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5z" />
+                <path d="M5.5 6.5C6.33 6.5 7 5.83 7 5S6.33 3.5 5.5 3.5 4 4.17 4 5s.67 1.5 1.5 1.5z" />
             </svg>
         ),
         cursos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+                <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
             </svg>
         ),
         accesos: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM15.1 8H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
+                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM15.1 8H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z" />
             </svg>
         ),
         notificaciones: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-rose-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
             </svg>
         )
     };
@@ -227,7 +227,7 @@ function DashboardMetrics() {
     // Función para manejar clics en las tarjetas de métricas
     const handleCardClick = (metricType) => {
         // Ejemplo de navegación condicional (nota: ya no es admin1 por órdenes superiores)
-        switch(metricType) {
+        switch (metricType) {
             case 'ingresos':
                 navigate('/administrativo/reportes-pagos');
                 break;
@@ -251,7 +251,7 @@ function DashboardMetrics() {
     // Función para refrescar datos manualmente (backend real)
     const handleRefreshData = async () => {
         if (isLoading) return;
-        
+
         try {
             await refreshDashboard();
         } catch (err) {
@@ -347,14 +347,14 @@ function DashboardMetrics() {
                     <h2 className="text-lg xs:text-xl sm:text-2xl font-extrabold text-red-700 mb-2 sm:mb-3">Error al cargar datos</h2>
                     <p className="text-sm xs:text-base text-gray-700 mb-5 sm:mb-6 max-w-md mx-auto font-medium">{error}</p>
                     <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 justify-center">
-                        <button 
+                        <button
                             onClick={handleRefreshData}
                             disabled={isLoading}
                             className="px-5 xs:px-6 py-2 xs:py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl sm:rounded-2xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm xs:text-base shadow-lg hover:shadow-xl active:scale-95 touch-manipulation"
                         >
                             {isLoading ? 'Reintentando...' : 'Reintentar'}
                         </button>
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             className="px-5 xs:px-6 py-2 xs:py-2.5 bg-gradient-to-r from-gray-600 to-slate-600 text-white rounded-xl sm:rounded-2xl hover:from-gray-700 hover:to-slate-700 transition-all duration-200 font-semibold text-sm xs:text-base shadow-lg hover:shadow-xl active:scale-95 touch-manipulation"
                         >
@@ -375,9 +375,9 @@ function DashboardMetrics() {
             )}
             {/* Header con información de actualización */}
             <div className="pt-3 xs:pt-4 sm:pt-5 md:pt-6 lg:pt-8 pb-0 px-3 xs:px-4 sm:px-5 md:px-6">
-                <div className="w-full max-w-7xl mx-auto">
+                <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
                     <div className="text-center mb-3 xs:mb-4 sm:mb-5">
-                     
+
                         <h2 className="relative inline-block 
                             text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl 
                             font-extrabold 
@@ -394,7 +394,7 @@ function DashboardMetrics() {
                             {isLoading ? 'Cargando métricas...' : 'Resumen de métricas y actividades principales'}
                         </p>
                     </div>
-                    
+
                     {/* Información de última actualización y botón de refresh */}
                     <div className="flex flex-col xs:flex-row items-center justify-between gap-2 xs:gap-0 text-xs xs:text-sm text-gray-600 mb-3 xs:mb-4 px-2">
                         <div className="flex items-center gap-2">
@@ -404,9 +404,9 @@ function DashboardMetrics() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span className="font-semibold">
-                                        Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-ES', { 
-                                            hour: '2-digit', 
-                                            minute: '2-digit' 
+                                        Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-ES', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
                                         })}
                                     </span>
                                 </>
@@ -436,8 +436,8 @@ function DashboardMetrics() {
             </div>
 
             <div className="flex-1 flex flex-col justify-center items-center py-3 xs:py-4 sm:py-5 md:py-6">
-                <div className="w-full max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6">
-                    <div className="grid grid-cols-6 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
+                <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto px-3 xs:px-4 sm:px-5 md:px-6 2xl:px-4">
+                    <div className="grid grid-cols-6 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 2xl:gap-8 auto-rows-fr">
                         {metricsData.map((metric, index) => (
                             <MetricCard
                                 key={metric.id}
@@ -463,7 +463,7 @@ function DashboardMetrics() {
                             <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full"></div>
                         </div>
                     </div>
-                    
+
                     {/* Footer con información adicional */}
                     <div className="mt-5 xs:mt-6 sm:mt-8 text-center">
                         <div className="text-xs xs:text-sm text-gray-500 font-medium">

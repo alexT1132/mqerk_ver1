@@ -914,7 +914,7 @@ function ValidacionPagos_Admin_comp() {
       )}
       {/* Header con filtros optimizado */}
       <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
-        <div className="w-full max-w-7xl mx-auto">
+        <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
           {/* Título principal */}
           <div className="text-center mb-4 xs:mb-6 sm:mb-8">
             <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
@@ -1065,7 +1065,7 @@ function ValidacionPagos_Admin_comp() {
 
       {/* Contenido principal de la tabla */}
       <div className="flex-1 px-2 xs:px-4 sm:px-6 pb-4 xs:pb-6">
-        <div className="w-full max-w-7xl mx-auto">
+        <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
           {/* Contenido Principal */}
           {!activeCategory ? (
             // Estado inicial - Seleccionar categoría
@@ -1629,49 +1629,49 @@ function ValidacionPagos_Admin_comp() {
         />
       )}
 
-      {/* Portal global para la modal de generación */}
+      {/* Modal generación: en lg/xl/2xl/1920px crece de forma pareja (ancho + alto): más padding, espaciado, iconos y barra */}
       {genModal.open && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto select-none">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-          <div className="relative bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-purple-200 w-full max-w-xs p-5 animate-fade-in">
-            <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg flex items-center justify-center ring-4 ring-white">
-              <svg className="w-4 h-4 text-white animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="relative bg-white rounded-xl lg:rounded-2xl 2xl:rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-purple-200 w-full max-w-xs lg:max-w-sm xl:max-w-md 2xl:max-w-lg min-[1920px]:max-w-xl p-5 lg:p-6 xl:p-7 2xl:p-8 min-[1920px]:p-9 animate-fade-in mx-4">
+            <div className="absolute -top-3 -right-3 w-8 h-8 lg:-top-3.5 lg:-right-3.5 lg:w-9 lg:h-9 xl:w-10 xl:h-10 2xl:-top-4 2xl:-right-4 2xl:w-11 2xl:h-11 min-[1920px]:w-12 min-[1920px]:h-12 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg flex items-center justify-center ring-4 ring-white">
+              <svg className="w-4 h-4 lg:w-5 lg:h-5 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 min-[1920px]:w-6 min-[1920px]:h-6 text-white animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 9a7.5 7.5 0 0113.418-3.418M19 15a7.5 7.5 0 01-13.418 3.418" />
               </svg>
             </div>
-            <div className="flex items-center mb-4 mt-1">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md mr-3">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center mb-4 mt-1 lg:mb-4 lg:mt-1.5 xl:mb-5 xl:mt-2 2xl:mb-5 2xl:mt-2 min-[1920px]:mb-6 min-[1920px]:mt-2.5">
+              <div className="w-11 h-11 rounded-lg lg:w-12 lg:h-12 xl:w-14 xl:h-14 2xl:w-14 2xl:h-14 min-[1920px]:w-16 min-[1920px]:h-16 lg:rounded-xl 2xl:rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md mr-3 lg:mr-4 xl:mr-4">
+                <svg className="w-6 h-6 lg:w-6 lg:h-6 xl:w-7 xl:h-7 2xl:w-8 2xl:h-8 min-[1920px]:w-9 min-[1920px]:h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
                 </svg>
               </div>
-              <div className="min-w-0">
-                <h4 className="text-sm font-semibold text-gray-800 tracking-wide flex items-center flex-wrap gap-1">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm lg:text-base xl:text-base 2xl:text-lg min-[1920px]:text-xl font-semibold text-gray-800 tracking-wide flex items-center flex-wrap gap-1">
                   Generando contrato
                   {genModal.preliminar && (
-                    <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-200">PRELIMINAR</span>
+                    <span className="ml-1 text-[10px] lg:text-xs font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-200">PRELIMINAR</span>
                   )}
                 </h4>
-                <p className="text-[11px] text-gray-500 truncate max-w-[180px]" title={genModal.alumno?.nombreCompleto}>
+                <p className="text-[11px] lg:text-xs xl:text-sm 2xl:text-sm min-[1920px]:text-base text-gray-500 truncate max-w-[180px] lg:max-w-[200px] xl:max-w-xs 2xl:max-w-sm min-[1920px]:max-w-md" title={genModal.alumno?.nombreCompleto}>
                   {genModal.alumno?.nombreCompleto || 'Preparando PDF'}
                 </p>
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="w-full bg-gray-200/80 rounded-full h-2 overflow-hidden relative">
+            <div className="space-y-4 lg:space-y-4 xl:space-y-5 2xl:space-y-5 min-[1920px]:space-y-6">
+              <div className="w-full bg-gray-200/80 rounded-full h-2 lg:h-2 xl:h-2.5 2xl:h-2.5 min-[1920px]:h-3 overflow-hidden relative">
                 <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(45deg,#fff_0_8px,#e5e5e5_8px_16px)]" />
-                <div className="h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-600 animate-loading-bar rounded-full shadow-inner" />
+                <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-600 animate-loading-bar rounded-full shadow-inner" />
               </div>
-              <div className="flex items-center justify-between text-[11px] text-gray-600 font-medium">
+              <div className="flex items-center justify-between text-[11px] lg:text-xs xl:text-xs 2xl:text-sm min-[1920px]:text-sm text-gray-600 font-medium">
                 <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 lg:w-4 lg:h-4 xl:w-4 xl:h-4 2xl:w-5 2xl:h-5 min-[1920px]:w-5 min-[1920px]:h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l2.5 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Procesando...
                 </span>
                 <span className="tabular-nums text-purple-600">{genModal.countdown}s</span>
               </div>
-              <p className="text-[10px] leading-snug text-gray-400">
+              <p className="text-[10px] lg:text-[11px] xl:text-xs 2xl:text-xs min-[1920px]:text-sm leading-snug text-gray-400">
                 Estamos ensamblando tu PDF con la plantilla oficial y posicionando los campos calibrados.
               </p>
             </div>

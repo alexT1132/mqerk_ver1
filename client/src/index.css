@@ -699,6 +699,16 @@ body::-webkit-scrollbar,
 /* Reduce base rem size slightly on ultra-wide screens to avoid oversized UI */
 :root {
   font-size: 16px;
+  --keyboard-zindex: 10005;
+  /* Asegurar que el teclado de MathLive esté por encima de los modales (z=9999) */
+}
+
+/* Forzar visibilidad del teclado virtual de MathLive */
+.ML__virtual-keyboard-container,
+.ML__keyboard,
+#mathlive-virtual-keyboard-container,
+[data-ml-container] {
+  z-index: 10005 !important;
 }
 
 @media (min-width: 1920px) {
@@ -819,4 +829,28 @@ body::-webkit-scrollbar,
 
 .animate-progress-bar {
   animation: progress-bar 1.2s linear forwards;
+}
+
+/* Fix crítico para popups de MathLive y otros elementos flotantes */
+/* Asegura que los menús/teclados virtuales de MathLive se vean por encima de los modales */
+.ML__keyboard,
+.ML__popover,
+.ML__menu,
+.ML__suggestion-box,
+math-field::part(virtual-keyboard-toggle),
+math-field::part(menu-toggle) {
+  z-index: 11000 !important;
+}
+
+/* Asegurar que el contenedor del teclado virtual tenga el z-index correcto */
+body>div[style*="z-index"] {
+  /* Esto es un intento genérico, pero MathLive suele insertar sus elementos en el body */
+}
+
+/* Si MathLive usa shadow DOM, necesitamos configurar las variables CSS globales */
+math-field {
+  --keyboard-zindex: 11000;
+  --menu-zindex: 11000;
+  z-index: 0;
+  /* Contexto local */
 }

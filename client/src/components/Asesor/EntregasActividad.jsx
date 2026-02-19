@@ -519,56 +519,56 @@ export default function EntregasActividad() {
 
         {/* Modal extender fecha por grupo */}
         {showExtendGrupo && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                <h3 className="text-sm font-bold text-slate-800">Extender fecha límite por grupo</h3>
-                <button onClick={() => setShowExtendGrupo(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                  <X className="w-4 h-4" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 2xl:p-6 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full 2xl:max-w-2xl min-[1800px]:max-w-3xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 2xl:px-8 2xl:py-5 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-sm 2xl:text-lg font-bold text-slate-800">Extender fecha límite por grupo</h3>
+                <button onClick={() => setShowExtendGrupo(false)} className="text-slate-400 hover:text-slate-600 transition-colors 2xl:p-2">
+                  <X className="w-4 h-4 2xl:w-6 2xl:h-6" />
                 </button>
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-4 2xl:p-6 2xl:space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Grupo</label>
+                  <label className="block text-xs 2xl:text-base font-bold text-slate-600 mb-1 2xl:mb-2">Grupo</label>
                   <input
                     type="text"
                     value={extendData.grupo}
                     onChange={(e) => setExtendData(prev => ({ ...prev, grupo: e.target.value }))}
                     placeholder="Ej: m1, v2, s1"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 2xl:px-4 2xl:py-3 text-sm 2xl:text-base font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Nueva fecha límite</label>
+                  <label className="block text-xs 2xl:text-base font-bold text-slate-600 mb-1 2xl:mb-2">Nueva fecha límite</label>
                   <input
                     type="datetime-local"
                     value={extendData.nueva_fecha_limite}
                     onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 2xl:px-4 2xl:py-3 text-sm 2xl:text-base font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Notas (opcional)</label>
+                  <label className="block text-xs 2xl:text-base font-bold text-slate-600 mb-1 2xl:mb-2">Notas (opcional)</label>
                   <textarea
                     value={extendData.notas}
                     onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
                     placeholder="Razón de la extensión..."
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 2xl:px-4 2xl:py-3 text-sm 2xl:text-base font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
                     rows={2}
                   />
                 </div>
               </div>
-              <div className="flex gap-2 justify-end px-4 py-3 border-t border-slate-100 bg-slate-50">
+              <div className="flex gap-2 justify-end px-4 py-3 2xl:px-8 2xl:py-5 border-t border-slate-100 bg-slate-50">
                 <button
                   onClick={() => setShowExtendGrupo(false)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
+                  className="px-3 py-1.5 2xl:px-5 2xl:py-2.5 rounded-lg border border-slate-200 text-xs 2xl:text-base font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleExtendGrupo}
                   disabled={extending}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-md transition-all hover:shadow-lg active:scale-95"
+                  className="px-3 py-1.5 2xl:px-5 2xl:py-2.5 rounded-lg bg-indigo-600 text-xs 2xl:text-base font-bold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-md transition-all hover:shadow-lg active:scale-95"
                 >
                   {extending ? '...' : 'Extender'}
                 </button>
@@ -580,21 +580,21 @@ export default function EntregasActividad() {
 
         {/* Modal extender fecha por estudiante */}
         {showExtendEstudiante && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                <h3 className="text-sm font-bold text-slate-800">Extender fecha límite por estudiante</h3>
-                <button onClick={() => setShowExtendEstudiante(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                  <X className="w-4 h-4" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 2xl:p-6 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full 2xl:max-w-2xl min-[1800px]:max-w-3xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 2xl:px-8 2xl:py-5 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-sm 2xl:text-lg font-bold text-slate-800">Extender fecha límite por estudiante</h3>
+                <button onClick={() => setShowExtendEstudiante(false)} className="text-slate-400 hover:text-slate-600 transition-colors 2xl:p-2">
+                  <X className="w-4 h-4 2xl:w-6 2xl:h-6" />
                 </button>
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-4 2xl:p-6 2xl:space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Estudiante</label>
+                  <label className="block text-xs 2xl:text-base font-bold text-slate-600 mb-1 2xl:mb-2">Estudiante</label>
                   <select
                     value={extendData.id_estudiante || ''}
                     onChange={(e) => setExtendData(prev => ({ ...prev, id_estudiante: e.target.value ? Number(e.target.value) : null }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 2xl:px-4 2xl:py-3 text-sm 2xl:text-base font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   >
                     <option value="">Selecciona un estudiante</option>
                     {rows.map(r => (
@@ -605,36 +605,36 @@ export default function EntregasActividad() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Nueva fecha límite</label>
+                  <label className="block text-xs 2xl:text-base font-bold text-slate-600 mb-1 2xl:mb-2">Nueva fecha límite</label>
                   <input
                     type="datetime-local"
                     value={extendData.nueva_fecha_limite}
                     onChange={(e) => setExtendData(prev => ({ ...prev, nueva_fecha_limite: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 2xl:px-4 2xl:py-3 text-sm 2xl:text-base font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Notas (opcional)</label>
+                  <label className="block text-xs 2xl:text-base font-bold text-slate-600 mb-1 2xl:mb-2">Notas (opcional)</label>
                   <textarea
                     value={extendData.notas}
                     onChange={(e) => setExtendData(prev => ({ ...prev, notas: e.target.value }))}
                     placeholder="Razón de la extensión..."
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 2xl:px-4 2xl:py-3 text-sm 2xl:text-base font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
                     rows={2}
                   />
                 </div>
               </div>
-              <div className="flex gap-2 justify-end px-4 py-3 border-t border-slate-100 bg-slate-50">
+              <div className="flex gap-2 justify-end px-4 py-3 2xl:px-8 2xl:py-5 border-t border-slate-100 bg-slate-50">
                 <button
                   onClick={() => setShowExtendEstudiante(false)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
+                  className="px-3 py-1.5 2xl:px-5 2xl:py-2.5 rounded-lg border border-slate-200 text-xs 2xl:text-base font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleExtendEstudiante}
                   disabled={extending}
-                  className="px-3 py-1.5 rounded-lg bg-purple-600 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-50 shadow-md transition-all hover:shadow-lg active:scale-95"
+                  className="px-3 py-1.5 2xl:px-5 2xl:py-2.5 rounded-lg bg-purple-600 text-xs 2xl:text-base font-bold text-white hover:bg-purple-700 disabled:opacity-50 shadow-md transition-all hover:shadow-lg active:scale-95"
                 >
                   {extending ? '...' : 'Extender'}
                 </button>

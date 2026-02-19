@@ -111,9 +111,8 @@ const InputField = ({
           value={value}
           onChange={(e) => onChange(field, e.target.value)}
           disabled={disabled}
-          className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm transition-all duration-200 hover:border-gray-400 ${
-            validationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm transition-all duration-200 hover:border-gray-400 ${validationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+            }`}
         >
           {options.map(option => (
             <option key={option.value} value={option.value}>
@@ -129,9 +128,8 @@ const InputField = ({
           maxLength={maxLength}
           rows={3}
           placeholder={`Ingresa ${label.toLowerCase()}`}
-          className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm resize-none transition-all duration-200 hover:border-gray-400 ${
-            validationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm resize-none transition-all duration-200 hover:border-gray-400 ${validationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+            }`}
         />
       ) : (
         <input
@@ -144,12 +142,11 @@ const InputField = ({
             type === 'tel'
               ? '(555) 123-4567'
               : type === 'email'
-              ? 'ejemplo@correo.com'
-              : `Ingresa ${label.toLowerCase()}`
+                ? 'ejemplo@correo.com'
+                : `Ingresa ${label.toLowerCase()}`
           }
-          className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm transition-all duration-200 hover:border-gray-400 ${
-            validationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm transition-all duration-200 hover:border-gray-400 ${validationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+            }`}
         />
       )}
       {helpText && (
@@ -190,14 +187,14 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
 function StudentProfilePage() {
   const { folio } = useParams(); // Obtiene el folio del estudiante desde la URL
   const navigate = useNavigate();
-  
+
   // ========================================================================
   // ESTADOS DEL COMPONENTE
   // ========================================================================
   const [isEditing, setIsEditing] = useState(false); // Controla si está en modo edición
   const [isLoading, setIsLoading] = useState(false); // Loading para operaciones de guardado
   const [isLoadingStudent, setIsLoadingStudent] = useState(true); // Loading para cargar datos
-  
+
   // ESTRUCTURA DE DATOS DEL ESTUDIANTE
   // TODO BACKEND: Esta estructura debe coincidir con la respuesta de tu API
   const [formData, setFormData] = useState({
@@ -206,7 +203,7 @@ function StudentProfilePage() {
     apellidos: '',
     folio: '',
     fechaRegistro: '',
-    
+
     // Información Personal y Contacto
     personal: {
       email: '',
@@ -215,39 +212,39 @@ function StudentProfilePage() {
       tutorName: '',
       tutorPhoneNumber: ''
     },
-    
+
     // Información Académica
     academic: {
       nivelAcademico: '',
       gradoSemestre: '',
       bachillerato: '',
-  postulaciones: '',
+      postulaciones: '',
       universityOption: ''
     },
-    
+
     // Información del Curso
     course: {
       curso: '',
-  turno: 'VESPERTINO',
-  modality: 'Presencial',
+      turno: 'VESPERTINO',
+      modality: 'Presencial',
       advisor: '',
       group: ''
     },
-    
+
     // Información de Salud
     health: {
       tipoAlergia: '',
       discapacidadTranstorno: '',
-  orientacionVocacional: '',
-  alergiaDetalle: '',
-  discapacidadDetalle: ''
+      orientacionVocacional: '',
+      alergiaDetalle: '',
+      discapacidadDetalle: ''
     },
-    
+
     // Estado del Estudiante
     status: {
-  estatus: 'Activo' // Valores: 'Activo', 'Suspendido'
+      estatus: 'Activo' // Valores: 'Activo', 'Suspendido'
     },
-    
+
     // Expectativas
     expectations: {
       cambioQuiereLograr: '',
@@ -264,7 +261,7 @@ function StudentProfilePage() {
       created_at: ''
     }
   });
-  
+
   const [originalData, setOriginalData] = useState({}); // Backup para cancelar cambios
   const [student, setStudent] = useState(null); // Datos del estudiante
   const [error, setError] = useState(null); // Errores de la aplicación
@@ -282,7 +279,7 @@ function StudentProfilePage() {
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => { }
   });
 
   const [saveConfirmModal, setSaveConfirmModal] = useState(false);
@@ -312,7 +309,7 @@ function StudentProfilePage() {
   // ========================================================================
   // FUNCIONES DE UTILIDAD
   // ========================================================================
-  
+
   // Función para mostrar notificaciones
   const showNotification = useCallback((message, type = 'success') => {
     setNotification({
@@ -336,7 +333,7 @@ function StudentProfilePage() {
   const loadStudentData = async () => {
     setIsLoadingStudent(true);
     setError(null);
-    
+
     try {
       // Validar que el folio existe
       if (!folio || folio.trim() === '') {
@@ -349,10 +346,10 @@ function StudentProfilePage() {
       // Por: const response = await fetch(`/api/students/${folio}`);
       // Y luego: const data = await response.json();
       const response = await studentService.getStudent(folio);
-      
+
       if (response.success && response.data) {
         setStudent(response.data);
-        
+
         // 🔄 CONEXIÓN API - PASO 2: Eliminar esta condición cuando uses API real
         if (response.isSimulated) {
           showNotification(`⚠️ ${response.message}`, 'warning');
@@ -405,9 +402,9 @@ function StudentProfilePage() {
       const status = await studentService.checkBackendStatus();
       setBackendStatus(status);
     } catch (error) {
-      setBackendStatus({ 
-        available: false, 
-        message: 'Error al verificar conexión con el servidor' 
+      setBackendStatus({
+        available: false,
+        message: 'Error al verificar conexión con el servidor'
       });
     }
   };
@@ -423,7 +420,7 @@ function StudentProfilePage() {
     const raw = String(valor).trim();
     const upper = raw.toUpperCase();
     // Si ya es un valor válido, devolverlo
-    if (['VESPERTINO','MATUTINO','SABATINO'].includes(upper)) return upper;
+    if (['VESPERTINO', 'MATUTINO', 'SABATINO'].includes(upper)) return upper;
     // Mapear códigos y variantes
     if (upper.startsWith('V')) return 'VESPERTINO'; // V, V1, V2, VESPERTINO 1, etc.
     if (upper.startsWith('M')) return 'MATUTINO';   // M, M1, M2, MATUTINO 1, etc.
@@ -498,31 +495,31 @@ function StudentProfilePage() {
         phoneNumber: st.telefonoAlumno || st.telefono || st.phoneNumber || '',
         tutorPhoneNumber: st.telefonoTutor || st.tel_tutor || st.tutorPhone || '',
       },
-    academic: {
+      academic: {
         nivelAcademico: pickFirstNonEmpty(st.academia, st.nivelAcademico, st.academico1, st.estudios, st.nivel),
         gradoSemestre: pickFirstNonEmpty(st.gradoSemestre, st.semestre, st.grado),
         // Bachillerato: academico2 -> bachillerato -> institucion -> preparatoria -> nivelAcademico -> academico1
         bachillerato: pickFirstNonEmpty(st.academico2, st.bachillerato, st.institucion, st.preparatoria, st.nivelAcademico, st.academico1),
-  // No usar orientacion como licenciatura; solo campos de carrera/licenciatura
-  postulaciones: pickFirstNonEmpty(st.postulaciones, st.postulacion, st.licenciaturaPostula, st.carreraInteres),
-  // Mostrar combinación de universidades fijas + campo abierto
-  universityOption: universidadesDisplay
+        // No usar orientacion como licenciatura; solo campos de carrera/licenciatura
+        postulaciones: pickFirstNonEmpty(st.postulaciones, st.postulacion, st.licenciaturaPostula, st.carreraInteres),
+        // Mostrar combinación de universidades fijas + campo abierto
+        universityOption: universidadesDisplay
       },
       course: {
         curso: st.curso || st.course || '',
         turno: mapTurnoLabel(st.turno || st.turnoCodigo || st.shift || ''),
         advisor: st.asesor || st.advisor || st.asesorAsignado || '',
         group: st.grupo || st.group || st.grupoAsignado || '',
-  modality: st.modalidad || st.modality || st.modalidadCurso || 'Presencial',
-  academia: st.academia || 'MQerKAcademy',
+        modality: st.modalidad || st.modality || st.modalidadCurso || 'Presencial',
+        academia: st.academia || 'MQerKAcademy',
       },
       health: {
         tipoAlergia: st.tipoAlergia || st.alergia || '',
         discapacidadTranstorno: st.discapacidadTranstorno || st.discapacidad || st.trastorno || '',
         // Orientación vocacional puede venir como 'orientacion' en estudiantes
         orientacionVocacional: pickFirstNonEmpty(st.orientacionVocacional, st.orientacion, st.testVocacional),
-  alergiaDetalle: st.alergia2 || '',
-  discapacidadDetalle: st.discapacidad2 || '',
+        alergiaDetalle: st.alergia2 || '',
+        discapacidadDetalle: st.discapacidad2 || '',
       },
       expectations: {
         cambioQuiereLograr: st.cambioQuiereLograr || st.metaPrincipal || '',
@@ -535,12 +532,12 @@ function StudentProfilePage() {
         comunidad2: st.comunidad2 || '',
         alergia2: st.alergia2 || '',
         discapacidad2: st.discapacidad2 || '',
-  // Detalles derivados (solo locales para UI)
-  alergiaDetalle: st.alergia2 || '',
-  discapacidadDetalle: st.discapacidad2 || '',
+        // Detalles derivados (solo locales para UI)
+        alergiaDetalle: st.alergia2 || '',
+        discapacidadDetalle: st.discapacidad2 || '',
         universidades2: st.universidades2 || '',
-  plan: st.plan || '',
-  academia: st.academia || '',
+        plan: st.plan || '',
+        academia: st.academia || '',
         anio: st.anio || '',
         verificacion: st.verificacion ?? '',
         created_at: st.created_at || fechaNormalizada || ''
@@ -586,12 +583,12 @@ function StudentProfilePage() {
   }, [student, mapBackendStudentToFormData]);
 
   const formatPhoneNumber = (value) => {
-    const cleaned = (value || '').replace(/\D/g, '').slice(0,10);
+    const cleaned = (value || '').replace(/\D/g, '').slice(0, 10);
     const len = cleaned.length;
     if (len === 0) return '';
     if (len < 4) return `(${cleaned}`; // empieza paréntesis
-    if (len < 7) return `(${cleaned.slice(0,3)}) ${cleaned.slice(3)}`;
-    return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
+    if (len < 7) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
   };
 
   const handleInputChange = (field, value) => {
@@ -613,7 +610,7 @@ function StudentProfilePage() {
       if (keys.length === 1) {
         return { ...prev, [field]: processedValue };
       }
-      
+
       const newData = { ...prev };
       let current = newData;
       for (let i = 0; i < keys.length - 1; i++) {
@@ -622,7 +619,7 @@ function StudentProfilePage() {
       }
       current[keys[keys.length - 1]] = processedValue;
 
-  // Ya no limpiamos campos académicos cuando se activa orientación; el admin puede capturarlos
+      // Ya no limpiamos campos académicos cuando se activa orientación; el admin puede capturarlos
       return newData;
     });
   };
@@ -699,31 +696,31 @@ function StudentProfilePage() {
 
     setIsLoading(true);
     try {
-  // Unificar campos mixtos para persistencia: municipio (comunidad) y universidades
-  const municipioFinal = (getNestedValue(formData, 'personal.municipio') || '').trim();
-  const universidadesStr = (getNestedValue(formData, 'academic.universityOption') || '').trim();
-  // Si viene múltiple separado por comas, mantenerlo; el backend puede dividirlo
+      // Unificar campos mixtos para persistencia: municipio (comunidad) y universidades
+      const municipioFinal = (getNestedValue(formData, 'personal.municipio') || '').trim();
+      const universidadesStr = (getNestedValue(formData, 'academic.universityOption') || '').trim();
+      // Si viene múltiple separado por comas, mantenerlo; el backend puede dividirlo
 
-  const updateData = {
+      const updateData = {
         nombres: formData.nombres.trim(),
         apellidos: formData.apellidos.trim(),
         correoElectronico: formData.personal.email.trim().toLowerCase(),
         telefonoAlumno: formData.personal.phoneNumber?.replace(/\D/g, '') || '',
-    municipioComunidad: municipioFinal,
+        municipioComunidad: municipioFinal,
         nombreTutor: formData.personal.tutorName?.trim() || '',
         telefonoTutor: formData.personal.tutorPhoneNumber?.replace(/\D/g, '') || '',
         nivelAcademico: formData.academic.nivelAcademico || '',
-  academia: formData.academic.nivelAcademico || '',
+        academia: formData.academic.nivelAcademico || '',
         gradoSemestre: formData.academic.gradoSemestre || '',
         bachillerato: formData.academic.bachillerato?.trim() || '',
-  // Permitir al administrador capturar postulaciones y universidades incluso con orientación='Si'
-  universidadesPostula: universidadesStr,
-  postulaciones: formData.academic.postulaciones?.trim() || '',
+        // Permitir al administrador capturar postulaciones y universidades incluso con orientación='Si'
+        universidadesPostula: universidadesStr,
+        postulaciones: formData.academic.postulaciones?.trim() || '',
         curso: formData.course.curso || '',
         turno: formData.course.turno || '',
         asesor: formData.course.advisor?.trim() || '',
         grupo: formData.course.group?.trim() || '',
-  modalidad: formData.course.modality || 'Presencial',
+        modalidad: formData.course.modality || 'Presencial',
         tipoAlergia: formData.health.tipoAlergia?.trim() || '',
         alergiaDetalle: formData.health.tipoAlergia && formData.health.tipoAlergia.toLowerCase() !== 'no'
           ? formData.health.alergiaDetalle?.trim() || ''
@@ -732,15 +729,15 @@ function StudentProfilePage() {
         discapacidadDetalle: formData.health.discapacidadTranstorno && formData.health.discapacidadTranstorno.toLowerCase() !== 'no'
           ? formData.health.discapacidadDetalle?.trim() || ''
           : '',
-    orientacionVocacional: formData.health.orientacionVocacional || '',
+        orientacionVocacional: formData.health.orientacionVocacional || '',
         cambioQuiereLograr: formData.expectations.cambioQuiereLograr?.trim() || '',
         comentarioEspera: formData.expectations.comentarioEspera?.trim() || '',
         estatus: formData.status.estatus
       };
 
-    
+
       const response = await studentService.updateStudent(student.folio, updateData);
-      
+
       if (response.success) {
         const updatedStudent = { ...student, ...updateData };
         setStudent(updatedStudent);
@@ -765,21 +762,21 @@ function StudentProfilePage() {
   const handleStatusChange = async (newStatus) => {
     setIsLoading(true);
     try {
-    
+
       const response = await studentService.updateStatus(student.folio, newStatus);
-      
+
       if (response.success) {
         const updatedData = { ...formData, status: { ...formData.status, estatus: newStatus } };
         setFormData(updatedData);
         setOriginalData(updatedData);
         setStudent({ ...student, estatus: newStatus });
-        
+
         // 🔄 CONEXIÓN API - PASO 6: Simplificar mensajes cuando uses API real
-        const message = response.isSimulated 
-          ? `⚠️ ${response.message}` 
+        const message = response.isSimulated
+          ? `⚠️ ${response.message}`
           : `✅ Estudiante marcado como ${newStatus.toLowerCase()}`;
         const type = response.isSimulated ? 'warning' : 'success';
-        
+
         showNotification(message, type);
       } else {
         showNotification(`❌ ${response.message || 'Error al cambiar el estatus'}`, 'error');
@@ -797,19 +794,19 @@ function StudentProfilePage() {
       title: 'Confirmar Eliminación',
       message: '¿Estás seguro de que quieres eliminar este estudiante? Esta acción es irreversible.',
       onConfirm: async () => {
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {} });
-        
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+
         try {
-          
+
           const response = await studentService.deleteStudent(student.folio);
-          
+
           if (response.success) {
             // 🔄 CONEXIÓN API - PASO 8: Simplificar mensajes cuando uses API real
-            const message = response.isSimulated 
-              ? `⚠️ ${response.message}` 
+            const message = response.isSimulated
+              ? `⚠️ ${response.message}`
               : '✅ Estudiante eliminado exitosamente';
             const type = response.isSimulated ? 'warning' : 'success';
-            
+
             showNotification(message, type);
             setTimeout(() => navigate(-1), 2000);
           } else {
@@ -845,13 +842,13 @@ function StudentProfilePage() {
           <h2 className="text-xl font-bold text-red-600 mb-2">Error al cargar estudiante</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               Volver a Lista
             </button>
-            <button 
+            <button
               onClick={loadStudentData}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -912,7 +909,7 @@ function StudentProfilePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       )
-  },
+    },
     {
       id: 'account',
       label: '🔐 Cuenta',
@@ -928,7 +925,7 @@ function StudentProfilePage() {
     switch (activeTab) {
       case 'general':
         return (
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
             {/* Sección Superior: Foto y Datos Básicos */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
@@ -941,7 +938,7 @@ function StudentProfilePage() {
                   Información General del Estudiante
                 </h3>
               </div>
-              
+
               <div className="p-5 sm:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   {/* Foto del estudiante */}
@@ -954,13 +951,13 @@ function StudentProfilePage() {
                       />
                       <div className="absolute bottom-2 right-2 w-7 h-7 sm:w-8 sm:h-8 bg-green-500 border-4 border-white rounded-full shadow-lg"></div>
                     </div>
-                    
+
                     <div className="text-center space-y-2">
                       <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{formData.nombres} {formData.apellidos}</p>
                       <p className="text-sm sm:text-base font-semibold text-slate-600">Folio: {displayFolio}</p>
                       <p className="text-sm sm:text-base font-semibold text-slate-600">Registrado: {formData.fechaRegistro}</p>
                     </div>
-                    
+
                     {isEditing && (
                       <div className="w-full max-w-xs">
                         <input
@@ -988,7 +985,7 @@ function StudentProfilePage() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Datos básicos */}
                   <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2 border-b-2 border-slate-200 pb-4 mb-4">
@@ -1001,27 +998,27 @@ function StudentProfilePage() {
                         Datos de Identificación
                       </h4>
                     </div>
-                    
-                    <InputField 
-                      label="Nombres" 
-                      field="nombres" 
-                      value={formData.nombres || ''} 
-                      onChange={handleInputChange} 
-                      maxLength={50} 
-                      isRequired={true} 
-                      disabled={!isEditing} 
+
+                    <InputField
+                      label="Nombres"
+                      field="nombres"
+                      value={formData.nombres || ''}
+                      onChange={handleInputChange}
+                      maxLength={50}
+                      isRequired={true}
+                      disabled={!isEditing}
                     />
-                    
-                    <InputField 
-                      label="Apellidos" 
-                      field="apellidos" 
-                      value={formData.apellidos || ''} 
-                      onChange={handleInputChange} 
-                      maxLength={50} 
-                      isRequired={true} 
-                      disabled={!isEditing} 
+
+                    <InputField
+                      label="Apellidos"
+                      field="apellidos"
+                      value={formData.apellidos || ''}
+                      onChange={handleInputChange}
+                      maxLength={50}
+                      isRequired={true}
+                      disabled={!isEditing}
                     />
-                    
+
                     <div className="space-y-1">
                       <label className="block text-sm font-medium text-gray-700">Folio</label>
                       <input
@@ -1032,7 +1029,7 @@ function StudentProfilePage() {
                         title={formData.folio ? `Folio interno: ${formData.folio}` : ''}
                       />
                     </div>
-                    
+
                     <div className="space-y-1">
                       <label className="block text-sm font-medium text-gray-700">Fecha de Registro</label>
                       <input
@@ -1061,31 +1058,31 @@ function StudentProfilePage() {
                   </h3>
                 </div>
                 <div className="p-6 space-y-4">
-                  <InputField 
-                    label="Correo Electrónico" 
-                    field="personal.email" 
-                    value={getNestedValue(formData, 'personal.email')} 
-                    onChange={handleInputChange} 
-                    type="email" 
-                    isRequired={true} 
-                    disabled={!isEditing} 
+                  <InputField
+                    label="Correo Electrónico"
+                    field="personal.email"
+                    value={getNestedValue(formData, 'personal.email')}
+                    onChange={handleInputChange}
+                    type="email"
+                    isRequired={true}
+                    disabled={!isEditing}
                   />
-                  <InputField 
-                    label="Teléfono del Alumno" 
-                    field="personal.phoneNumber" 
-                    value={getNestedValue(formData, 'personal.phoneNumber')} 
-                    onChange={handleInputChange} 
-                    type="tel" 
-                    helpText="Formato: (555) 123-4567" 
-                    disabled={!isEditing} 
+                  <InputField
+                    label="Teléfono del Alumno"
+                    field="personal.phoneNumber"
+                    value={getNestedValue(formData, 'personal.phoneNumber')}
+                    onChange={handleInputChange}
+                    type="tel"
+                    helpText="Formato: (555) 123-4567"
+                    disabled={!isEditing}
                   />
-                  <InputField 
-                    label="Municipio/Comunidad" 
-                    field="personal.municipio" 
-                    value={getNestedValue(formData, 'personal.municipio')} 
-                    onChange={handleInputChange} 
-                    maxLength={50} 
-                    disabled={!isEditing} 
+                  <InputField
+                    label="Municipio/Comunidad"
+                    field="personal.municipio"
+                    value={getNestedValue(formData, 'personal.municipio')}
+                    onChange={handleInputChange}
+                    maxLength={50}
+                    disabled={!isEditing}
                   />
                 </div>
               </div>
@@ -1102,24 +1099,24 @@ function StudentProfilePage() {
                   </h3>
                 </div>
                 <div className="p-6 space-y-4">
-                  <InputField 
-                    label="Nombre del Tutor" 
-                    field="personal.tutorName" 
-                    value={getNestedValue(formData, 'personal.tutorName')} 
-                    onChange={handleInputChange} 
-                    maxLength={50} 
-                    disabled={!isEditing} 
+                  <InputField
+                    label="Nombre del Tutor"
+                    field="personal.tutorName"
+                    value={getNestedValue(formData, 'personal.tutorName')}
+                    onChange={handleInputChange}
+                    maxLength={50}
+                    disabled={!isEditing}
                   />
-                  <InputField 
-                    label="Teléfono del Tutor" 
-                    field="personal.tutorPhoneNumber" 
-                    value={getNestedValue(formData, 'personal.tutorPhoneNumber')} 
-                    onChange={handleInputChange} 
-                    type="tel" 
-                    helpText="Formato: (555) 123-4567" 
-                    disabled={!isEditing} 
+                  <InputField
+                    label="Teléfono del Tutor"
+                    field="personal.tutorPhoneNumber"
+                    value={getNestedValue(formData, 'personal.tutorPhoneNumber')}
+                    onChange={handleInputChange}
+                    type="tel"
+                    helpText="Formato: (555) 123-4567"
+                    disabled={!isEditing}
                   />
-                  
+
                   {/* Información adicional del tutor */}
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-start space-x-3">
@@ -1142,7 +1139,7 @@ function StudentProfilePage() {
 
       case 'academic':
         return (
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
             {/* Sección: Nivel Educativo Actual */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
@@ -1159,25 +1156,25 @@ function StudentProfilePage() {
               <div className="p-6">
                 {/* Ajuste: usar siempre 2 columnas en pantallas medianas y grandes para que los campos tengan el mismo ancho y no quede una tercera columna vacía */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
+
                   {/* Campo Academia removido a solicitud; valor sigue disponible en formData.academic.nivelAcademico si se necesita mostrar en otra sección */}
-                  
-                  <InputField 
-                    label="Grado/Semestre" 
-                    field="academic.gradoSemestre" 
-                    value={getNestedValue(formData, 'academic.gradoSemestre')} 
-                    onChange={handleInputChange} 
+
+                  <InputField
+                    label="Grado/Semestre"
+                    field="academic.gradoSemestre"
+                    value={getNestedValue(formData, 'academic.gradoSemestre')}
+                    onChange={handleInputChange}
                     maxLength={30}
-                    disabled={!isEditing} 
+                    disabled={!isEditing}
                   />
-                  
-                  <InputField 
-                    label="Bachillerato Actual" 
-                    field="academic.bachillerato" 
-                    value={getNestedValue(formData, 'academic.bachillerato')} 
-                    onChange={handleInputChange} 
-                    maxLength={100} 
-                    disabled={!isEditing} 
+
+                  <InputField
+                    label="Bachillerato Actual"
+                    field="academic.bachillerato"
+                    value={getNestedValue(formData, 'academic.bachillerato')}
+                    onChange={handleInputChange}
+                    maxLength={100}
+                    disabled={!isEditing}
                   />
                 </div>
               </div>
@@ -1199,7 +1196,7 @@ function StudentProfilePage() {
               <div className="p-6">
                 {/* Selector de orientación vocacional trasladado a la sección de Salud y Bienestar */
                 }
-                { (getNestedValue(formData, 'health.orientacionVocacional') || 'No') === 'Si' && (
+                {(getNestedValue(formData, 'health.orientacionVocacional') || 'No') === 'Si' && (
                   <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
                     El estudiante ha indicado que requiere orientación vocacional; por este motivo, la información de carrera y universidades puede estar pendiente de definir. Estos campos podrán completarse cuando se cuente con la decisión correspondiente.
                   </div>
@@ -1212,20 +1209,20 @@ function StudentProfilePage() {
                     value={getNestedValue(formData, 'academic.postulaciones')}
                     onChange={handleInputChange}
                     maxLength={150}
-          disabled={!isEditing}
-          helpText={'Ejemplo: Derecho, Medicina, Ingeniería...'}
+                    disabled={!isEditing}
+                    helpText={'Ejemplo: Derecho, Medicina, Ingeniería...'}
                   />
-                  <InputField 
-                    label="Universidades a Postular" 
-                    field="academic.universityOption" 
-                    value={getNestedValue(formData, 'academic.universityOption')} 
-                    onChange={handleInputChange} 
-                    maxLength={100} 
-          disabled={!isEditing}
-          helpText={'Máximo 3, separadas por coma. Ej.: UNAM, IPN, UDG'}
+                  <InputField
+                    label="Universidades a Postular"
+                    field="academic.universityOption"
+                    value={getNestedValue(formData, 'academic.universityOption')}
+                    onChange={handleInputChange}
+                    maxLength={100}
+                    disabled={!isEditing}
+                    helpText={'Máximo 3, separadas por coma. Ej.: UNAM, IPN, UDG'}
                   />
                 </div>
-        {/* Nota informativa opcional eliminada: el administrador puede capturar datos aunque orientación sea 'Si' */}
+                {/* Nota informativa opcional eliminada: el administrador puede capturar datos aunque orientación sea 'Si' */}
               </div>
             </div>
           </div>
@@ -1233,7 +1230,7 @@ function StudentProfilePage() {
 
       case 'course':
         return (
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-5xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
@@ -1249,75 +1246,75 @@ function StudentProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {/* Fila 1 */}
                   <div>
-                    <InputField 
-                      label="Academia" 
-                      field="course.academia" 
-                      value={getNestedValue(formData, 'course.academia') || 'MQerKAcademy'} 
-                      onChange={handleInputChange} 
-                      disabled={true} 
+                    <InputField
+                      label="Academia"
+                      field="course.academia"
+                      value={getNestedValue(formData, 'course.academia') || 'MQerKAcademy'}
+                      onChange={handleInputChange}
+                      disabled={true}
                     />
                   </div>
                   <div>
-                    <InputField 
-                      label="Curso" 
-                      field="course.curso" 
-                      value={getNestedValue(formData, 'course.curso')} 
-                      onChange={handleInputChange} 
+                    <InputField
+                      label="Curso"
+                      field="course.curso"
+                      value={getNestedValue(formData, 'course.curso')}
+                      onChange={handleInputChange}
                       options={[
-                        { value: '', label: 'Seleccionar...' }, 
-                        { value: 'EEAU', label: 'EEAU' }, 
+                        { value: '', label: 'Seleccionar...' },
+                        { value: 'EEAU', label: 'EEAU' },
                         { value: 'EEAP', label: 'EEAP' }
-                      ]} 
-                      disabled={!isEditing} 
+                      ]}
+                      disabled={!isEditing}
                     />
                   </div>
                   <div>
-                    <InputField 
-                      label="Modalidad" 
-                      field="course.modality" 
-                      value={getNestedValue(formData, 'course.modality') || 'Presencial'} 
-                      onChange={handleInputChange} 
+                    <InputField
+                      label="Modalidad"
+                      field="course.modality"
+                      value={getNestedValue(formData, 'course.modality') || 'Presencial'}
+                      onChange={handleInputChange}
                       options={[
-                        { value: 'Presencial', label: 'Presencial' }, 
+                        { value: 'Presencial', label: 'Presencial' },
                         { value: 'Virtual', label: 'Virtual' }
-                      ]} 
-                      disabled={!isEditing} 
+                      ]}
+                      disabled={!isEditing}
                     />
                   </div>
                   {/* Fila 2 */}
                   <div>
-                    <InputField 
-                      label="Turno" 
-                      field="course.turno" 
-                      value={getNestedValue(formData, 'course.turno')} 
-                      onChange={handleInputChange} 
+                    <InputField
+                      label="Turno"
+                      field="course.turno"
+                      value={getNestedValue(formData, 'course.turno')}
+                      onChange={handleInputChange}
                       options={[
-                        { value: '', label: 'Seleccionar...' }, 
-                        { value: 'VESPERTINO', label: 'VESPERTINO' }, 
+                        { value: '', label: 'Seleccionar...' },
+                        { value: 'VESPERTINO', label: 'VESPERTINO' },
                         { value: 'MATUTINO', label: 'MATUTINO' },
                         { value: 'SABATINO', label: 'SABATINO' }
-                      ]} 
-                      disabled={!isEditing} 
+                      ]}
+                      disabled={!isEditing}
                     />
                   </div>
                   <div>
-                    <InputField 
-                      label="Grupo" 
-                      field="course.group" 
-                      value={getNestedValue(formData, 'course.group')} 
-                      onChange={handleInputChange} 
-                      maxLength={20} 
-                      disabled={!isEditing} 
+                    <InputField
+                      label="Grupo"
+                      field="course.group"
+                      value={getNestedValue(formData, 'course.group')}
+                      onChange={handleInputChange}
+                      maxLength={20}
+                      disabled={!isEditing}
                     />
                   </div>
                   <div className="xl:col-span-1 md:col-span-2">
-                    <InputField 
-                      label="Asesor Asignado" 
-                      field="course.advisor" 
-                      value={getNestedValue(formData, 'course.advisor')} 
-                      onChange={handleInputChange} 
-                      maxLength={50} 
-                      disabled={!isEditing} 
+                    <InputField
+                      label="Asesor Asignado"
+                      field="course.advisor"
+                      value={getNestedValue(formData, 'course.advisor')}
+                      onChange={handleInputChange}
+                      maxLength={50}
+                      disabled={!isEditing}
                     />
                   </div>
                 </div>
@@ -1328,7 +1325,7 @@ function StudentProfilePage() {
 
       case 'health':
         return (
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
             {/* Sección: Información Médica */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
@@ -1407,7 +1404,7 @@ function StudentProfilePage() {
                   </div>
                 </div>
                 {/* Orientación vocacional (ahora en Salud y Bienestar) - alineada con la cuadrícula */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto mt-4">
                   <div>
                     <InputField
                       label="¿Requiere orientación vocacional?"
@@ -1438,18 +1435,18 @@ function StudentProfilePage() {
                 </h3>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-4xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
                   <div className="lg:col-span-1">
-                    <InputField 
-                      label="Estatus Actual" 
-                      field="status.estatus" 
-                      value={getNestedValue(formData, 'status.estatus')} 
-                      onChange={handleInputChange} 
+                    <InputField
+                      label="Estatus Actual"
+                      field="status.estatus"
+                      value={getNestedValue(formData, 'status.estatus')}
+                      onChange={handleInputChange}
                       options={[
-                        { value: 'Activo', label: '✅ Activo' }, 
+                        { value: 'Activo', label: '✅ Activo' },
                         { value: 'Suspendido', label: '❌ Suspendido' }
-                      ]} 
-                      disabled={!isEditing} 
+                      ]}
+                      disabled={!isEditing}
                     />
                   </div>
                   {!isEditing && (
@@ -1457,9 +1454,9 @@ function StudentProfilePage() {
                       <p className="text-sm font-medium text-gray-700 mb-3">Acciones Rápidas:</p>
                       <div className="flex flex-wrap gap-3">
                         {getNestedValue(formData, 'status.estatus') !== 'Activo' && (
-                          <button 
-                            onClick={() => handleStatusChange('Activo')} 
-                            disabled={isLoading} 
+                          <button
+                            onClick={() => handleStatusChange('Activo')}
+                            disabled={isLoading}
                             className="flex-1 min-w-[120px] inline-flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-green-700 bg-green-50 border-2 border-green-300 hover:bg-green-100 transition-all duration-200 disabled:opacity-50 shadow-sm"
                           >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1470,9 +1467,9 @@ function StudentProfilePage() {
                         )}
                         {/* Botón de Inactivar eliminado: dejamos solo Activar y Suspender */}
                         {getNestedValue(formData, 'status.estatus') !== 'Suspendido' && (
-                          <button 
-                            onClick={() => handleStatusChange('Suspendido')} 
-                            disabled={isLoading} 
+                          <button
+                            onClick={() => handleStatusChange('Suspendido')}
+                            disabled={isLoading}
                             className="flex-1 min-w-[120px] inline-flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-red-700 bg-red-50 border-2 border-red-300 hover:bg-red-100 transition-all duration-200 disabled:opacity-50 shadow-sm"
                           >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1492,7 +1489,7 @@ function StudentProfilePage() {
 
       case 'expectations':
         return (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
@@ -1517,7 +1514,7 @@ function StudentProfilePage() {
         return null;
       case 'account':
         return (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-3xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
@@ -1635,14 +1632,14 @@ function StudentProfilePage() {
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {} })}
+        onCancel={() => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => { } })}
         confirmText="Eliminar"
         cancelText="Cancelar"
       />
 
       {/* Modal de confirmación de guardado - diseño mejorado */}
       {saveConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background: 'rgba(255, 255, 255, 0.63)', backdropFilter: 'blur(2px)'}}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(255, 255, 255, 0.63)', backdropFilter: 'blur(2px)' }}>
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 text-center border-t-4 border-green-500">
             <div className="flex flex-col items-center justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-2">
@@ -1663,12 +1660,12 @@ function StudentProfilePage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto px-2 sm:px-4 lg:px-8">
         {/* Header mejorado con fondo destacado */}
         <div className="mb-6 sm:mb-8 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-lg p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <button 
+              <button
                 onClick={() => navigate(-1)}
                 className="flex items-center px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all duration-200 self-start border border-slate-200 hover:border-slate-300 shadow-sm"
               >
@@ -1689,20 +1686,19 @@ function StudentProfilePage() {
                     <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-slate-700 border-2 border-slate-300 shadow-sm">Registro: {formData.fechaRegistro}</span>
                   )}
                   <span
-                    className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold border-2 shadow-sm ${
-                      getNestedValue(formData,'status.estatus') === 'Activo' 
-                        ? 'bg-green-50 text-green-800 border-green-400' 
-                        : getNestedValue(formData,'status.estatus') === 'Suspendido' 
-                        ? 'bg-red-50 text-red-800 border-red-400' 
+                    className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold border-2 shadow-sm ${getNestedValue(formData, 'status.estatus') === 'Activo'
+                      ? 'bg-green-50 text-green-800 border-green-400'
+                      : getNestedValue(formData, 'status.estatus') === 'Suspendido'
+                        ? 'bg-red-50 text-red-800 border-red-400'
                         : 'bg-white text-slate-700 border-slate-300'
-                    }`}
+                      }`}
                   >
-                    {getNestedValue(formData,'status.estatus') || 'Sin estatus'}
+                    {getNestedValue(formData, 'status.estatus') || 'Sin estatus'}
                   </span>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               {!isEditing ? (
                 <>
@@ -1750,7 +1746,7 @@ function StudentProfilePage() {
 
         {/* Navegación + Contenido unificados en un solo contenedor para aprovechar mejor el espacio */}
         <div className="mb-6">
-            <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden">
+          <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden">
             {/* Tabs en el header del mismo contenedor (todas las vistas) */}
             <div className="border-b">
               <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2 sm:gap-3 p-2 sm:p-3">
@@ -1758,11 +1754,10 @@ function StudentProfilePage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full inline-flex items-center justify-start gap-2 px-3 py-2.5 rounded-xl border-2 text-[13px] sm:text-sm leading-5 transition-all duration-200 ${
-                      activeTab === tab.id
-                        ? 'bg-gradient-to-r from-slate-100 to-gray-100 text-slate-900 border-slate-400 shadow-md font-extrabold'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-slate-400 hover:shadow-sm'
-                    }`}
+                    className={`w-full inline-flex items-center justify-start gap-2 px-3 py-2.5 rounded-xl border-2 text-[13px] sm:text-sm leading-5 transition-all duration-200 ${activeTab === tab.id
+                      ? 'bg-gradient-to-r from-slate-100 to-gray-100 text-slate-900 border-slate-400 shadow-md font-extrabold'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-slate-400 hover:shadow-sm'
+                      }`}
                   >
                     <span className="shrink-0">{tab.icon}</span>
                     <span className="whitespace-normal break-words">{tab.label}</span>

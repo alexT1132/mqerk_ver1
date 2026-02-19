@@ -184,7 +184,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
 
         {/* Contenedor principal  */}
         <div
-          className="w-full max-w-lg rounded-2xl bg-white shadow-xl max-h-[90vh] h-auto flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          className="w-[95%] max-w-lg 2xl:max-w-4xl rounded-2xl bg-white shadow-xl max-h-[80vh] h-auto flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
 
@@ -212,8 +212,8 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
           </div>
 
           {/* Contenido Scrollable con ocultamiento de barra nativo */}
-          <div className="overflow-y-auto flex-1 min-h-0 p-4 bg-gradient-to-b from-white to-slate-50/30 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-            <div className="space-y-5">
+          <div className="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4 bg-gradient-to-b from-white to-slate-50/30 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+            <div className="space-y-3 sm:space-y-4">
 
               {/* Input Area */}
               <div>
@@ -383,7 +383,7 @@ export function AIFormulaModal({ open, onClose, onInsert }) {
                       {Object.entries(formulaExamples).map(([category, examples]) => (
                         <div key={category}>
                           <p className="text-[10px] font-bold text-violet-500 mb-2 uppercase ml-1">{category}</p>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-2 2xl:grid-cols-4 gap-2">
                             {examples.map((example, idx) => (
                               <button
                                 key={idx}

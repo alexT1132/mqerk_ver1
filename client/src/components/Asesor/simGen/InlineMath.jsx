@@ -1,79 +1,14 @@
 import React from 'react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
-// =====================================================================
-// EN TU PROYECTO: DESCOMENTA ESTAS LÍNEAS Y BORRA LOS "MOCKS" DE ABAJO
-// =====================================================================
-// import { InlineMath as KaInlineMath, BlockMath } from 'react-katex';
-// import 'katex/dist/katex.min.css';
-
-// =====================================================================
-// MOCKS PARA VISTA PREVIA (BORRAR EN PRODUCCIÓN)
-// Usamos window.katex directamente, con carga dinámica si falta
-// =====================================================================
-const useKatex = () => {
-  const [ready, setReady] = React.useState(false);
-
-  React.useEffect(() => {
-    // Si ya está listo de inmediato
-    if (window.katex) {
-      setReady(true);
-      return;
-    }
-
-    // Identificador para evitar inyección duplicada
-    const SCRIPT_ID = 'katex-script-dynamic';
-    const STYLE_ID = 'katex-style-dynamic';
-
-    if (!document.getElementById(SCRIPT_ID)) {
-      // Inyectar CSS
-      if (!document.getElementById(STYLE_ID)) {
-        const link = document.createElement('link');
-        link.id = STYLE_ID;
-        link.rel = 'stylesheet';
-        link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css";
-        link.crossOrigin = "anonymous";
-        document.head.appendChild(link);
-      }
-
-      // Inyectar JS
-      const script = document.createElement('script');
-      script.id = SCRIPT_ID;
-      script.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js";
-      script.crossOrigin = "anonymous";
-      script.onload = () => {
-        window.dispatchEvent(new Event('katex-loaded'));
-      };
-      document.head.appendChild(script);
-    }
-
-    // Escuchar evento o pollear
-    const handler = () => setReady(true);
-    window.addEventListener('katex-loaded', handler);
-
-    const interval = setInterval(() => {
-      if (window.katex) {
-        setReady(true);
-        clearInterval(interval);
-      }
-    }, 200);
-
-    return () => {
-      window.removeEventListener('katex-loaded', handler);
-      clearInterval(interval);
-    };
-  }, []);
-
-  return ready;
-};
-
+// Uso del paquete npm (mismo origen) para evitar bloqueos por Tracking Prevention al cargar desde CDN
 const KaInlineMath = ({ math }) => {
   const ref = React.useRef();
-  const ready = useKatex();
-
   React.useEffect(() => {
-    if (ready && window.katex && ref.current) {
+    if (ref.current && math) {
       try {
-        window.katex.render(math, ref.current, {
+        katex.render(math, ref.current, {
           throwOnError: false,
           displayMode: false,
           strict: false,
@@ -81,19 +16,16 @@ const KaInlineMath = ({ math }) => {
         });
       } catch (e) { console.error(e); }
     }
-  }, [math, ready]);
-
+  }, [math]);
   return <span ref={ref} />;
 };
 
 const BlockMath = ({ math }) => {
   const ref = React.useRef();
-  const ready = useKatex();
-
   React.useEffect(() => {
-    if (ready && window.katex && ref.current) {
+    if (ref.current && math) {
       try {
-        window.katex.render(math, ref.current, {
+        katex.render(math, ref.current, {
           throwOnError: false,
           displayMode: true,
           strict: false,
@@ -101,11 +33,9 @@ const BlockMath = ({ math }) => {
         });
       } catch (e) { console.error(e); }
     }
-  }, [math, ready]);
-
+  }, [math]);
   return <div ref={ref} />;
 };
-// =====================================================================
 
 
 /**

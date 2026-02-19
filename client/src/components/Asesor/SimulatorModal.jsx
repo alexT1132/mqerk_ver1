@@ -305,7 +305,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 2xl:p-6"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
@@ -313,21 +313,21 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
     >
       <div
         data-modal
-        className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] overflow-hidden flex flex-col"
+        className="relative w-full max-w-2xl 2xl:max-w-4xl rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] 2xl:max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex-shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 2xl:gap-4 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 2xl:px-6 2xl:py-4 flex-shrink-0">
+          <div className="flex items-center gap-3 2xl:gap-4">
             <Stepper step={step} />
             <div>
               <h2
                 id="sim-modal-title"
-                className="text-sm font-semibold text-slate-900 sm:text-base"
+                className="text-sm font-semibold text-slate-900 sm:text-base 2xl:text-lg"
               >
                 {step === 1 ? (mode === 'edit' ? 'Editar instrucciones' : 'Crear instrucciones') : (mode === 'edit' ? 'Editar simulador' : 'Información del simulador')}
               </h2>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] 2xl:text-sm text-slate-500">
                 Paso {step} de 2
               </p>
             </div>
@@ -336,10 +336,10 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
           <button
             ref={firstFocusable}
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+            className="rounded-lg p-1.5 2xl:p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
             aria-label="Cerrar"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 2xl:h-5 2xl:w-5" />
           </button>
         </div>
 
@@ -358,7 +358,7 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         )}
 
         {/* Body: min-h-0 para que haga scroll en pantallas bajas */}
-        <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 overflow-y-auto">
+        <div className="flex-1 min-h-0 px-4 py-3 sm:px-5 sm:py-4 2xl:px-6 2xl:py-5 overflow-y-auto">
           {step === 1 ? (
             <StepOne form={form} setForm={setForm} />
           ) : (
@@ -367,23 +367,23 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex-shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 2xl:gap-4 border-t border-slate-200 bg-slate-50/50 px-4 py-3 2xl:px-6 2xl:py-4 flex-shrink-0">
+          <div className="flex items-center gap-2 2xl:gap-3">
             <button
               onClick={onClose}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 px-4 py-2 2xl:px-5 2xl:py-2.5 2xl:text-base text-sm font-semibold text-slate-700 shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 2xl:h-5 2xl:w-5" />
               Cancelar
             </button>
             {step > 1 && (
               <button
                 onClick={() => setStep(1)}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 2xl:px-5 2xl:py-2.5 2xl:text-base text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4 2xl:h-5 2xl:w-5" />
                 Atrás
               </button>
             )}
@@ -394,10 +394,10 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
               <button
                 disabled={!canNext}
                 onClick={() => setStep(2)}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-5 py-2 2xl:px-6 2xl:py-2.5 2xl:text-base text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
               >
                 Siguiente
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 2xl:h-5 2xl:w-5" />
               </button>
             ) : (
               <>
@@ -412,18 +412,18 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
                         onEditQuestions?.();
                       }, 100);
                     }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 2xl:px-5 2xl:py-2.5 2xl:text-base text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     title="Guardar cambios y editar preguntas"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 2xl:h-5 2xl:w-5 animate-spin" />
                         Guardando...
                       </>
                     ) : (
                       <>
                         Guardar y editar preguntas
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-4 w-4 2xl:h-5 2xl:w-5" />
                       </>
                     )}
                   </button>
@@ -431,17 +431,17 @@ export default function SimulatorModal({ open, onClose, onCreate, onUpdate, mode
                 <button
                   disabled={!canCreate || loading}
                   onClick={handleSubmit}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-5 py-2 2xl:px-6 2xl:py-2.5 2xl:text-base text-sm font-semibold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 2xl:h-5 2xl:w-5 animate-spin" />
                       {mode === 'edit' ? 'Guardando...' : 'Creando...'}
                     </>
                   ) : (
                     <>
                       {mode === 'edit' ? 'Guardar cambios' : 'Crear simulador'}
-                      <Check className="h-4 w-4" />
+                      <Check className="h-4 w-4 2xl:h-5 2xl:w-5" />
                     </>
                   )}
                 </button>

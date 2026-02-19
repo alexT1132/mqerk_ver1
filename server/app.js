@@ -39,6 +39,7 @@ import ChatRoutes from "./routes/chat.routes.js";
 import AiUsageRoutes from "./routes/aiUsageRoutes.js";
 import cursosRoutes from "./routes/cursos.routes.js";
 import previewRoutes from "./routes/preview.routes.js";
+import uploadsRoutes from "./routes/uploads.routes.js";
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use('/uploads/asesores', express.static('uploads/asesores'));
 app.use('/uploads/recursos-educativos', express.static('uploads/recursos-educativos'));
 app.use('/uploads/documentos', express.static('uploads/documentos'));
 app.use('/uploads/chat', express.static('uploads/chat'));
+app.use('/uploads/preguntas', express.static('uploads/preguntas'));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
@@ -141,6 +143,7 @@ app.use("/api", ChatRoutes);
 app.use("/api/ai-usage", AiUsageRoutes);
 app.use("/api", cursosRoutes);
 app.use("/api", previewRoutes);
+app.use("/api", uploadsRoutes);
 
 // Middleware de manejo de errores global (debe ir al final, después de todas las rutas)
 app.use((err, req, res, next) => {

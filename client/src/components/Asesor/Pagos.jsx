@@ -68,7 +68,7 @@ function WeekChip({ w, active, onClick, count }) {
     <button
       onClick={onClick}
       className={[
-        "relative px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 transform",
+        "relative px-5 py-3 2xl:px-6 2xl:py-4 2xl:text-base rounded-xl text-sm font-bold transition-all duration-200 transform",
         active
           ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg scale-105 ring-2 ring-violet-200"
           : "bg-white text-slate-700 border-2 border-slate-200 hover:border-violet-300 hover:shadow-md hover:scale-[1.02]",
@@ -331,26 +331,26 @@ export default function Pagos() {
   return (
     <div className="w-full min-h-screen relative">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
-      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-[1920px] w-full 2xl:max-w-none mx-auto px-4 sm:px-6 lg:px-8 2xl:px-4 py-6 lg:py-8 2xl:py-10">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
-              <CreditCard className="size-8 sm:size-10 text-white" />
+        <div className="mb-8 2xl:mb-10">
+          <div className="flex items-center gap-4 mb-4 2xl:gap-6 2xl:mb-6">
+            <div className="p-4 2xl:p-5 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
+              <CreditCard className="size-8 sm:size-10 2xl:size-12 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl 2xl:text-6xl font-extrabold mb-2 tracking-tight leading-tight">
                 <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                   Mis Pagos
                 </span>
               </h1>
-              <p className="text-slate-600 text-sm sm:text-base font-medium">Consulta tus pagos y honorarios por período</p>
+              <p className="text-slate-600 text-sm sm:text-base 2xl:text-lg font-medium">Consulta tus pagos y honorarios por período</p>
             </div>
           </div>
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 p-5 sm:p-6 mb-6">
+        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 p-5 sm:p-6 2xl:p-7 mb-6 2xl:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1">
               <CustomSelect
@@ -374,7 +374,7 @@ export default function Pagos() {
               />
             </div>
 
-            <div className="px-5 py-3 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-md ring-2 ring-violet-200">
+            <div className="px-5 py-3 2xl:py-4 2xl:text-base bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-md ring-2 ring-violet-200">
               {pagos.length} {pagos.length === 1 ? 'pago encontrado' : 'pagos encontrados'}
               {year !== TODOS_VALUE && month !== TODOS_VALUE && ` en ${month} ${year}`}
             </div>
@@ -383,12 +383,12 @@ export default function Pagos() {
 
         {/* Botones de semanas - Solo mostrar si NO estamos en modo TODOS */}
         {year !== TODOS_VALUE && month !== TODOS_VALUE && (
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
-                <Calendar className="size-5" />
+          <div className="mb-6 2xl:mb-8">
+            <div className="flex items-center gap-3 mb-4 2xl:gap-4 2xl:mb-5">
+              <div className="p-2 2xl:p-2.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
+                <Calendar className="size-5 2xl:size-6" />
               </div>
-              <h3 className="text-lg font-extrabold text-slate-800">Selecciona la semana:</h3>
+              <h3 className="text-lg 2xl:text-xl font-extrabold text-slate-800">Selecciona la semana:</h3>
             </div>
             <div className="flex flex-wrap gap-3">
               {Array.from({ length: weeksInMonth }, (_, i) => i + 1).map((w) => (
@@ -406,49 +406,49 @@ export default function Pagos() {
 
         {/* Estadísticas */}
         {!loading && rows.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-emerald-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md ring-2 ring-emerald-200">
-                  <DollarSign className="size-5" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 2xl:gap-6 mb-6 2xl:mb-8">
+            <div className="bg-white rounded-2xl p-5 sm:p-6 2xl:p-7 border-2 border-emerald-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-3 2xl:mb-4">
+                <div className="p-2 2xl:p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md ring-2 ring-emerald-200">
+                  <DollarSign className="size-5 2xl:size-6" />
                 </div>
-                <CheckCircle2 className="size-5 text-emerald-600" />
+                <CheckCircle2 className="size-5 2xl:size-6 text-emerald-600" />
               </div>
-              <div className="text-3xl font-extrabold text-emerald-700 mb-1">{fmtMoney(stats.totalIngresos)}</div>
-              <div className="text-xs text-emerald-600 font-semibold">Ingresos pagados</div>
+              <div className="text-3xl 2xl:text-4xl font-extrabold text-emerald-700 mb-1">{fmtMoney(stats.totalIngresos)}</div>
+              <div className="text-xs 2xl:text-sm text-emerald-600 font-semibold">Ingresos pagados</div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-amber-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-md ring-2 ring-amber-200">
-                  <Clock className="size-5" />
+            <div className="bg-white rounded-2xl p-5 sm:p-6 2xl:p-7 border-2 border-amber-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-3 2xl:mb-4">
+                <div className="p-2 2xl:p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-md ring-2 ring-amber-200">
+                  <Clock className="size-5 2xl:size-6" />
                 </div>
-                <AlertCircle className="size-5 text-amber-600" />
+                <AlertCircle className="size-5 2xl:size-6 text-amber-600" />
               </div>
-              <div className="text-3xl font-extrabold text-amber-700 mb-1">{fmtMoney(stats.totalPendientes)}</div>
-              <div className="text-xs text-amber-600 font-semibold">Pendientes por cobrar</div>
+              <div className="text-3xl 2xl:text-4xl font-extrabold text-amber-700 mb-1">{fmtMoney(stats.totalPendientes)}</div>
+              <div className="text-xs 2xl:text-sm text-amber-600 font-semibold">Pendientes por cobrar</div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-violet-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
-                  <Clock className="size-5" />
+            <div className="bg-white rounded-2xl p-5 sm:p-6 2xl:p-7 border-2 border-violet-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-3 2xl:mb-4">
+                <div className="p-2 2xl:p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200">
+                  <Clock className="size-5 2xl:size-6" />
                 </div>
-                <span className="text-2xl">⏱</span>
+                <span className="text-2xl 2xl:text-3xl">⏱</span>
               </div>
-              <div className="text-3xl font-extrabold text-violet-700 mb-1">{stats.totalHoras.toFixed(1)}</div>
-              <div className="text-xs text-violet-600 font-semibold">Horas trabajadas</div>
+              <div className="text-3xl 2xl:text-4xl font-extrabold text-violet-700 mb-1">{stats.totalHoras.toFixed(1)}</div>
+              <div className="text-xs 2xl:text-sm text-violet-600 font-semibold">Horas trabajadas</div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 text-white shadow-md ring-2 ring-slate-200">
-                  <DollarSign className="size-5" />
+            <div className="bg-white rounded-2xl p-5 sm:p-6 2xl:p-7 border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-3 2xl:mb-4">
+                <div className="p-2 2xl:p-2.5 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 text-white shadow-md ring-2 ring-slate-200">
+                  <DollarSign className="size-5 2xl:size-6" />
                 </div>
-                <span className="text-2xl">📊</span>
+                <span className="text-2xl 2xl:text-3xl">📊</span>
               </div>
-              <div className="text-3xl font-extrabold text-slate-700 mb-1">{stats.total}</div>
-              <div className="text-xs text-slate-600 font-semibold">Total de pagos</div>
+              <div className="text-3xl 2xl:text-4xl font-extrabold text-slate-700 mb-1">{stats.total}</div>
+              <div className="text-xs 2xl:text-sm text-slate-600 font-semibold">Total de pagos</div>
             </div>
           </div>
         )}
@@ -492,25 +492,25 @@ export default function Pagos() {
               <table className="min-w-[1000px] w-full text-left">
                 <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
                   <tr>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[100px]">ID_Pago</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[150px]">Tipo de servicio</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[110px]">Monto base</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[100px]">Horas</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[140px]">Hon. / Comis.</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[120px]">Ingreso final</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[120px]">Fecha de pago</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[120px]">Método</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider border-r border-white/30 min-w-[100px]">Nota</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider min-w-[100px]">Status</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[100px]">ID_Pago</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[150px]">Tipo de servicio</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[110px]">Monto base</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[100px]">Horas</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[140px]">Hon. / Comis.</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[120px]">Ingreso final</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[120px]">Fecha de pago</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[120px]">Método</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider border-r border-white/30 min-w-[100px]">Nota</th>
+                    <th className="px-4 py-3 2xl:py-4 font-bold text-[11px] 2xl:text-xs uppercase tracking-wider min-w-[100px]">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {rows.map((r, i) => (
                     <tr
                       key={r.id}
-                      className="hover:bg-slate-50/50 transition-colors duration-150"
+                      className="hover:bg-slate-50/50 transition-colors duration-150 2xl:[&_td]:py-4"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap border-r border-slate-100">
+                      <td className="px-4 py-3 2xl:py-4 whitespace-nowrap border-r border-slate-100">
                         <span className="font-bold text-slate-900">{r.id_pago}</span>
                       </td>
                       <td className="px-4 py-3 border-r border-slate-100">

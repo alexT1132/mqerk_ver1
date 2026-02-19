@@ -104,10 +104,10 @@ export function ReportesPagos_Admin_comp() {
     },
     ingresosPorMes: [],
     pagosPorCurso: [],
-  metodosDepago: [],
-  pagosDetallados: [],
-  ingresosPorSemana: [],
-  ingresosPorAnio: []
+    metodosDepago: [],
+    pagosDetallados: [],
+    ingresosPorSemana: [],
+    ingresosPorAnio: []
   });
   // Rango por defecto: año actual hasta hoy
   const today = new Date();
@@ -119,13 +119,13 @@ export function ReportesPagos_Admin_comp() {
   const [fechaFin, setFechaFin] = useState(defaultEnd);
   const [exportingExcel, setExportingExcel] = useState(false);
 
-  const { 
+  const {
     paymentReports,
     isLoading,
     error,
     lastUpdated,
     loadFinancialReports,
-  // exportToExcel/exportToPDF ya no se usan; exportamos local con SheetJS
+    // exportToExcel/exportToPDF ya no se usan; exportamos local con SheetJS
   } = useAdminContext();
 
   // Función para obtener reportes del backend
@@ -212,12 +212,12 @@ export function ReportesPagos_Admin_comp() {
   // Funciones auxiliares para exportación local
   const generateCSVContent = (data) => {
     let csv = 'Fecha,Curso,Estudiante,Monto,Estado,Método de Pago\n';
-    
+
     // Agregar datos de ejemplo basados en los reportes actuales
     csv += `${fechaInicio},EEAU,Juan Pérez,$2400,Aprobado,Transferencia\n`;
     csv += `${fechaInicio},EEAP,María García,$2400,Pendiente,Tarjeta\n`;
     csv += `${fechaFin},DIGI-START,Carlos López,$3200,Aprobado,Efectivo\n`;
-    
+
     return csv;
   };
 
@@ -282,7 +282,7 @@ export function ReportesPagos_Admin_comp() {
           <h2 className="text-xl font-bold text-red-600 mb-2">Error cargando reportes</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
-            <button 
+            <button
               onClick={handleRefreshData}
               disabled={isLoading}
               className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -300,16 +300,16 @@ export function ReportesPagos_Admin_comp() {
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message="Cargando reportes de pagos..." />
       )}
-      <div className="max-w-7xl mx-auto">
-  {/* Header mejorado */}
-  <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl p-5 sm:p-6 mb-6 sticky top-0 z-30">
+      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
+        {/* Header mejorado */}
+        <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl p-5 sm:p-6 mb-6 sticky top-0 z-30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 mb-2">Reportes de Pagos</h1>
               <p className="text-sm sm:text-base font-semibold text-slate-600 mb-3">
                 Análisis detallado de ingresos y estadísticas de pagos
               </p>
-              
+
               {/* Información de actualización */}
               {lastUpdated && (
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 font-medium">
@@ -319,9 +319,9 @@ export function ReportesPagos_Admin_comp() {
                     </svg>
                   </div>
                   <span>
-                    Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-MX', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    Actualizado: {new Date(lastUpdated).toLocaleTimeString('es-MX', {
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })}
                   </span>
                   <button
@@ -338,7 +338,7 @@ export function ReportesPagos_Admin_comp() {
               )}
             </div>
             <div className="mt-4 sm:mt-0 flex gap-2">
-              <button 
+              <button
                 onClick={handleExportExcel}
                 disabled={isLoading || exportingExcel}
                 className="inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-sm border border-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -377,7 +377,7 @@ export function ReportesPagos_Admin_comp() {
                 className="block w-full sm:w-40 px-3 py-2.5 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
-        max={fechaFin}
+                max={fechaFin}
               />
             </div>
             <div>
@@ -390,11 +390,11 @@ export function ReportesPagos_Admin_comp() {
                 className="block w-full sm:w-40 px-3 py-2.5 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
-        min={fechaInicio}
-        max={defaultEnd}
+                min={fechaInicio}
+                max={defaultEnd}
               />
             </div>
-      <button onClick={fetchReportes} className="px-5 py-2.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm border border-slate-700 font-semibold transition-all duration-200">
+            <button onClick={fetchReportes} className="px-5 py-2.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm border border-slate-700 font-semibold transition-all duration-200">
               Aplicar Filtros
             </button>
           </div>
@@ -481,17 +481,17 @@ export function ReportesPagos_Admin_comp() {
           (reportes.resumenGeneral.totalPagos || 0) === 0 &&
           (reportes.resumenGeneral.pagosPendientes || 0) === 0
         )) && (
-          <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center border-2 border-amber-300">
-                <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center border-2 border-amber-300">
+                  <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="font-semibold text-sm sm:text-base">No se encontraron datos para el rango seleccionado. Ajusta las fechas para ver movimientos.</p>
               </div>
-              <p className="font-semibold text-sm sm:text-base">No se encontraron datos para el rango seleccionado. Ajusta las fechas para ver movimientos.</p>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Gráficas principales */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
@@ -500,54 +500,54 @@ export function ReportesPagos_Admin_comp() {
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Solo pagos aprobados</div>
             <div className="flex-1 min-h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={(reportes.ingresosPorMes||[])}>
+                <BarChart data={(reportes.ingresosPorMes || [])}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v)=>formatCurrencyMXN(v)} />
-                  <Bar dataKey="ingresos" fill="#6366F1" radius={[4,4,0,0]} />
+                  <Tooltip formatter={(v) => formatCurrencyMXN(v)} />
+                  <Bar dataKey="ingresos" fill="#6366F1" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="pagos-curso">
-              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Pagos por Curso</h3>
-              <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Cantidad de pagos aprobados</div>
-              <div className="flex-1 min-h-[240px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={(reportes.pagosPorCurso||[])}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="curso" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
-                    <YAxis yAxisId={0} tick={{ fontSize: 11 }} />
-                    <YAxis yAxisId={1} orientation="right" tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="pagos" name="Pagos" fill="#10B981" radius={[4,4,0,0]} yAxisId={0} />
-                    <Bar dataKey="ingresos" name="Ingresos" fill="#0EA5E9" radius={[4,4,0,0]} yAxisId={1} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="pagos-curso">
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Pagos por Curso</h3>
+            <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Cantidad de pagos aprobados</div>
+            <div className="flex-1 min-h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={(reportes.pagosPorCurso || [])}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="curso" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
+                  <YAxis yAxisId={0} tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId={1} orientation="right" tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="pagos" name="Pagos" fill="#10B981" radius={[4, 4, 0, 0]} yAxisId={0} />
+                  <Bar dataKey="ingresos" name="Ingresos" fill="#0EA5E9" radius={[4, 4, 0, 0]} yAxisId={1} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          </div>
 
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="metodos-pago">
-              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Distribución por Método</h3>
-              <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Métodos de pago (aprobados)</div>
-              <div className="flex-1 min-h-[240px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip formatter={(v,_,p)=>`${v} (${p.payload.porcentaje}%)`} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Pie data={(reportes.metodosDepago||[])} dataKey="cantidad" nameKey="metodo" innerRadius={50} outerRadius={80} paddingAngle={4}>
-                      {(reportes.metodosDepago||[]).map((d,i)=> {
-                        const colors=['#6366F1','#10B981','#F59E0B','#EF4444','#0EA5E9','#8B5CF6'];
-                        return <Cell key={i} fill={colors[i % colors.length]} />;
-                      })}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="metodos-pago">
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Distribución por Método</h3>
+            <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Métodos de pago (aprobados)</div>
+            <div className="flex-1 min-h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip formatter={(v, _, p) => `${v} (${p.payload.porcentaje}%)`} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Pie data={(reportes.metodosDepago || [])} dataKey="cantidad" nameKey="metodo" innerRadius={50} outerRadius={80} paddingAngle={4}>
+                    {(reportes.metodosDepago || []).map((d, i) => {
+                      const colors = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#0EA5E9', '#8B5CF6'];
+                      return <Cell key={i} fill={colors[i % colors.length]} />;
+                    })}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
             </div>
+          </div>
         </div>
 
         {/* Gráficas temporales adicionales */}
@@ -557,12 +557,12 @@ export function ReportesPagos_Admin_comp() {
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Semanas en el rango</div>
             <div className="flex-1 min-h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={(reportes.ingresosPorSemana||[]).slice().reverse()}>
+                <LineChart data={(reportes.ingresosPorSemana || []).slice().reverse()}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="semana" tickFormatter={(v)=>`S${v}`} />
+                  <XAxis dataKey="semana" tickFormatter={(v) => `S${v}`} />
                   <YAxis />
-                  <Tooltip formatter={(v)=>formatCurrencyMXN(v)} labelFormatter={(l,p)=>`Semana ${p[0]?.payload?.semana} ${p[0]?.payload?.anio}`} />
-                  <Line type="monotone" dataKey="ingresos" stroke="#6366F1" strokeWidth={2} dot={{ r:3 }} activeDot={{ r:5 }} />
+                  <Tooltip formatter={(v) => formatCurrencyMXN(v)} labelFormatter={(l, p) => `Semana ${p[0]?.payload?.semana} ${p[0]?.payload?.anio}`} />
+                  <Line type="monotone" dataKey="ingresos" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -572,12 +572,12 @@ export function ReportesPagos_Admin_comp() {
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Visión global</div>
             <div className="flex-1 min-h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={(reportes.ingresosPorAnio||[])}>
+                <BarChart data={(reportes.ingresosPorAnio || [])}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="anio" />
                   <YAxis />
-                  <Tooltip formatter={(v)=>formatCurrencyMXN(v)} />
-                  <Bar dataKey="ingresos" fill="#8B5CF6" radius={[4,4,0,0]} />
+                  <Tooltip formatter={(v) => formatCurrencyMXN(v)} />
+                  <Bar dataKey="ingresos" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -611,14 +611,14 @@ export function ReportesPagos_Admin_comp() {
             <h3 className="text-sm font-semibold text-slate-700">Pagos Detallados</h3>
             <span className="text-xs text-slate-500 font-medium">Mostrando {reportes.pagosDetallados?.length || 0} registros</span>
           </div>
-      <div className="overflow-auto rounded border border-slate-200">
+          <div className="overflow-auto rounded border border-slate-200">
             <table className="min-w-full text-xs">
               <thead className="bg-slate-50">
                 <tr className="border-b border-slate-200">
                   <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Folio</th>
                   <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Alumno</th>
                   <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Curso</th>
-          <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Grupo</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Grupo</th>
                   <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Estado</th>
                   <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Importe</th>
                   <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Método</th>
@@ -628,15 +628,15 @@ export function ReportesPagos_Admin_comp() {
                 </tr>
               </thead>
               <tbody>
-                {(reportes.pagosDetallados||[]).map(r => {
+                {(reportes.pagosDetallados || []).map(r => {
                   const estadoLabel = r.estado === 1 ? 'Pendiente' : r.estado === 2 ? 'Aprobado' : 'Rechazado';
                   const estadoColor = r.estado === 1 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : r.estado === 2 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
                   return (
                     <tr key={r.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors">
                       <td className="px-2 py-2 font-mono text-[11px] font-medium text-slate-700">{r.folio}</td>
                       <td className="px-2 py-2 text-slate-600 text-[11px]">{r.alumno}</td>
-            <td className="px-2 py-2 text-slate-600 text-[11px]">{r.curso}</td>
-            <td className="px-2 py-2 text-slate-600 text-[11px]">{r.grupo || '-'}</td>
+                      <td className="px-2 py-2 text-slate-600 text-[11px]">{r.curso}</td>
+                      <td className="px-2 py-2 text-slate-600 text-[11px]">{r.grupo || '-'}</td>
                       <td className="px-2 py-2"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${estadoColor}`}>{estadoLabel}</span></td>
                       <td className="px-2 py-2 font-semibold text-slate-700 text-[11px]">{r.importe != null ? formatCurrencyMXN(r.importe) : '-'}</td>
                       <td className="px-2 py-2 text-slate-600 text-[11px]">{r.metodo || '-'}</td>
@@ -646,7 +646,7 @@ export function ReportesPagos_Admin_comp() {
                     </tr>
                   );
                 })}
-                {!(reportes.pagosDetallados||[]).length && (
+                {!(reportes.pagosDetallados || []).length && (
                   <tr>
                     <td colSpan="10" className="px-3 py-6 text-center text-slate-400 text-xs">Sin pagos en el rango seleccionado</td>
                   </tr>

@@ -88,7 +88,7 @@ export default function FormulaChip({ latex, onEdit, onDelete }) {
                     type="button"
                     onClick={(e) => {
                         e.stopPropagation();
-                        onDelete();
+                        onDelete(e);
                     }}
                     className="absolute -top-2 -right-2 w-4 h-4 bg-rose-500 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-sm z-20"
                     title="Eliminar fórmula"

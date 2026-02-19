@@ -212,17 +212,16 @@ export default function Topbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 text-white bg-gradient-to-r from-[#3d18c3] to-[#4816bf] shadow-md supports-[backdrop-filter]:backdrop-blur">
-      <div className="w-full flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 md:h-16 lg:h-20 transition-all duration-300">
+      <div className="w-full flex items-center justify-between px-3 sm:px-4 md:px-6 h-14 md:h-16 lg:h-20 transition-all duration-300">
         {/* Izquierda */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Logo (visible siempre, más pequeño en móvil) */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <img src={logo} alt="MQerKAcademy" className="w-10 sm:w-14 md:w-16 lg:w-20 transition-all duration-300" />
+            <img src={logo} alt="MQerKAcademy" className="w-10 sm:w-12 md:w-14 transition-all duration-300" />
           </div>
         </div>
 
         {/* Centro: título (oculto en móvil, visible desde sm) */}
-        <h1 className="hidden sm:block text-sm md:text-base lg:text-xl font-medium text-center select-none tracking-wide flex-1 px-4 leading-tight">
+        <h1 className="hidden sm:block text-sm md:text-base font-medium text-center select-none tracking-wide flex-1 px-4 leading-tight">
           Asesores Especializados en la Enseñanza de las Ciencias y Tecnología
         </h1>
 
@@ -238,7 +237,7 @@ export default function Topbar() {
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
               aria-label="Notificaciones"
-              className="relative rounded-full p-2 lg:p-3 hover:bg-white/10 transition-colors"
+              className="relative rounded-full p-2 hover:bg-white/10 transition-colors"
             >
               <Bell className="h-5 w-5 md:h-6 md:w-6" />
               {unreadCount > 0 && (
@@ -250,7 +249,7 @@ export default function Topbar() {
 
             {/* Dropdown de notificaciones */}
             {notificationsOpen && (
-              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border-2 border-slate-200 overflow-hidden z-50">
+              <div className="absolute right-0 top-full mt-2 w-[min(24rem,calc(100vw-1rem))] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border-2 border-slate-200 overflow-hidden z-50">
                 {/* Header */}
                 <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between">
                   <h3 className="font-semibold text-lg">Notificaciones</h3>
@@ -375,7 +374,7 @@ export default function Topbar() {
                   src={photoUrl}
                   alt="Avatar"
                   key={photoUrl} // ✅ Forzar re-render cuando cambia
-                  className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 object-cover rounded-full ring-2 ring-white/30"
+                  className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 object-cover rounded-full ring-2 ring-white/30"
                   onError={(e) => {
                     // ✅ Si falla, ocultar y mostrar placeholder
                     e.target.style.display = 'none';

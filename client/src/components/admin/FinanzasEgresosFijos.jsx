@@ -545,13 +545,13 @@ export default function FinanzasEgresosFijos() {
   };
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 max-w-screen-2xl mx-auto">
-      <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+    <section className="px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 lg:pt-12 xl:pt-14 2xl:pt-14 pb-6 max-w-screen-2xl 2xl:max-w-none mx-auto">
+      <header className="flex items-center justify-between gap-4 mb-6 lg:mb-8 xl:mb-8 2xl:mb-8 flex-wrap">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-extrabold tracking-tight text-gray-900">
             Gastos fijos
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm lg:text-base xl:text-base 2xl:text-lg text-gray-500">
             Rentas, salarios, servicios y otros costos recurrentes.
           </p>
         </div>
@@ -580,40 +580,40 @@ export default function FinanzasEgresosFijos() {
       </header>
 
       {/* Tarjetas rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Hoy</p>
-          <p className="text-2xl font-semibold text-rose-600">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-6 mb-6 lg:mb-8 xl:mb-8 2xl:mb-8">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
+          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Hoy</p>
+          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
             {formatCurrency(totals.today)}
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Últimos 7 días</p>
-          <p className="text-2xl font-semibold text-rose-600">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
+          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Últimos 7 días</p>
+          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
             {formatCurrency(totals.week)}
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Mes</p>
-          <p className="text-2xl font-semibold text-rose-600">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
+          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Mes</p>
+          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
             {formatCurrency(totals.month)}
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Año</p>
-          <p className="text-2xl font-semibold text-rose-600">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
+          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Año</p>
+          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
             {formatCurrency(totals.year)}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+        <div className="p-6 lg:p-8 xl:p-8 2xl:p-10 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+            <h2 className="text-base sm:text-lg lg:text-xl xl:text-xl 2xl:text-2xl font-semibold text-gray-900">
               Registro de gastos fijos
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500 mt-0.5">
               Total pagado:{" "}
               <span className="font-semibold text-gray-900">
                 {formatCurrency(totals.all)}
@@ -695,37 +695,37 @@ export default function FinanzasEgresosFijos() {
         {/* Tabla desktop */}
         <div className="hidden sm:block">
           <div className="overflow-x-auto max-h-[60vh]">
-            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm">
+            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm lg:text-base xl:text-base 2xl:text-base">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     #
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Fecha
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Hora
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Categoría
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[60px]">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[60px]">
                     Descripción
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Proveedor
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Frecuencia
                   </th>
-                  <th className="text-center font-semibold px-1 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-1 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Método de pago
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200">
                     Importe
                   </th>
-                  <th className="text-center font-semibold px-4 py-3">
+                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4">
                     Estatus
                   </th>
                 </tr>
@@ -2088,7 +2088,7 @@ export default function FinanzasEgresosFijos() {
                   <p className="text-[10px] text-rose-500 font-medium mt-0.5">Esta acción no se puede deshacer.</p>
                 </div>
               </div>
-              
+
               <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1.5">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Categoría</span>

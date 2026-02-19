@@ -36,7 +36,7 @@ function Email_Admin_comp() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ message: '', onConfirm: null });
 
-  const { 
+  const {
     isLoading,
     error,
     lastUpdated
@@ -62,7 +62,7 @@ function Email_Admin_comp() {
         const st = await getGmailStatus();
         setGmailLinked(!!st?.linked);
         setGmailEmail(st?.email || null);
-      } catch {}
+      } catch { }
     };
     check();
   }, []);
@@ -98,7 +98,7 @@ function Email_Admin_comp() {
               window.clearInterval(linkPollRef.current);
               linkPollRef.current = null;
             }
-          } catch {}
+          } catch { }
           if (attempts > 40) { // ~2 minutos si 3s
             window.clearInterval(linkPollRef.current);
             linkPollRef.current = null;
@@ -107,8 +107,8 @@ function Email_Admin_comp() {
       }
     } catch (e) {
       notify('No se pudo iniciar la vinculación', 'error');
-    } finally { 
-      setIsLinking(false); 
+    } finally {
+      setIsLinking(false);
     }
   };
 
@@ -159,7 +159,7 @@ function Email_Admin_comp() {
   const emailsNoLeidos = emailsRecibidos.filter(email => !email.leido);
 
   const getEtiquetaColor = (etiqueta) => {
-    switch(etiqueta) {
+    switch (etiqueta) {
       case 'consulta': return 'bg-blue-50 text-blue-800 border-blue-300';
       case 'pago': return 'bg-yellow-50 text-yellow-800 border-yellow-300';
       case 'confirmacion': return 'bg-green-50 text-green-800 border-green-300';
@@ -250,7 +250,7 @@ function Email_Admin_comp() {
     // Extraer email del remitente (puede estar en formato "Nombre <email@example.com>")
     const emailMatch = email.de.match(/<(.+)>/);
     const emailAddress = emailMatch ? emailMatch[1] : email.de;
-    
+
     setReplyEmail({
       para: emailAddress,
       asunto: email.asunto.startsWith('Re:') ? email.asunto : `Re: ${email.asunto}`,
@@ -267,10 +267,10 @@ function Email_Admin_comp() {
     setIsSendingReply(true);
     try {
       if (useGmail && gmailLinked) {
-        await sendGmail({ 
-          to: replyEmail.para, 
-          subject: replyEmail.asunto, 
-          text: replyEmail.mensaje 
+        await sendGmail({
+          to: replyEmail.para,
+          subject: replyEmail.asunto,
+          text: replyEmail.mensaje
         });
         notify('Respuesta enviada con Gmail', 'success');
       } else {
@@ -296,22 +296,21 @@ function Email_Admin_comp() {
     }
   };
 
-  const Spinner = ({size='h-5 w-5'}) => (
+  const Spinner = ({ size = 'h-5 w-5' }) => (
     <span className={`inline-block animate-spin rounded-full border-2 border-b-transparent border-current ${size}`} />
   );
 
   return (
     <div className="px-4 sm:px-6 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 bg-slate-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
         {/* Toast */}
         {toast && (
-          <div className={`mb-4 rounded-xl sm:rounded-2xl p-4 text-sm font-semibold transition-all border-2 shadow-lg ${
-            toast.type === 'error' 
-              ? 'bg-red-50 text-red-800 border-red-300' 
-              : toast.type === 'success' 
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
-              : 'bg-blue-50 text-blue-800 border-blue-300'
-          }`}>
+          <div className={`mb-4 rounded-xl sm:rounded-2xl p-4 text-sm font-semibold transition-all border-2 shadow-lg ${toast.type === 'error'
+              ? 'bg-red-50 text-red-800 border-red-300'
+              : toast.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                : 'bg-blue-50 text-blue-800 border-blue-300'
+            }`}>
             <div className="flex items-center gap-2">
               {toast.type === 'error' && (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,11 +347,10 @@ function Email_Admin_comp() {
                   type="button"
                   onClick={handleLinkGmail}
                   disabled={isLinking}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 border-2 text-sm font-semibold rounded-lg transition-all shadow-sm ${
-                    isLinking 
-                      ? 'bg-slate-100 text-slate-400 border-slate-300 cursor-not-allowed' 
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 border-2 text-sm font-semibold rounded-lg transition-all shadow-sm ${isLinking
+                      ? 'bg-slate-100 text-slate-400 border-slate-300 cursor-not-allowed'
                       : 'text-slate-700 bg-white border-slate-300 hover:bg-slate-50 hover:border-slate-400'
-                  }`}
+                    }`}
                 >
                   {isLinking && <Spinner size="h-4 w-4" />} Vincular Gmail
                 </button>
@@ -361,7 +359,7 @@ function Email_Admin_comp() {
                   Gmail vinculado{gmailEmail ? ` (${gmailEmail})` : ''}
                 </span>
               )}
-              <button 
+              <button
                 onClick={() => setVistaActual('redactar')}
                 className="inline-flex items-center px-4 py-2.5 border-2 border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-slate-600 hover:bg-slate-700 transition-all duration-200"
               >
@@ -379,13 +377,12 @@ function Email_Admin_comp() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
               <div className="space-y-2">
-                <button 
+                <button
                   onClick={() => setVistaActual('bandeja')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 border-2 font-semibold ${
-                    vistaActual === 'bandeja' 
-                      ? 'bg-slate-100 text-slate-900 border-slate-300 shadow-sm' 
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 border-2 font-semibold ${vistaActual === 'bandeja'
+                      ? 'bg-slate-100 text-slate-900 border-slate-300 shadow-sm'
                       : 'text-slate-700 hover:bg-slate-50 border-transparent hover:border-slate-200'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span>Bandeja de Entrada</span>
@@ -396,25 +393,23 @@ function Email_Admin_comp() {
                     )}
                   </div>
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => setVistaActual('enviados')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 border-2 font-semibold ${
-                    vistaActual === 'enviados' 
-                      ? 'bg-slate-100 text-slate-900 border-slate-300 shadow-sm' 
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 border-2 font-semibold ${vistaActual === 'enviados'
+                      ? 'bg-slate-100 text-slate-900 border-slate-300 shadow-sm'
                       : 'text-slate-700 hover:bg-slate-50 border-transparent hover:border-slate-200'
-                  }`}
+                    }`}
                 >
                   Emails Enviados
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => setVistaActual('redactar')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 border-2 font-semibold ${
-                    vistaActual === 'redactar' 
-                      ? 'bg-slate-100 text-slate-900 border-slate-300 shadow-sm' 
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 border-2 font-semibold ${vistaActual === 'redactar'
+                      ? 'bg-slate-100 text-slate-900 border-slate-300 shadow-sm'
                       : 'text-slate-700 hover:bg-slate-50 border-transparent hover:border-slate-200'
-                  }`}
+                    }`}
                 >
                   Redactar Email
                 </button>
@@ -483,11 +478,10 @@ function Email_Admin_comp() {
                         } finally { setIsGmailFetching(false); }
                       }}
                       disabled={!gmailLinked || isGmailFetching}
-                      className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg border-2 transition-all ${
-                        !gmailLinked || isGmailFetching 
-                          ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-slate-50' 
+                      className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg border-2 transition-all ${!gmailLinked || isGmailFetching
+                          ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-slate-50'
                           : 'text-slate-700 border-slate-300 hover:bg-slate-50 hover:border-slate-400'
-                      }`}
+                        }`}
                     >
                       {isGmailFetching && <Spinner size="h-4 w-4" />} Cargar desde Gmail
                     </button>
@@ -505,18 +499,17 @@ function Email_Admin_comp() {
                     )}
                   </div>
                 )}
-                
+
                 <div className="divide-y-2 divide-slate-100">
                   {emailsRecibidos.map((email) => (
-                    <div 
+                    <div
                       key={email.id}
                       onClick={() => {
                         setEmailSeleccionado(email);
                         if (!email.leido && email.etiqueta !== 'gmail') handleMarcarComoLeido(email.id);
                       }}
-                      className={`p-5 sm:p-6 bg-white cursor-pointer border-l-4 transition-all hover:shadow-md ${
-                        !email.leido ? 'border-blue-500 bg-blue-50/30' : 'border-transparent hover:border-slate-300'
-                      }`}
+                      className={`p-5 sm:p-6 bg-white cursor-pointer border-l-4 transition-all hover:shadow-md ${!email.leido ? 'border-blue-500 bg-blue-50/30' : 'border-transparent hover:border-slate-300'
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -558,10 +551,10 @@ function Email_Admin_comp() {
                     Emails Enviados ({emailsEnviados.length})
                   </h3>
                 </div>
-                
+
                 <div className="divide-y-2 divide-slate-100">
                   {emailsEnviados.map((email) => (
-                    <div 
+                    <div
                       key={email.id}
                       onClick={() => setEmailSeleccionado(email)}
                       className="p-5 sm:p-6 bg-white hover:bg-slate-50 cursor-pointer border-l-4 border-transparent hover:border-slate-300 transition-all hover:shadow-md"
@@ -599,7 +592,7 @@ function Email_Admin_comp() {
             {vistaActual === 'redactar' && (
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-6">Redactar Nuevo Email</h3>
-                
+
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleEnviarEmail(); }}>
                   <div>
                     <label htmlFor="tipo" className="block text-sm font-extrabold text-slate-700 mb-2">
@@ -608,7 +601,7 @@ function Email_Admin_comp() {
                     <select
                       id="tipo"
                       value={nuevoEmail.tipo}
-                      onChange={(e) => setNuevoEmail({...nuevoEmail, tipo: e.target.value})}
+                      onChange={(e) => setNuevoEmail({ ...nuevoEmail, tipo: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                     >
                       <option value="individual">Individual</option>
@@ -625,7 +618,7 @@ function Email_Admin_comp() {
                       type="email"
                       id="para"
                       value={nuevoEmail.para}
-                      onChange={(e) => setNuevoEmail({...nuevoEmail, para: e.target.value})}
+                      onChange={(e) => setNuevoEmail({ ...nuevoEmail, para: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="ejemplo@email.com"
                       disabled={nuevoEmail.tipo !== 'individual'}
@@ -645,7 +638,7 @@ function Email_Admin_comp() {
                       type="text"
                       id="asunto"
                       value={nuevoEmail.asunto}
-                      onChange={(e) => setNuevoEmail({...nuevoEmail, asunto: e.target.value})}
+                      onChange={(e) => setNuevoEmail({ ...nuevoEmail, asunto: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="Asunto del mensaje"
                     />
@@ -659,7 +652,7 @@ function Email_Admin_comp() {
                       id="mensaje"
                       rows={8}
                       value={nuevoEmail.mensaje}
-                      onChange={(e) => setNuevoEmail({...nuevoEmail, mensaje: e.target.value})}
+                      onChange={(e) => setNuevoEmail({ ...nuevoEmail, mensaje: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="Escribe tu mensaje aquí..."
                     />
@@ -700,11 +693,10 @@ function Email_Admin_comp() {
                       }}
                       disabled={!gmailLinked}
                       title={!gmailLinked ? 'Vincula tu Gmail para usar este botón' : ''}
-                      className={`px-4 py-2 border-2 text-sm font-semibold rounded-lg shadow-sm text-white transition-all ${
-                        gmailLinked 
-                          ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-700' 
+                      className={`px-4 py-2 border-2 text-sm font-semibold rounded-lg shadow-sm text-white transition-all ${gmailLinked
+                          ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-700'
                           : 'bg-emerald-400 border-emerald-300 cursor-not-allowed'
-                      }`}
+                        }`}
                     >
                       Enviar con Gmail
                     </button>
@@ -724,7 +716,7 @@ function Email_Admin_comp() {
                   <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     {emailSeleccionado.asunto}
                   </h3>
-                  <button 
+                  <button
                     onClick={() => setEmailSeleccionado(null)}
                     className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >
@@ -733,7 +725,7 @@ function Email_Admin_comp() {
                     </svg>
                   </button>
                 </div>
-                
+
                 <div className="border-b-2 border-slate-200 pb-4 mb-4">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
@@ -749,43 +741,41 @@ function Email_Admin_comp() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="mb-6 p-4 bg-slate-50 rounded-lg border-2 border-slate-200">
                   <p className="text-slate-700 whitespace-pre-wrap font-medium">
                     {emailSeleccionado.mensaje}
                   </p>
                 </div>
-                
+
                 <div className="flex justify-between items-center flex-wrap gap-3">
                   <div className="flex gap-2">
                     {emailSeleccionado.tipo === 'recibido' && (
                       <>
-                        <button 
+                        <button
                           onClick={() => handleMarcarComoLeido(emailSeleccionado.id)}
                           disabled={emailSeleccionado.leido}
-                          className={`px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-all ${
-                            emailSeleccionado.leido 
-                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                          className={`px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-all ${emailSeleccionado.leido
+                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                               : 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'
-                          }`}
+                            }`}
                         >
                           Marcar como leído
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleMarcarComoNoLeido(emailSeleccionado.id)}
                           disabled={!emailSeleccionado.leido}
-                          className={`px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-all ${
-                            !emailSeleccionado.leido 
-                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                          className={`px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-all ${!emailSeleccionado.leido
+                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                               : 'bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100'
-                          }`}
+                            }`}
                         >
                           Marcar como no leído
                         </button>
                       </>
                     )}
                     {emailSeleccionado.etiqueta !== 'gmail' && (
-                      <button 
+                      <button
                         onClick={() => handleEliminarEmail(emailSeleccionado.id)}
                         className="px-3 py-2 text-sm font-semibold rounded-lg border-2 bg-red-50 text-red-700 border-red-300 hover:bg-red-100 transition-all"
                       >
@@ -794,14 +784,14 @@ function Email_Admin_comp() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => setEmailSeleccionado(null)}
                       className="px-4 py-2 bg-slate-300 text-slate-700 rounded-lg hover:bg-slate-400 border-2 border-slate-400 transition-all font-semibold"
                     >
                       Cerrar
                     </button>
                     {emailSeleccionado.tipo === 'recibido' && (
-                      <button 
+                      <button
                         onClick={() => handleResponderEmail(emailSeleccionado)}
                         className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 border-2 border-slate-700 transition-all font-semibold"
                       >
@@ -824,7 +814,7 @@ function Email_Admin_comp() {
                   <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     Responder Email
                   </h3>
-                  <button 
+                  <button
                     onClick={() => {
                       setShowReplyModal(false);
                       setReplyEmail({ para: '', asunto: '', mensaje: '' });
@@ -836,7 +826,7 @@ function Email_Admin_comp() {
                     </svg>
                   </button>
                 </div>
-                
+
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleEnviarRespuesta(); }}>
                   <div>
                     <label htmlFor="reply-para" className="block text-sm font-extrabold text-slate-700 mb-2">
@@ -846,7 +836,7 @@ function Email_Admin_comp() {
                       type="email"
                       id="reply-para"
                       value={replyEmail.para}
-                      onChange={(e) => setReplyEmail({...replyEmail, para: e.target.value})}
+                      onChange={(e) => setReplyEmail({ ...replyEmail, para: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="ejemplo@email.com"
                       required
@@ -861,7 +851,7 @@ function Email_Admin_comp() {
                       type="text"
                       id="reply-asunto"
                       value={replyEmail.asunto}
-                      onChange={(e) => setReplyEmail({...replyEmail, asunto: e.target.value})}
+                      onChange={(e) => setReplyEmail({ ...replyEmail, asunto: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="Asunto del mensaje"
                       required
@@ -876,7 +866,7 @@ function Email_Admin_comp() {
                       id="reply-mensaje"
                       rows={10}
                       value={replyEmail.mensaje}
-                      onChange={(e) => setReplyEmail({...replyEmail, mensaje: e.target.value})}
+                      onChange={(e) => setReplyEmail({ ...replyEmail, mensaje: e.target.value })}
                       className="block w-full px-3 py-2 border-2 border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
                       placeholder="Escribe tu respuesta aquí..."
                       required
@@ -927,7 +917,7 @@ function Email_Admin_comp() {
                   <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                     Confirmar
                   </h3>
-                  <button 
+                  <button
                     onClick={() => setShowConfirmModal(false)}
                     className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
                   >

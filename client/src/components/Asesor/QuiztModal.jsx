@@ -246,11 +246,11 @@ export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId,
     }
   };
 
-  const contentMaxW = step === 2 ? "max-w-xl sm:max-w-2xl" : "max-w-md sm:max-w-lg";
+  const contentMaxW = step === 2 ? "max-w-xl sm:max-w-2xl 2xl:max-w-4xl" : "max-w-md sm:max-w-lg 2xl:max-w-2xl";
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 2xl:p-6"
       aria-modal="true"
       role="dialog"
       aria-labelledby="sim-modal-title"
@@ -259,32 +259,32 @@ export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId,
       {/* Content: max-height para pantallas con poca altura */}
       <div
         data-modal
-        className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] overflow-hidden flex flex-col`}
+        className={`relative w-full ${contentMaxW} rounded-2xl bg-white shadow-2xl border border-slate-200/80 max-h-[85vh] 2xl:max-h-[90vh] overflow-hidden flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5 bg-gradient-to-r from-violet-50 to-indigo-50">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 2xl:gap-4 border-b px-4 py-2.5 2xl:px-6 2xl:py-4 bg-gradient-to-r from-violet-50 to-indigo-50">
+          <div className="flex items-center gap-3 2xl:gap-4">
             <Stepper step={step} />
             <div>
               <h2
                 id="sim-modal-title"
-                className="text-sm font-semibold text-slate-900 sm:text-base"
+                className="text-sm font-semibold text-slate-900 sm:text-base 2xl:text-lg"
               >
                 {step === 1 ? "Crear instrucciones" : "Información del quizt"}
               </h2>
-              <p className="text-[11px] text-slate-500">Paso {step} de 2</p>
+              <p className="text-[11px] 2xl:text-sm text-slate-500">Paso {step} de 2</p>
             </div>
           </div>
 
           <button
             ref={firstFocusable}
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="rounded-lg p-2 2xl:p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
             aria-label="Cerrar"
           >
             <svg
-              className="h-5 w-5"
+              className="h-5 w-5 2xl:h-6 2xl:w-6"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -296,7 +296,7 @@ export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId,
         </div>
 
         {/* Body: flex-1 min-h-0 para que haga scroll en pantallas bajas */}
-        <div className="flex-1 min-h-0 px-5 py-3 sm:px-6 sm:py-4 overflow-y-auto">
+        <div className="flex-1 min-h-0 px-5 py-3 sm:px-6 sm:py-4 2xl:px-6 2xl:py-5 overflow-y-auto">
           {step === 1 ? (
             <StepOne form={form} setForm={setForm} />
           ) : (
@@ -305,10 +305,10 @@ export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId,
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t px-4 py-2.5 bg-white/90">
+        <div className="flex items-center justify-between gap-3 2xl:gap-4 border-t px-4 py-2.5 2xl:px-6 2xl:py-4 bg-white/90">
           <button
             onClick={() => (step === 1 ? onClose?.() : setStep(1))}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 2xl:px-5 2xl:py-2.5 2xl:text-base text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             {step === 1 ? <>Cancelar</> : <>Atrás</>}
           </button>
@@ -317,7 +317,7 @@ export default function QuiztModal({ open, onClose, onCreate, areaTitle, areaId,
             <button
               disabled={!canNext}
               onClick={() => setStep(2)}
-              className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 2xl:px-5 2xl:py-2.5 2xl:text-base text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               Siguiente
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

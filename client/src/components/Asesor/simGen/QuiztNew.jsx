@@ -2,6 +2,8 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuiz } from "../../../api/quizzes.js";
 import { areaIdFromName } from "../../../api/actividades";
+import { uploadPreguntaImagen } from '../../../api/uploads.js';
+import { buildStaticUrl } from '../../../utils/url.js';
 // Nota: reemplazado react-katex por un componente local liviano para evitar dependencia
 import InlineMath from './InlineMath.jsx';
 import MathExamplesHint from './MathExamplesHint.jsx';
@@ -59,12 +61,12 @@ const newQuestion = (type = "multiple") => ({
 function MathText({ text = "", onFormulaClick }) {
   if (!text) return null;
 
-  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // ✅ Función para sanitizar HTML
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
     const div = document.createElement('div');
     div.innerHTML = html;
-    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br', 'pre', 'code', 'div', 'span'];
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
     const nodesToRemove = [];
     let node;
@@ -75,86 +77,159 @@ function MathText({ text = "", onFormulaClick }) {
     }
     nodesToRemove.forEach(n => {
       const parent = n.parentNode;
-      while (n.firstChild) {
-        parent.insertBefore(n.firstChild, n);
-      }
+      while (n.firstChild) parent.insertBefore(n.firstChild, n);
       parent.removeChild(n);
     });
     return div.innerHTML;
   };
 
-  // ✅ Normalizar saltos de línea y espacios primero
-  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // ✅ Procesador de Markdown simple
+  const processMarkdown = (txt) => {
+    if (!txt) return '';
+    let processed = txt;
 
-  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
-  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+    // Bloques de código (triple backtick)
+    processed = processed.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre class="bg-slate-800 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto my-2 shadow-sm border border-slate-700"><div class="opacity-50 text-[10px] uppercase mb-1 border-b border-slate-600 pb-1">${lang || 'code'}</div><code>${code}</code></pre>`;
+    });
 
-  // Regex para detectar $...$ y $$...$$
-  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+    // Código en línea (backtick simple)
+    processed = processed.replace(/`([^`]+)`/g, '<code class="bg-violet-50 px-1.5 py-0.5 rounded-md font-mono text-sm text-violet-700 border border-violet-100 font-semibold">$1</code>');
 
-  // Protegiendo LaTeX antes de procesar Markdown
-  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
-  const latexMatches = [];
-  let placeholderIndex = 0;
+    // Negrita
+    processed = processed.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
 
-  processedText = processedText.replace(fullLatexRe, (match) => {
-    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
-    latexMatches.push(match);
-    placeholderIndex++;
-    return placeholder;
-  });
+    return processed;
+  };
 
-  // Procesar Markdown: **texto** -> <strong>texto</strong>
-  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  const getParts = (txt) => {
+    const ranges = [];
+    if (!txt) return [];
 
-  // Restaurar LaTeX
-  latexMatches.forEach((match, idx) => {
-    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
-  });
+    const occupied = [];
+    let i = 0;
 
-  const parts = [];
-  let lastIndex = 0;
-  let m;
-  let matchFound = false;
+    // 1. Detectar Bloques de código, Inline Code y Fórmulas Explícitas
+    while (i < txt.length) {
+      // A. Bloques de Código
+      if (txt.startsWith('```', i)) {
+        const start = i;
+        i += 3;
+        while (i < txt.length && !txt.startsWith('```', i)) i++;
+        i += 3;
+        occupied.push({ start, end: i });
+        continue;
+      }
+      // B. Inline Code
+      if (txt[i] === '`') {
+        const start = i;
+        i++;
+        while (i < txt.length && txt[i] !== '`' && txt[i] !== '\n') i++;
+        if (i < txt.length && txt[i] === '`') {
+          i++;
+          occupied.push({ start, end: i });
+        }
+        continue;
+      }
+      // C. Escapes
+      if (txt[i] === '\\') { i += 2; continue; }
 
-  fullLatexRe.lastIndex = 0;
-
-  while ((m = fullLatexRe.exec(processedText)) !== null) {
-    matchFound = true;
-    if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+      // D. Fórmulas Explícitas ($)
+      if (txt[i] === '$') {
+        const start = i;
+        const isBlock = (i + 1 < txt.length && txt[i + 1] === '$');
+        const delimiter = isBlock ? '$$' : '$';
+        i += delimiter.length;
+        let content = '';
+        let closed = false;
+        let j = i;
+        while (j < txt.length) {
+          const c = txt[j];
+          if (c === '\\') { content += c + (txt[j + 1] || ''); j += 2; continue; }
+          if (c === '$') {
+            let isClosing = false;
+            if (isBlock) { if (j + 1 < txt.length && txt[j + 1] === '$') isClosing = true; }
+            else { isClosing = true; }
+            if (isClosing) { closed = true; i = j; break; }
+          }
+          content += c;
+          j++;
+        }
+        if (closed) {
+          const fullMatch = txt.substring(start, i + delimiter.length);
+          let isValid = true;
+          if (!isBlock) {
+            const trimmed = content.trim();
+            if (/^\d+/.test(trimmed) && /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,}/.test(trimmed) && !/[=\+\-\^_{}\\]/.test(trimmed)) isValid = false;
+          }
+          if (isValid) {
+            ranges.push({ start, end: i + delimiter.length, content, fullMatch, isBlock, isExplicit: true });
+            occupied.push({ start, end: i + delimiter.length });
+            i += delimiter.length;
+            continue;
+          } else {
+            i = start + 1; continue;
+          }
+        } else { break; }
+      }
+      i++;
     }
 
-    // m[1] es para $$...$$, m[2] es para $...$
-    const formula = (m[1] || m[2] || "").trim();
-    const isBlock = !!m[1];
+    // E. Implícitos
+    const implicitPatterns = [
+      /(?:∫|\\int)(?:[^=]+?)d[a-z]\b/gi,
+      /\b[a-zA-Z]{1,2}\([a-z0-9]+\)\s*=\s*[a-zA-Z0-9\.\+\-\*\/\^\s()]+/g,
+      /[a-zA-Z0-9_]+\^\{?[a-zA-Z0-9\-\+\.]+\}?/g,
+      /\\[a-zA-Z]+(?:\{[^}]*\})?/g
+    ];
 
-    if (formula) {
-      parts.push({
-        type: 'math',
-        content: formula,
-        full: m[0],
-        start: m.index,
-        end: m.index + m[0].length,
-        display: isBlock
+    const skipRanges = [...occupied].sort((a, b) => a.start - b.start);
+    let currentIdx = 0;
+    const implicitRanges = [];
+
+    const findInSegment = (seg, offset) => {
+      implicitPatterns.forEach(p => {
+        const regex = new RegExp(p.source, p.flags.includes('g') ? p.flags : p.flags + 'g');
+        let m;
+        while ((m = regex.exec(seg)) !== null) {
+          if (m.index > 0 && seg[m.index - 1] === ':') continue;
+          if (m[0].includes('=') && !/[0-9+\-*/^]/.test(m[0].split('=')[1])) continue;
+
+          const startRaw = offset + m.index;
+          const endRaw = offset + m.index + m[0].length;
+          // Evitar colisiones internas
+          if (!implicitRanges.some(r => (startRaw < r.end && endRaw > r.start))) {
+            implicitRanges.push({ start: startRaw, end: endRaw, content: m[0], fullMatch: m[0], isBlock: false, isImplicit: true });
+          }
+        }
       });
     }
-    lastIndex = m.index + m[0].length;
-  }
 
-  if (lastIndex < processedText.length) {
-    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
-  }
+    for (const r of skipRanges) {
+      if (r.start > currentIdx) findInSegment(txt.substring(currentIdx, r.start), currentIdx);
+      currentIdx = r.end;
+    }
+    if (currentIdx < txt.length) findInSegment(txt.substring(currentIdx), currentIdx);
 
-  // Si no se encontraron fórmulas, devolver el texto con HTML procesado
-  if (!matchFound || parts.length === 0) {
-    return (
-      <span
-        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
-      />
-    );
-  }
+    const allRanges = [...ranges, ...implicitRanges].sort((a, b) => a.start - b.start);
+
+    // Construir partes
+    const parts = [];
+    let cursor = 0;
+    for (const r of allRanges) {
+      if (r.start > cursor) {
+        parts.push({ type: 'text', content: processMarkdown(txt.substring(cursor, r.start)) });
+      }
+      parts.push({ type: 'math', content: r.content, full: r.fullMatch, start: r.start, end: r.end, isBlock: r.isBlock });
+      cursor = r.end;
+    }
+    if (cursor < txt.length) {
+      parts.push({ type: 'text', content: processMarkdown(txt.substring(cursor)) });
+    }
+    return parts;
+  };
+
+  const parts = getParts(text);
 
   const handleFormulaClick = (formula, fullMatch, start, end) => {
     if (onFormulaClick) {
@@ -162,7 +237,6 @@ function MathText({ text = "", onFormulaClick }) {
     }
   };
 
-  // Renderizar las partes encontradas, con soporte para overflow
   return (
     <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
       {parts.map((part, idx) =>
@@ -170,10 +244,10 @@ function MathText({ text = "", onFormulaClick }) {
           <span
             key={`math-${idx}`}
             onClick={() => onFormulaClick && handleFormulaClick(part.content, part.full, part.start, part.end)}
-            className={`${onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors" : ""} ${part.display ? "block text-center my-2" : "inline-block align-middle"}`}
+            className={`${onFormulaClick ? "cursor-pointer hover:bg-violet-100 rounded px-1 transition-colors" : ""} ${part.isBlock ? "block text-center my-2" : "inline-block align-middle"}`}
             title={onFormulaClick ? "Clic para editar esta fórmula" : ""}
           >
-            <InlineMath math={part.content} display={part.display} />
+            <InlineMath math={part.content} display={part.isBlock} />
           </span>
         ) : (
           <span
@@ -697,6 +771,48 @@ export default function EspanolFormBuilder() {
     return { ok: true };
   };
 
+  const resolveQuestionImages = async (questionsList) => {
+    const out = [];
+    for (const q of questionsList) {
+      let questionImage = q.image;
+      if (q.image?.file) {
+        try {
+          const url = await uploadPreguntaImagen(q.image.file);
+          const urlStr = typeof url === 'string' ? url : (url?.url || '');
+          questionImage = urlStr ? { url: urlStr, preview: buildStaticUrl(urlStr) } : null;
+        } catch (err) {
+          console.error('Error subiendo imagen de pregunta:', err);
+          questionImage = q.image?.url ? { url: q.image.url, preview: buildStaticUrl(q.image.url) } : null;
+        }
+      } else if (q.image && !String(q.image.preview || q.image.url || '').startsWith('blob:')) {
+        const existing = q.image.url || q.image.preview || '';
+        questionImage = existing ? { url: existing, preview: buildStaticUrl(existing) } : null;
+      }
+      let options = q.options;
+      if (q.type === 'multiple' && Array.isArray(q.options)) {
+        options = await Promise.all(q.options.map(async (o) => {
+          let optImg = o.image;
+          if (o.image?.file) {
+            try {
+              const url = await uploadPreguntaImagen(o.image.file);
+              const urlStr = typeof url === 'string' ? url : (url?.url || '');
+              optImg = urlStr ? { url: urlStr, preview: buildStaticUrl(urlStr) } : null;
+            } catch (err) {
+              console.error('Error subiendo imagen de opción:', err);
+              optImg = o.image?.url ? { url: o.image.url, preview: buildStaticUrl(o.image.url) } : null;
+            }
+          } else if (o.image && !String(o.image.preview || o.image.url || '').startsWith('blob:')) {
+            const existing = o.image.url || o.image.preview || '';
+            optImg = existing ? { url: existing, preview: buildStaticUrl(existing) } : null;
+          }
+          return { ...o, image: optImg };
+        }));
+      }
+      out.push({ ...q, image: questionImage, options });
+    }
+    return out;
+  };
+
   const payload = {
     subject: "espanol",
     questions,
@@ -741,48 +857,38 @@ export default function EspanolFormBuilder() {
       const descripcionRaw = draft?.instrucciones || draft?.descripcion || '';
       const descripcion = descripcionRaw.trim() || `Quiz generado automáticamente con IA. Lee cada pregunta y selecciona la respuesta correcta. Este quiz cubre contenido general del área de ${areaTitle || 'la materia'}.`;
 
+      const resolved = await resolveQuestionImages(questions);
       const body = {
         titulo: titulo,
-        descripcion: descripcion, // Siempre tendrá un valor
+        descripcion: descripcion,
         materia: areaTitle || null,
-        id_area: id_area, // Ya validado que no es null
-        publico: false, // Guardar como borrador
+        id_area: id_area,
+        publico: false,
         fecha_limite: draft?.fechaLimite || null,
         max_intentos: draft?.intentosMode === 'limited' ? Number(draft?.maxIntentos || 1) : null,
         shuffle_questions: true,
         time_limit_min: totalMin > 0 ? totalMin : null,
-        preguntas: questions.map(q => {
-          const preguntaBase = {
-            type: q.type,
-            text: q.text,
-            points: q.points,
-            answer: q.answer
-          };
-
-          // ✅ Incluir imagen de la pregunta si existe
-          if (q.image) {
-            preguntaBase.image = q.image.preview || q.image.url || null;
-          }
-
-          // ✅ Incluir opciones con sus imágenes
+        preguntas: resolved.map(q => {
+          const preguntaBase = { type: q.type, text: q.text, points: q.points, answer: q.answer };
+          if (q.image?.url) preguntaBase.image = q.image.url;
           if (q.type === 'multiple' && q.options) {
-            preguntaBase.options = q.options.map(o => {
-              const opcionBase = { text: o.text, correct: o.correct };
-              // ✅ Incluir imagen de la opción si existe
-              if (o.image) {
-                opcionBase.image = o.image.preview || o.image.url || null;
-              }
-              return opcionBase;
-            });
+            preguntaBase.options = q.options.map(o => ({
+              text: o.text,
+              correct: o.correct,
+              image: o.image?.url || null
+            }));
           }
-
           return preguntaBase;
         })
       };
       await createQuiz(body);
       await showAlert("Borrador guardado exitosamente.", 'Borrador guardado', 'success');
       // Navegar de vuelta a la lista de quizzes - NO usar replace para preservar historial
-      navigate('/asesor/quizt');
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/asesor/quizt', { replace: true });
+      }
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el borrador', 'Error', 'error');
     }
@@ -873,38 +979,27 @@ export default function EspanolFormBuilder() {
         max_intentos: draft?.intentosMode === 'limited' ? Number(draft?.maxIntentos || 1) : null,
         shuffle_questions: true,
         time_limit_min: totalMin > 0 ? totalMin : null,
-        preguntas: questions.map(q => {
-          const preguntaBase = {
-            type: q.type,
-            text: q.text,
-            points: q.points,
-            answer: q.answer
-          };
-
-          // ✅ Incluir imagen de la pregunta si existe
-          if (q.image) {
-            preguntaBase.image = q.image.preview || q.image.url || null;
-          }
-
-          // ✅ Incluir opciones con sus imágenes
+        preguntas: (await resolveQuestionImages(questions)).map(q => {
+          const preguntaBase = { type: q.type, text: q.text, points: q.points, answer: q.answer };
+          if (q.image?.url) preguntaBase.image = q.image.url;
           if (q.type === 'multiple' && q.options) {
-            preguntaBase.options = q.options.map(o => {
-              const opcionBase = { text: o.text, correct: o.correct };
-              // ✅ Incluir imagen de la opción si existe
-              if (o.image) {
-                opcionBase.image = o.image.preview || o.image.url || null;
-              }
-              return opcionBase;
-            });
+            preguntaBase.options = q.options.map(o => ({
+              text: o.text,
+              correct: o.correct,
+              image: o.image?.url || null
+            }));
           }
-
           return preguntaBase;
         })
       };
 
       const { data } = await createQuiz(body);
       await showAlert('Quizt creado exitosamente', 'Éxito', 'success');
-      navigate('/asesor/quizt');
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/asesor/quizt', { replace: true });
+      }
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo crear el quiz', 'Error', 'error');
     }

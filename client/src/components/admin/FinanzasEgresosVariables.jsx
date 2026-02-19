@@ -538,33 +538,33 @@ export default function FinanzasEgresosVariables() {
   };
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 max-w-screen-2xl mx-auto">
-      <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+    <section className="px-4 sm:px-6 lg:px-10 2xl:px-6 min-[1920px]:px-10 min-[2560px]:px-12 pt-6 xs:pt-8 sm:pt-10 md:pt-12 2xl:pt-12 min-[1920px]:pt-14 pb-6 2xl:pb-10 max-w-screen-2xl 2xl:max-w-none mx-auto">
+      <header className="flex items-center justify-between gap-4 mb-6 2xl:mb-8 min-[1920px]:mb-10 flex-wrap">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+          <h1 className="text-2xl sm:text-3xl 2xl:text-4xl min-[1920px]:text-5xl min-[2560px]:text-6xl font-extrabold tracking-tight text-gray-900">
             Gastos variables
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm 2xl:text-base min-[1920px]:text-lg min-[2560px]:text-xl text-gray-500 mt-0.5">
             Compras, materiales, comisiones y costos no recurrentes.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 ring-1 ring-gray-200 text-gray-700 text-sm">
-              <span className="text-xs text-gray-500">Total</span>
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 rounded-lg bg-gray-50 ring-1 ring-gray-200 text-gray-700 text-sm 2xl:text-base min-[1920px]:text-lg">
+              <span className="text-xs 2xl:text-sm text-gray-500">Total</span>
               <strong className="font-semibold text-gray-900">
                 {formatCurrency(totals.all)}
               </strong>
             </div>
             <Link
               to="/administrativo/finanzas/egresos/fijos"
-              className="text-sm text-gray-600 hover:text-gray-800"
+              className="text-sm 2xl:text-base min-[1920px]:text-lg text-gray-600 hover:text-gray-800"
             >
               Gastos fijos
             </Link>
             <Link
               to="/administrativo/finanzas"
-              className="text-sm text-indigo-600 hover:text-indigo-800"
+              className="text-sm 2xl:text-base min-[1920px]:text-lg text-indigo-600 hover:text-indigo-800"
             >
               Finanzas
             </Link>
@@ -573,58 +573,58 @@ export default function FinanzasEgresosVariables() {
       </header>
 
       {/* Tarjetas rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Hoy</p>
-          <p className="text-2xl font-semibold text-rose-600">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 2xl:gap-5 min-[1920px]:gap-6 min-[2560px]:gap-8 mb-6 2xl:mb-8 min-[1920px]:mb-10">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
+          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Hoy</p>
+          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
             {formatCurrency(totals.today)}
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Últimos 7 días</p>
-          <p className="text-2xl font-semibold text-rose-600">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
+          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Últimos 7 días</p>
+          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
             {formatCurrency(totals.week)}
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Mes</p>
-          <p className="text-2xl font-semibold text-rose-600">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
+          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Mes</p>
+          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
             {formatCurrency(totals.month)}
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Año</p>
-          <p className="text-2xl font-semibold text-rose-600">
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
+          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Año</p>
+          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
             {formatCurrency(totals.year)}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white rounded-xl 2xl:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+        <div className="p-6 2xl:p-8 min-[1920px]:p-10 min-[2560px]:p-12 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+            <h2 className="text-base sm:text-lg 2xl:text-xl min-[1920px]:text-2xl min-[2560px]:text-3xl font-semibold text-gray-900">
               Registro de gastos variables
             </h2>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
+          <div className="flex items-center gap-2 2xl:gap-3 min-[1920px]:gap-4">
+            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 text-sm 2xl:text-base rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
             <button
               onClick={handleExportExcel}
               disabled={exportExcelLoading}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 text-sm 2xl:text-base rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+              className="px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 text-sm 2xl:text-base rounded-lg bg-rose-600 text-white hover:bg-rose-700"
             >
               Nuevo gasto variable
             </button>
           </div>
         </div>
         {showFilters && (
-          <div className="px-6 pb-4 pt-4 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px]">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="px-6 2xl:px-8 min-[1920px]:px-10 pb-4 pt-4 2xl:pb-5 2xl:pt-5 min-[1920px]:pb-6 min-[1920px]:pt-6 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-[13px] 2xl:text-sm min-[1920px]:text-base">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 2xl:gap-4 min-[1920px]:gap-5">
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase tracking-wide">Desde</label>
                 <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
@@ -664,35 +664,35 @@ export default function FinanzasEgresosVariables() {
 
         {/* Tabla desktop */}
         <div className="hidden sm:block">
-          <div className="overflow-x-auto max-h-[60vh]">
-            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm">
+          <div className="overflow-x-auto max-h-[60vh] 2xl:max-h-[65vh]">
+            <table className="min-w-[980px] md:min-w-[1060px] xl:min-w-[1260px] w-full text-sm 2xl:text-base min-[1920px]:text-lg">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     #
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     Unidades
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     Producto/Servicio
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[60px] whitespace-nowrap">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[60px] 2xl:w-[70px] whitespace-nowrap">
                     Desc.
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     Entidad
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     Valor unitario
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     Método de pago
                   </th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200">
                     Importe
                   </th>
-                  <th className="text-center font-semibold px-4 py-3">
+                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4">
                     Estatus
                   </th>
                 </tr>
@@ -702,7 +702,7 @@ export default function FinanzasEgresosVariables() {
                   <tr className="border-b border-gray-200">
                     <td
                       colSpan={9}
-                      className="px-4 py-6 text-center text-gray-500"
+                      className="px-4 py-6 2xl:py-8 min-[1920px]:py-10 text-center text-gray-500 2xl:text-base min-[1920px]:text-lg"
                     >
                       No hay gastos variables.
                     </td>
@@ -718,20 +718,20 @@ export default function FinanzasEgresosVariables() {
                         setEditOpen(true);
                       }}
                     >
-                      <td className="px-4 py-3 text-gray-500 border-r border-gray-100">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-gray-500 border-r border-gray-100">
                         {idx + 1}
                       </td>
-                      <td className="px-4 py-3 text-gray-700 border-r border-gray-100 text-center">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-gray-700 border-r border-gray-100 text-center">
                         {r.unidades}
                       </td>
-                      <td className="px-4 py-3 text-gray-900 font-medium border-r border-gray-100">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-gray-900 font-medium border-r border-gray-100">
                         {r.producto}
                       </td>
-                      <td className="px-4 py-3 border-r border-gray-100">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-100">
                         <div className="flex justify-center">
                           <button
                             type="button"
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-50 text-indigo-600"
+                            className="inline-flex items-center justify-center w-8 h-8 2xl:w-9 2xl:h-9 min-[1920px]:w-10 min-[1920px]:h-10 rounded-md hover:bg-gray-50 text-indigo-600"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDescText(r.descripcion || "Sin descripción");
@@ -740,25 +740,25 @@ export default function FinanzasEgresosVariables() {
                             title="Ver descripción"
                             aria-label="Ver descripción"
                           >
-                            <FaRegEye className="w-4 h-4" />
+                            <FaRegEye className="w-4 h-4 2xl:w-5 2xl:h-5 min-[1920px]:w-5 min-[1920px]:h-5" />
                           </button>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-700 border-r border-gray-100">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-gray-700 border-r border-gray-100">
                         {r.entidad || "-"}
                       </td>
-                      <td className="px-4 py-3 text-center border-r border-gray-100">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-center border-r border-gray-100">
                         {formatCurrency(r.valorUnitario)}
                       </td>
-                      <td className="px-4 py-3 text-gray-700 border-r border-gray-100 text-center">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-gray-700 border-r border-gray-100 text-center">
                         {String(r.metodo || "").toLowerCase()}
                       </td>
-                      <td className="px-4 py-3 text-center border-r border-gray-100">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-50 text-rose-600 font-semibold">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-center border-r border-gray-100">
+                        <span className="inline-flex items-center px-2 py-0.5 2xl:px-2.5 2xl:py-1 rounded-md bg-rose-50 text-rose-600 font-semibold">
                           {formatCurrency(r.importe)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 text-gray-700">
                         <select
                           value={r.estatus}
                           onClick={(e) => e.stopPropagation()}

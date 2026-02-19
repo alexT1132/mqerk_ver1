@@ -45,6 +45,7 @@ import SimuladorModalGen from "./SimulatorModal";
 import ReviewModal from "./ReviewModal";
 import { generarPreguntasIA, getCooldownRemainingMs } from "../../service/simuladoresAI";
 import { listSimulaciones, deleteSimulacion, createSimulacion, updateSimulacion, getSimulacion, getSimulacionFull, estudiantesEstadoSimulacion, getSimulacionIntentoReview } from "../../api/simulaciones";
+import { buildStaticUrl } from "../../utils/url.js";
 import InlineMath from "./simGen/InlineMath.jsx";
 
 
@@ -54,12 +55,12 @@ import InlineMath from "./simGen/InlineMath.jsx";
 function MathText({ text = "" }) {
   if (!text) return null;
 
-  // ✅ Función para sanitizar HTML (similar a RichTextEditor)
+  // ✅ Función para sanitizar HTML
   const sanitizeHtmlLite = (html) => {
     if (!html) return '';
     const div = document.createElement('div');
     div.innerHTML = html;
-    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br', 'pre', 'code', 'div', 'span'];
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
     const nodesToRemove = [];
     let node;
@@ -70,85 +71,120 @@ function MathText({ text = "" }) {
     }
     nodesToRemove.forEach(n => {
       const parent = n.parentNode;
-      while (n.firstChild) {
-        parent.insertBefore(n.firstChild, n);
-      }
+      while (n.firstChild) parent.insertBefore(n.firstChild, n);
       parent.removeChild(n);
     });
     return div.innerHTML;
   };
 
-  // ✅ Normalizar saltos de línea y espacios primero
-  let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // ✅ Procesador de Markdown simple
+  const processMarkdown = (txt) => {
+    if (!txt) return '';
+    let processed = txt;
 
-  // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
-  // Esto debe hacerse ANTES de proteger las fórmulas
-  processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
+    // Bloques de código (triple backtick)
+    processed = processed.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre class="bg-slate-800 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto my-2 shadow-sm border border-slate-700"><div class="opacity-50 text-[10px] uppercase mb-1 border-b border-slate-600 pb-1">${lang || 'code'}</div><code>${code}</code></pre>`;
+    });
 
-  // Regex para detectar $...$ y $$...$$
-  const fullLatexRe = /\$\$([\s\S]+?)\$\$|\$([\s\S]+?)\$/g;
+    // Código en línea (backtick simple)
+    processed = processed.replace(/`([^`]+)`/g, '<code class="bg-violet-50 px-1.5 py-0.5 rounded-md font-mono text-sm text-violet-700 border border-violet-100 font-semibold">$1</code>');
 
-  // Protegiendo LaTeX antes de procesar Markdown
-  const latexPlaceholder = '___LATEX_PLACEHOLDER___';
-  const latexMatches = [];
-  let placeholderIndex = 0;
+    // Negrita
+    processed = processed.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
 
-  processedText = processedText.replace(fullLatexRe, (match) => {
-    const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
-    latexMatches.push(match);
-    placeholderIndex++;
-    return placeholder;
-  });
+    return processed;
+  };
 
-  // Procesar Markdown: **texto** -> <strong>texto</strong>
-  processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  const getParts = (txt) => {
+    const ranges = [];
+    let i = 0;
 
-  // Restaurar LaTeX
-  latexMatches.forEach((match, idx) => {
-    processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
-  });
+    // 1. Detectar rangos explícitos ($...$)
+    while (i < txt.length) {
+      const char = txt[i];
+      if (char === '\\') { i += 2; continue; }
+      if (char === '$') {
+        const start = i;
+        const isBlock = (i + 1 < txt.length && txt[i + 1] === '$');
+        const delimiter = isBlock ? '$$' : '$';
+        i += delimiter.length;
+        let content = '';
+        let closed = false;
+        while (i < txt.length) {
+          const c = txt[i];
+          if (c === '\\') { content += c + (txt[i + 1] || ''); i += 2; continue; }
+          if (c === '$') {
+            if (isBlock) { if (i + 1 < txt.length && txt[i + 1] === '$') closed = true; }
+            else { closed = true; }
+            if (closed) break;
+          }
+          content += c;
+          i++;
+        }
+        if (closed) {
+          const fullMatch = txt.substring(start, i + delimiter.length);
+          let isValid = true;
+          if (!isBlock) {
+            const trimmed = content.trim();
+            if (/^\d+/.test(trimmed) && /[a-zA-Z]{2,}/.test(trimmed) && !/[=\+\-\^_{}\\]/.test(trimmed)) isValid = false;
+          }
 
-  const parts = [];
-  let lastIndex = 0;
-  let m;
-  let matchFound = false;
-
-  fullLatexRe.lastIndex = 0;
-
-  while ((m = fullLatexRe.exec(processedText)) !== null) {
-    matchFound = true;
-    if (m.index > lastIndex) {
-      parts.push({ type: 'text', content: processedText.slice(lastIndex, m.index) });
+          if (isValid) {
+            ranges.push({ start, end: i + delimiter.length, content, fullMatch, isBlock });
+            i += delimiter.length;
+            continue;
+          }
+        }
+      }
+      i++;
     }
 
-    // m[1] es para $$...$$, m[2] es para $...$
-    const formula = (m[1] || m[2] || "").trim();
-    const isBlock = !!m[1];
+    // 2. Detectar implícitos (x^2, \int, f(x)=)
+    const implicitRe = /(?:[a-zA-Z_]\w*\^\{?[a-zA-Z0-9\-\+\.]+\}?)|(?:\\[a-zA-Z]+)|(?:\b[fgh]\w*\([\w,]+\)\s*=)/g;
+    const sortedRanges = [...ranges].sort((a, b) => a.start - b.start);
+    let currentIdx = 0;
+    const implicitRanges = [];
 
-    if (formula) {
-      parts.push({ type: 'math', content: formula, display: isBlock });
+    const findInSegment = (seg, offset) => {
+      let m;
+      while ((m = implicitRe.exec(seg)) !== null) {
+        if (m.index > 0 && seg[m.index - 1] === ':') continue;
+        implicitRanges.push({ start: offset + m.index, end: offset + m.index + m[0].length, content: m[0], fullMatch: m[0], isBlock: false, isImplicit: true });
+      }
     }
-    lastIndex = m.index + m[0].length;
-  }
 
-  if (lastIndex < processedText.length) {
-    parts.push({ type: 'text', content: processedText.slice(lastIndex) });
-  }
+    for (const r of sortedRanges) {
+      if (r.start > currentIdx) findInSegment(txt.substring(currentIdx, r.start), currentIdx);
+      currentIdx = r.end;
+    }
+    if (currentIdx < txt.length) findInSegment(txt.substring(currentIdx), currentIdx);
 
-  if (!matchFound || parts.length === 0) {
-    return (
-      <span
-        className="block w-full break-words overflow-x-auto whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
-      />
-    );
-  }
+    const allRanges = [...ranges, ...implicitRanges].sort((a, b) => a.start - b.start);
+
+    // 3. Construir partes
+    const parts = [];
+    let cursor = 0;
+    for (const r of allRanges) {
+      if (r.start > cursor) {
+        parts.push({ type: 'text', content: processMarkdown(txt.substring(cursor, r.start)) });
+      }
+      parts.push({ type: 'math', content: r.content, full: r.fullMatch, start: r.start, end: r.end, isBlock: r.isBlock });
+      cursor = r.end;
+    }
+    if (cursor < txt.length) {
+      parts.push({ type: 'text', content: processMarkdown(txt.substring(cursor)) });
+    }
+    return parts;
+  };
+
+  const parts = getParts(text);
 
   return (
     <span className="block w-full break-words overflow-x-auto whitespace-pre-wrap">
       {parts.map((part, idx) =>
         part.type === 'math' ? (
-          <InlineMath key={`math-${idx}`} math={part.content} display={part.display} />
+          <InlineMath key={`math-${idx}`} math={part.content} display={part.isBlock} />
         ) : (
           <span
             key={`text-${idx}`}
@@ -865,6 +901,10 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         }
       }
 
+      // Intentos: simulaciones no tienen max_intentos en BD; si en el futuro se añade, usarlo
+      const maxIntentosSim = Number(simData.max_intentos ?? simData.maxIntentos ?? 3);
+      const intentosModeSim = (maxIntentosSim && maxIntentosSim > 0) ? 'limited' : 'unlimited';
+
       // Preparar el objeto de edición con todos los datos
       const editData = {
         ...item,
@@ -874,10 +914,12 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
         // ✅ CRÍTICO: Buscar instrucciones/descripción en múltiples lugares
         instrucciones: simData.instrucciones || simData.descripcion || item.instrucciones || item.descripcion || '',
         descripcion: simData.descripcion || simData.instrucciones || item.descripcion || item.instrucciones || '',
-        fechaLimite: fechaLimiteFormatted, // ✅ Usar solo el formateado (no fallback a simData.fechaLimite que puede no existir)
+        fechaLimite: fechaLimiteFormatted || (simData.fechaLimite && String(simData.fechaLimite).slice(0, 10)) || '',
         publico: simData.publico !== undefined ? Boolean(simData.publico) : (simData.status === 'Publicado' || item.status === 'Publicado'),
         horas: horas,
         minutos: minutos,
+        intentosMode: intentosModeSim,
+        maxIntentos: maxIntentosSim,
         grupos: gruposArray, // ✅ Ya procesado como array
         areaId: simData.id_area !== undefined && simData.id_area !== null ? Number(simData.id_area) : null,
         areaTitle: simData.materia || simData.titulo_area || simData.areaTitle || null
@@ -1988,7 +2030,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
   return (
     <div className="min-h-screen relative">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
-      <div className="mx-auto max-w-8xl px-4 pb-8 pt-4 sm:pt-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-8xl w-full 2xl:max-w-none 2xl:px-4 px-4 pb-8 pt-4 sm:pt-6 sm:px-6 lg:px-8">
         {/* Header Premium Replicado */}
         <SectionBadge
           title={headerTitle}
@@ -2159,7 +2201,7 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
           )}
         </div>
 
-        {/* Desktop: tabla */}
+        {/* Desktop: tabla — 2xl: más altura y texto para 1920×1080 */}
         <div className="hidden md:block">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
@@ -2168,26 +2210,26 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   <tr>
                     <th
                       scope="col"
-                      className="sticky left-0 z-20 bg-indigo-600 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[220px]"
+                      className="sticky left-0 z-20 bg-indigo-600 px-4 py-3 2xl:py-4 text-left text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[220px]"
                     >
                       Simulador
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
+                    <th scope="col" className="px-4 py-3 2xl:py-4 text-left text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
                       Tipo
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[95px]">
+                    <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[95px]">
                       Preguntas
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[90px]">
+                    <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[90px]">
                       Intentos
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
+                    <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
                       Estado
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
+                    <th scope="col" className="px-4 py-3 2xl:py-4 text-left text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
                       Actualizado
                     </th>
-                    <th scope="col" className="px-4 py-3 min-w-[190px]">
+                    <th scope="col" className="px-4 py-3 2xl:py-4 min-w-[190px]">
                       Acciones
                     </th>
                   </tr>
@@ -2197,11 +2239,11 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   {viewItems.map((item, idx) => (
                     <tr
                       key={item.id}
-                      className="bg-white hover:bg-slate-50/50 transition-colors duration-150 group border-b border-slate-100 last:border-0"
+                      className="bg-white hover:bg-slate-50/50 transition-colors duration-150 group border-b border-slate-100 last:border-0 2xl:[&_td]:py-4"
                     >
-                      <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-4 py-3 border-r border-slate-200">
-                        <div className="max-w-[200px] lg:max-w-xs xl:max-w-md">
-                          <div className="font-semibold text-slate-900 truncate text-sm" title={item.name}>
+                      <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-4 py-3 2xl:py-4 border-r border-slate-200">
+                        <div className="max-w-[200px] lg:max-w-xs xl:max-w-md 2xl:max-w-lg">
+                          <div className="font-semibold text-slate-900 truncate text-sm 2xl:text-base" title={item.name}>
                             {item.name}
                           </div>
                           {item.instrucciones && item.instrucciones.trim() && (
@@ -2279,16 +2321,16 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                   ))}
                   {viewItems.length === 0 && !loading && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-20 text-center">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
-                            <PlaySquare className="w-10 h-10 text-violet-600" />
+                      <td colSpan={7} className="px-6 py-20 2xl:py-28 text-center">
+                        <div className="flex flex-col items-center gap-4 2xl:gap-6">
+                          <div className="w-20 h-20 2xl:w-28 2xl:h-28 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 ring-4 ring-violet-200 flex items-center justify-center shadow-lg">
+                            <PlaySquare className="w-10 h-10 2xl:w-14 2xl:h-14 text-violet-600" />
                           </div>
-                          <div className="space-y-2">
-                            <p className="text-lg font-bold text-slate-700">No hay simuladores</p>
-                            <p className="text-sm text-slate-500">
+                          <div className="space-y-2 2xl:space-y-3">
+                            <p className="text-lg 2xl:text-xl font-bold text-slate-700">No hay simuladores</p>
+                            <p className="text-sm 2xl:text-base text-slate-500">
                               Crea tu primer simulador con el botón
-                              <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 font-bold text-white shadow-md">
+                              <span className="mx-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 2xl:px-4 2xl:py-2 font-bold text-white shadow-md">
                                 Nuevo simulador
                               </span>
                             </p>
@@ -2329,11 +2371,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
               nombre: editing.nombre || editing.titulo || editing.name || '',
               instrucciones: editing.instrucciones || editing.descripcion || '',
               descripcion: editing.descripcion || editing.instrucciones || '',
-              fechaLimite: editing.fechaLimite || editing.fecha_limite || '',
+              fechaLimite: editing.fechaLimite || (editing.fecha_limite && String(editing.fecha_limite).slice(0, 10)) || '',
               publico: editing.publico ?? (editing.status === 'Publicado'),
               horas: editing.horas ?? 0,
               minutos: editing.minutos ?? 0,
-              grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? [editing.grupos] : []),
+              intentosMode: editing.intentosMode || 'unlimited',
+              maxIntentos: Number(editing.maxIntentos ?? 3),
+              grupos: Array.isArray(editing.grupos) ? editing.grupos : (editing.grupos ? (typeof editing.grupos === 'string' ? editing.grupos.split(',').map(s => s.trim()).filter(Boolean) : [editing.grupos]) : []),
               areaId: editing.areaId !== undefined ? editing.areaId : null,
               areaTitle: editing.areaTitle || null
             };
@@ -3036,7 +3080,15 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                           <div className="text-sm font-semibold text-slate-900 leading-relaxed mb-3">
                             <MathText text={p.enunciado || ''} />
                           </div>
-
+                          {(p.imagen || p.image) && (
+                            <div className="mb-3 rounded-lg overflow-hidden border border-slate-200 max-w-md">
+                              <img
+                                src={buildStaticUrl(p.imagen || p.image) || (p.imagen || p.image)}
+                                alt="Imagen de la pregunta"
+                                className="w-full h-auto object-contain max-h-48"
+                              />
+                            </div>
+                          )}
                           {p.tipo === 'opcion_multiple' && (
                             <ul className="grid gap-2">
                               {p.opciones?.map((o) => (
@@ -3047,6 +3099,13 @@ export default function SimuladoresAdmin({ Icon = PlaySquare, title = "SIMULACIO
                                     </div>
                                   ) : (
                                     <div className="size-5 rounded-full flex-shrink-0 border-2 border-slate-300" />
+                                  )}
+                                  {(o.imagen || o.image) && (
+                                    <img
+                                      src={buildStaticUrl(o.imagen || o.image) || (o.imagen || o.image)}
+                                      alt=""
+                                      className="w-12 h-12 rounded object-cover flex-shrink-0"
+                                    />
                                   )}
                                   <MathText text={o.texto || '—'} />
                                 </li>

@@ -847,6 +847,46 @@ const distribucionTipos = (cantidad, tag) => {
 };
 
 // Normalización al contrato del builder, con enforcement de distribución y limpieza
+// Envuelve fórmulas en texto plano con $...$ para que MathText/KaTeX las renderice (cualquier tipo: álgebra, cálculo, física, química).
+const wrapPlainFormulasInLatex = (str) => {
+  if (!str || typeof str !== 'string') return str;
+  const s = str.trim();
+  if (!s || s.includes('$')) return str; // Ya tiene LaTeX o vacío
+  let out = s;
+
+  // 1) Variable = número (t=0, t=3, x=2) primero para no interferir con fórmulas largas
+  const varNumRe = /\b([a-zA-Z])\s*=\s*(\d+)\b/g;
+  out = out.replace(varNumRe, (m) => `$${m}$`);
+
+  // 2) Ecuaciones tipo polinomio/álgebra: x^2+5x+6=0, ax^2+bx+c=0 (contienen ^ y =)
+  const algebraEqRe = /(\b\d*[a-zA-Z]\^?\d*(?:\s*[+\-]\s*\d*[a-zA-Z]?\^?\d*)*\s*=\s*[0-9a-zA-Z\s^+\-*/\u00B2\u00B3().]+?)(?=\s*[.,;:)]|\s+[A-Za-záéíóú]|\s*$)/g;
+  out = out.replace(algebraEqRe, (match) => {
+    const m = match.trim();
+    if (!/\^|\u00B2|\u00B3|=/.test(m) || m.length < 3) return match;
+    return `$${m}$`;
+  });
+
+  // 3) Función de una variable = expresión (física, cálculo): v(t) = 3t^2 - 4t + 2, f(x)=x^2+1
+  const funcEqRe = /\b([a-zA-Z])\s*\(\s*[a-zA-Z]\s*\)\s*=\s*([0-9a-zA-Z\s^+\-*/\u00B2\u00B3().]+?)(?=\s*[.,;:)]|\s+[A-Za-záéíóú]|\s*$)/g;
+  out = out.replace(funcEqRe, (match, _letter, expr) => {
+    const exprTrim = expr.trim();
+    const looksMath = /\^|\u00B2|\u00B3|\\frac|\\sqrt|\\int/.test(exprTrim) || (/[\d]/.test(exprTrim) && (/[+\-]/.test(exprTrim) || /[*\/]/.test(exprTrim)));
+    if (!looksMath || exprTrim.length < 2) return match;
+    return `$${match.trim()}$`;
+  });
+
+  // 4) Fórmulas cortas tipo física/química: F=ma, v=d/t, E=mc^2, PV=nRT (no tocar si ya está entre $)
+  const shortFormulaRe = /\b([A-Za-z][A-Za-z0-9]*\s*=\s*[A-Za-z0-9^+\-*/\s\u00B2\u00B3.]+?)(?=\s*[.,;:)]|\s+[A-Za-záéíóú]|\s*$)/g;
+  out = out.replace(shortFormulaRe, (match, _p1, offset, fullString) => {
+    if (fullString[offset - 1] === '$' || fullString[offset + match.length] === '$') return match;
+    const m = match.trim();
+    if (/[=^]/.test(m) && m.length >= 3 && m.length <= 40) return `$${m}$`;
+    return match;
+  });
+
+  return out;
+};
+
 const normalizarPreguntas = (arr, cantidad, dist = null) => {
   const seen = new Set();
   const ensureUniqueText = (t, idx) => {
@@ -861,7 +901,7 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
     const type = String(q.type || '').toLowerCase();
     const points = Number(q.points || 1) || 1;
     if (type === 'multi') {
-      let options = Array.isArray(q.options) ? q.options.map(o => ({ text: String(o.text || ''), correct: !!o.correct })) : [];
+      let options = Array.isArray(q.options) ? q.options.map(o => ({ text: wrapPlainFormulasInLatex(String(o.text || '')), correct: !!o.correct })) : [];
       // Garantizar 4 opciones y exactamente 1 correcta
       // 1) Normalizar textos
       options = options.map((o, j) => ({ text: o.text || `Opción ${j + 1}`, correct: !!o.correct }));
@@ -879,12 +919,12 @@ const normalizarPreguntas = (arr, cantidad, dist = null) => {
       } else {
         options = options.map((o, j) => ({ ...o, correct: j === idxCorrect }));
       }
-      return { order: i + 1, text: ensureUniqueText(q.text, i), type: 'multi', points, options };
+      return { order: i + 1, text: wrapPlainFormulasInLatex(ensureUniqueText(q.text, i)), type: 'multi', points, options };
     } else if (type === 'tf' || type === 'verdadero_falso') {
       const ans = String(q.answer || '').toLowerCase() === 'false' ? 'false' : 'true';
-      return { order: i + 1, text: ensureUniqueText(q.text, i), type: 'tf', points, answer: ans };
+      return { order: i + 1, text: wrapPlainFormulasInLatex(ensureUniqueText(q.text, i)), type: 'tf', points, answer: ans };
     } else {
-      return { order: i + 1, text: ensureUniqueText(q.text, i), type: 'short', points, answer: String(q.answer || '') };
+      return { order: i + 1, text: wrapPlainFormulasInLatex(ensureUniqueText(q.text, i)), type: 'short', points, answer: String(q.answer || '') };
     }
   });
   // Aplicar distribución si se especificó
@@ -1025,8 +1065,8 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
     })()
     : '';
 
-  // Determinar si requiere problemas con fórmulas/ecuaciones (matemáticas, física, química)
-  const requiereFormulas = /matemática|matematica|física|fisica|química|quimica|álgebra|algebra|geometría|geometria|pensamiento.*analítico|analítico/.test(
+  // Cualquier área/tema que pueda tener fórmulas: matemática, cálculo, álgebra, geometría, física, química, etc.
+  const requiereFormulas = /matemática|matematica|física|fisica|química|quimica|álgebra|algebra|geometría|geometria|cálculo|calculo|trigonometr|estequiometr|pensamiento.*analítico|analítico|razonamiento.*(matem|num|lóg)|ecuacion|fórmula|formula/.test(
     (area || '').toLowerCase() + ' ' + temaEfectivo.toLowerCase()
   );
 
@@ -1034,8 +1074,18 @@ export async function generarPreguntasIA({ tema, cantidad = 5, area = undefined,
 
 IMPORTANTE PARA ÁREAS DE MATEMÁTICAS, FÍSICA O QUÍMICA (ESTILO EXAMEN IPN):
 - Genera problemas PRÁCTICOS similares a exámenes de ingreso universitario como el IPN.
-- Incluye FÓRMULAS cuando sean necesarias para resolver el problema (muestra fórmulas como v=d/t, F=ma, x²+5x+6=0, etc.).
-- FORMATO MATEMÁTICO: Usa LaTeX para todas las fórmulas matemáticas, encerrándolas en signos de dólar simples para inline ($...$) o dobles para bloque ($$...$$). Ejemplo: "Calcula la integral $\\int x^2 dx$." o "La fórmula es $$F = ma$$". Escapa las barras invertidas correctamente (\\int, \\frac, \\sqrt, \\sum, etc.).
+- Incluye FÓRMULAS cuando sean necesarias para resolver el problema.
+
+REGLA OBLIGATORIA - FÓRMULAS EN LaTeX (el sistema las renderiza solo si están entre $):
+- NUNCA escribas fórmulas como texto plano. SIEMPRE encierra CUALQUIER expresión matemática, física, química o de cálculo entre $ ... $ (inline) o $$ ... $$ (bloque). Aplica a: matemáticas, álgebra, cálculo, geometría, física, química, etc.
+- Cualquier ecuación, función, potencia (t^2, x^2), polinomio (x^2+5x+6=0), integral (∫), derivada, fracción, raíz, fórmula física (F=ma, v=d/t) o química DEBE ir dentro de $...$. Ejemplos correctos:
+  * Física: "La función $v(t) = 3t^2 - 4t + 2$ (en m/s)." "Desde $t=0$ hasta $t=3$." "$F = ma$."
+  * Álgebra: "Resuelve $x^2 + 5x + 6 = 0$." "La expresión $ax^2 + bx + c$."
+  * Cálculo: "Calcule $\\\\int_0^1 x^2 \\\\, dx$." "La derivada $f'(x)$."
+  * Química: "La ecuación $\\\\mathrm{H_2O}$" o fórmulas con subíndices. En JSON escapa barra invertida: \\\\. Potencias t^2; fracciones \\\\frac{a}{b}; raíz \\\\sqrt{x}.
+- MAL: "La función v(t) = 3t^2 - 4t + 2" o "Resuelve x^2+5x+6=0" sin $.
+- BIEN: "La función $v(t) = 3t^2 - 4t + 2$" y "Resuelve $x^2+5x+6=0$".
+
 - Presenta situaciones REALES: problemas de la vida diaria, aplicaciones prácticas, análisis de gráficas/tablas.
 - Los enunciados deben proporcionar TODOS los datos numéricos necesarios para resolver el problema.
 - Las opciones de respuesta múltiple deben incluir el RESULTADO NUMÉRICO correcto con unidades si aplica (ej: "25 m/s", "3.5 moles", "42%", "15 N").
@@ -1137,7 +1187,7 @@ Requisitos estrictos:
 - Opción múltiple: SIEMPRE 4 opciones (nunca menos), UNA sola correcta ("correct": true solo en una, las otras 3 con "correct": false).
 - Verdadero/falso: usar "answer": "true" | "false".
 - Respuesta corta: "answer" con texto breve y objetivo. ${requiereFormulas ? 'Para problemas numéricos, incluye el resultado numérico con unidades si aplica (ej: "25 m/s", "3.5", "42%").' : 'Sin explicaciones.'}
-- Enunciados claros, con datos suficientes para resolver. ${requiereFormulas ? 'Para problemas numéricos, incluye las fórmulas necesarias en el enunciado o presenta problemas donde se requiera aplicarlas. Muestra fórmulas en notación matemática estándar.' : ''} Evita dependencias de imágenes.
+- Enunciados claros, con datos suficientes para resolver. ${requiereFormulas ? 'Incluye las fórmulas necesarias en el enunciado. ' : ''}Si en "text" u "options[].text" incluyes CUALQUIER fórmula, ecuación o expresión matemática (álgebra, cálculo, física, química, etc.), escríbela SIEMPRE entre $...$ (LaTeX) para que el sistema la renderice. Evita dependencias de imágenes.
 
 Devuelve SOLO JSON con este esquema:
 {

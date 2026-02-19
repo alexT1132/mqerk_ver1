@@ -21,12 +21,20 @@ export function MathLiveInput({
     if (!mf) return;
 
     try {
-      // Opciones para hacerlo más amigable
-      if (typeof mf.setOptions === 'function') {
-        mf.setOptions({
-          virtualKeyboardMode: 'manual',
-          smartMode: true,
-        });
+      // Opciones para hacerlo más amigable (usando API moderna)
+      if (mf.virtualKeyboardMode !== undefined) {
+        mf.virtualKeyboardMode = 'manual';
+      }
+      if (mf.smartMode !== undefined) {
+        mf.smartMode = true;
+      }
+      if (mf.virtualKeyboardZIndex !== undefined) {
+        mf.virtualKeyboardZIndex = 10005;
+      }
+
+      // Asegurar que globalmente se respete el z-index si la librería lo permite
+      if (typeof window !== 'undefined' && window.MathfieldElement) {
+        window.MathfieldElement.computeOption('virtualKeyboardZIndex', 10005);
       }
       // Placeholder (si existe soporte)
       if ('placeholder' in mf) {

@@ -50,7 +50,7 @@ export function Configuracion_Admin_comp() {
   // Estados de control de la interfaz
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  
+
   // Leer parámetros de URL para establecer la sección activa
   const urlParams = new URLSearchParams(location.search);
   const sectionParam = urlParams.get('section');
@@ -59,7 +59,7 @@ export function Configuracion_Admin_comp() {
   // Contexto del administrador - INTEGRACIÓN AdminContext
   // USADO PARA: Gestión de perfil del admin (foto, datos personales, actualización)
   // AdminContext provee: adminProfile, updateAdminProfile, uploadAdminAvatar
-  const { 
+  const {
     isLoading: contextLoading,
     error,
     lastUpdated,
@@ -149,7 +149,7 @@ export function Configuracion_Admin_comp() {
   const handleGuardarConfiguracion = async () => {
     setSaving(true);
     setMessage(''); // Limpiar mensaje anterior
-    
+
     try {
       const payload = {
         sesionMaxima: Number(configuration.seguridad.sesionMaxima) || 0,
@@ -184,16 +184,16 @@ export function Configuracion_Admin_comp() {
       setTimeout(() => setMessage(''), 4000);
       return;
     }
-    
+
     if (passwordData.newPassword.length < 6) {
       setMessage('La nueva contraseña debe tener al menos 6 caracteres');
       setTimeout(() => setMessage(''), 4000);
       return;
     }
-    
+
     setSaving(true);
     setMessage(''); // Limpiar mensaje anterior
-    
+
     try {
       await changeAdminPasswordRequest({
         currentPassword: passwordData.currentPassword,
@@ -220,7 +220,7 @@ export function Configuracion_Admin_comp() {
       setTimeout(() => setMessage(''), 4000);
       return;
     }
-    
+
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(personalData.email)) {
@@ -228,10 +228,10 @@ export function Configuracion_Admin_comp() {
       setTimeout(() => setMessage(''), 4000);
       return;
     }
-    
+
     setSaving(true);
     setMessage(''); // Limpiar mensaje anterior
-    
+
     try {
       // Preparar datos para actualización
       const profileData = {
@@ -268,7 +268,7 @@ export function Configuracion_Admin_comp() {
       } else {
         throw new Error('Error al actualizar el perfil');
       }
-      
+
       setTimeout(() => setMessage(''), 4000);
     } catch (error) {
       console.error('Error updating personal data:', error);
@@ -316,7 +316,7 @@ export function Configuracion_Admin_comp() {
         setTimeout(() => setMessage(''), 4000);
         return;
       }
-      
+
       // Validar tamaño (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setMessage('La imagen debe ser menor a 5MB');
@@ -326,7 +326,7 @@ export function Configuracion_Admin_comp() {
 
       // Crear preview temporal
       const previewUrl = URL.createObjectURL(file);
-      
+
       setPersonalData(prev => ({
         ...prev,
         foto: file,
@@ -337,21 +337,21 @@ export function Configuracion_Admin_comp() {
 
   // Configuración de secciones del menú lateral
   const secciones = [
-    { 
-      id: 'perfil', 
-      nombre: 'Mi Perfil', 
+    {
+      id: 'perfil',
+      nombre: 'Mi Perfil',
       icono: '👤',
       descripcion: 'Configuración de tu perfil personal'
     },
-    { 
-      id: 'general', 
-      nombre: 'General', 
+    {
+      id: 'general',
+      nombre: 'General',
       icono: '⚙️',
       descripcion: 'Configuración básica del sistema'
     },
-    { 
-      id: 'seguridad', 
-      nombre: 'Seguridad', 
+    {
+      id: 'seguridad',
+      nombre: 'Seguridad',
       icono: '🔒',
       descripcion: 'Configuración de seguridad y acceso'
     }
@@ -362,10 +362,10 @@ export function Configuracion_Admin_comp() {
       {(showInitialOverlay || isLoading || contextLoading) && (
         <LoadingOverlay message="Cargando configuración..." subMessage="Por favor espera..." />
       )}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
         {/* Header Principal */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-blue-200/30 border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6 relative">
-          
+
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 transform transition-all duration-300 hover:scale-105">
@@ -381,7 +381,7 @@ export function Configuracion_Admin_comp() {
               </div>
             </div>
             <div className="mt-3 sm:mt-0">
-              <button 
+              <button
                 onClick={handleGuardarConfiguracion}
                 disabled={saving}
                 className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:-translate-y-0.5 backdrop-blur-sm"
@@ -409,17 +409,15 @@ export function Configuracion_Admin_comp() {
 
         {/* Mensaje de éxito/error */}
         {message && (
-          <div className={`bg-white ${
-            message.includes('exitosamente') 
-              ? 'border-green-200 text-green-700' 
+          <div className={`bg-white ${message.includes('exitosamente')
+              ? 'border-green-200 text-green-700'
               : 'border-red-200 text-red-700'
-          } border rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-lg relative transform transition-all duration-300 hover:scale-[1.01]`}>
+            } border rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-lg relative transform transition-all duration-300 hover:scale-[1.01]`}>
             <div className="relative z-10 flex items-center">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 ${
-                message.includes('exitosamente') 
-                  ? 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-400/30' 
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 ${message.includes('exitosamente')
+                  ? 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-400/30'
                   : 'bg-gradient-to-br from-red-400 to-pink-500 shadow-red-400/30'
-              } shadow-lg`}>
+                } shadow-lg`}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {message.includes('exitosamente') ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -437,7 +435,7 @@ export function Configuracion_Admin_comp() {
           {/* Sidebar de navegación */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200 p-6 sm:p-8 relative">
-              
+
               <div className="relative z-10">
                 <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-6 flex items-center">
                   <span className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mr-3"></span>
@@ -448,29 +446,26 @@ export function Configuracion_Admin_comp() {
                     <button
                       key={seccion.id}
                       onClick={() => setActiveSection(seccion.id)}
-                      className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center space-x-4 group relative overflow-hidden ${
-                        activeSection === seccion.id 
-                          ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-xl shadow-blue-500/40 transform scale-105' 
+                      className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center space-x-4 group relative overflow-hidden ${activeSection === seccion.id
+                          ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-xl shadow-blue-500/40 transform scale-105'
                           : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:shadow-lg hover:scale-[1.02] hover:shadow-blue-200/30'
-                      }`}
+                        }`}
                     >
                       {/* Efecto de brillo para botón activo */}
                       {activeSection === seccion.id && (
                         <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-xl"></div>
                       )}
-                      
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative z-10 ${
-                        activeSection === seccion.id 
-                          ? 'bg-white/20 shadow-lg' 
+
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative z-10 ${activeSection === seccion.id
+                          ? 'bg-white/20 shadow-lg'
                           : 'bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200'
-                      } transition-all duration-300`}>
+                        } transition-all duration-300`}>
                         <span className="text-lg">{seccion.icono}</span>
                       </div>
                       <div className="relative z-10 flex-1">
                         <span className="font-semibold text-base block">{seccion.nombre}</span>
-                        <span className={`text-xs opacity-75 ${
-                          activeSection === seccion.id ? 'text-blue-100' : 'text-gray-500'
-                        }`}>
+                        <span className={`text-xs opacity-75 ${activeSection === seccion.id ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
                           {seccion.descripcion}
                         </span>
                       </div>
@@ -484,7 +479,7 @@ export function Configuracion_Admin_comp() {
           {/* Contenido principal */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/40 border border-gray-200 p-6 sm:p-8 relative">
-              
+
               <div className="relative z-10">
                 {/* Mi Perfil */}
                 {activeSection === 'perfil' && (
@@ -502,11 +497,11 @@ export function Configuracion_Admin_comp() {
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* Foto de perfil */}
                     <div className="mb-8">
                       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-lg relative">
-                        
+
                         <div className="relative z-10">
                           <div className="flex items-center mb-6">
                             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 mr-4">
@@ -519,14 +514,14 @@ export function Configuracion_Admin_comp() {
                               <p className="text-sm text-gray-600 opacity-80">Actualiza tu imagen de perfil</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
                             <div className="flex-shrink-0">
                               <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-lg">
                                 {personalData.fotoPreview ? (
-                                  <img 
-                                    src={personalData.fotoPreview} 
-                                    alt="Preview" 
+                                  <img
+                                    src={personalData.fotoPreview}
+                                    alt="Preview"
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
@@ -539,8 +534,8 @@ export function Configuracion_Admin_comp() {
                             <div className="flex-1">
                               <label className="block">
                                 <span className="sr-only">Seleccionar foto</span>
-                                <input 
-                                  type="file" 
+                                <input
+                                  type="file"
                                   accept="image/*"
                                   onChange={handleImageChange}
                                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 file:cursor-pointer cursor-pointer"
@@ -606,7 +601,7 @@ export function Configuracion_Admin_comp() {
                     </div>
 
                     <div className="mt-8 flex justify-end">
-                      <button 
+                      <button
                         onClick={handleUpdatePersonalData}
                         disabled={saving}
                         className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-purple-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:-translate-y-0.5"
@@ -648,7 +643,7 @@ export function Configuracion_Admin_comp() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -736,7 +731,7 @@ export function Configuracion_Admin_comp() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-10">
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -796,7 +791,7 @@ export function Configuracion_Admin_comp() {
                     {/* Sección para cambiar contraseña */}
                     <div className="mb-10">
                       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-lg relative">
-                        
+
                         <div className="relative z-10">
                           <div className="flex items-center mb-6">
                             <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30 mr-4">
@@ -812,33 +807,33 @@ export function Configuracion_Admin_comp() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <label className="block text-sm font-semibold text-gray-700 mb-3">Contraseña Actual</label>
-                              <input 
-                                type="password" 
+                              <input
+                                type="password"
                                 value={passwordData.currentPassword}
                                 onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                                className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-orange-300" 
+                                className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-orange-300"
                               />
                             </div>
                             <div className="space-y-2">
                               <label className="block text-sm font-semibold text-gray-700 mb-3">Nueva Contraseña</label>
-                              <input 
-                                type="password" 
+                              <input
+                                type="password"
                                 value={passwordData.newPassword}
                                 onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                                className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-orange-300" 
+                                className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-orange-300"
                               />
                             </div>
                             <div className="md:col-span-2 space-y-2">
                               <label className="block text-sm font-semibold text-gray-700 mb-3">Confirmar Nueva Contraseña</label>
-                              <input 
-                                type="password" 
+                              <input
+                                type="password"
                                 value={passwordData.confirmPassword}
                                 onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                                className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-orange-300" 
+                                className="block w-full px-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:shadow-md hover:border-orange-300"
                               />
                             </div>
                             <div className="md:col-span-2 flex justify-end">
-                              <button 
+                              <button
                                 onClick={handleUpdatePassword}
                                 disabled={saving}
                                 className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-red-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:-translate-y-0.5"

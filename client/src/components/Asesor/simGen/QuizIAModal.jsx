@@ -323,9 +323,9 @@ export default function QuizIAModal({
     return createPortal(
         <>
             <AlertComponent />
-            <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="mqerk-quiz-ia-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 xl:p-6 2xl:p-8">
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
-                <div className="mqerk-quiz-ia-dialog relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-emerald-200/50 border border-slate-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                <div className="mqerk-quiz-ia-dialog relative z-10 w-full max-w-2xl 2xl:max-w-4xl min-[1800px]:max-w-5xl max-h-[90vh] 2xl:max-h-[92vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-emerald-200/50 border border-slate-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
                     {/* Header */}
                     <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-3">
                         <div className="flex items-center gap-3">

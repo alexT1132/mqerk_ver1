@@ -44,12 +44,12 @@ const kColor = {
 
 /* ------------------------------ Componentes ----------------------------- */
 const KPI = ({ icon, label, value }) => (
-  <div className={`rounded-3xl ${kColor.card} border ${kColor.border} p-4 sm:p-5 shadow-sm ring-1 ring-gray-100 hover:shadow-md transition-shadow`}>
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">{icon}</div>
+  <div className={`rounded-3xl ${kColor.card} border ${kColor.border} p-4 sm:p-5 2xl:p-6 shadow-sm ring-1 ring-gray-100 hover:shadow-md transition-shadow`}>
+    <div className="flex items-center gap-3 2xl:gap-4">
+      <div className="flex h-9 w-9 sm:h-10 sm:w-10 2xl:h-12 2xl:w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">{icon}</div>
       <div className="flex-1 min-w-0">
-        <div className={`text-xs sm:text-sm ${kColor.text} mb-1`}>{label}</div>
-        <div className={`text-xl sm:text-2xl font-semibold ${kColor.textStrong}`}>{value}</div>
+        <div className={`text-xs sm:text-sm 2xl:text-base ${kColor.text} mb-1`}>{label}</div>
+        <div className={`text-xl sm:text-2xl 2xl:text-3xl font-semibold ${kColor.textStrong}`}>{value}</div>
       </div>
     </div>
   </div>
@@ -101,11 +101,11 @@ const SessionCard = ({ s, selected, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-xl border ${selected ? "border-sky-300 bg-sky-50" : "border-slate-200 bg-white hover:bg-slate-50"} p-4 shadow-sm transition`}
+      className={`w-full text-left rounded-xl border ${selected ? "border-sky-300 bg-sky-50" : "border-slate-200 bg-white hover:bg-slate-50"} p-4 2xl:p-5 shadow-sm transition`}
     >
-      <div className="text-xs text-slate-500 mb-1">{fecha} · {hora}</div>
-      <div className="font-semibold text-slate-800">{s.materia}</div>
-      <div className="text-sm text-slate-600">
+      <div className="text-xs 2xl:text-sm text-slate-500 mb-1">{fecha} · {hora}</div>
+      <div className="font-semibold text-slate-800 2xl:text-base">{s.materia}</div>
+      <div className="text-sm 2xl:text-base text-slate-600">
         {s.tipo} — {s.tipo === "Personalizada" ? s.alumno : `Grupal - Grupo ${s.grupo}`}
       </div>
     </button>
@@ -447,27 +447,27 @@ export default function DashboardAsesorias() {
       {/* Fondo fijo independiente del scroll */}
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
-      <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-[1920px] mx-auto relative z-10">
+      <section className="px-4 sm:px-6 lg:px-10 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 2xl:pt-14 pb-8 2xl:pb-12 max-w-[1920px] w-full 2xl:max-w-none mx-auto relative z-10">
         {/* Header con título grande */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
-              <Users className="size-8 sm:size-10 text-white" />
+        <div className="mb-8 2xl:mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 2xl:gap-6">
+            <div className="p-4 2xl:p-5 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
+              <Users className="size-8 sm:size-10 2xl:size-12 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-1 tracking-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl 2xl:text-6xl font-extrabold mb-1 tracking-tight">
                 <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                   Asesorías
                 </span>
               </h1>
-              <p className="text-slate-600 text-sm sm:text-base font-medium">
+              <p className="text-slate-600 text-sm sm:text-base 2xl:text-lg font-medium">
                 Gestiona tus sesiones de asesoría asignadas
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:border-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 2xl:py-3 2xl:text-base text-sm text-slate-700 shadow-sm hover:border-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500">
               <option>Semana</option>
               <option>Mes</option>
             </select>
@@ -475,7 +475,7 @@ export default function DashboardAsesorias() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 2xl:gap-5 2xl:mb-8 mb-6">
           <KPI icon={<IconPeople />} label="Total Asesorías" value={kpis.total} />
           <KPI icon={<IconBook />} label="Materias Cubiertas" value={kpis.materias} />
           <KPI icon={<IconSplit />} label="Personalizadas vs Grupales" value={`${kpis.pers} / ${kpis.grup}`} />
@@ -515,12 +515,12 @@ export default function DashboardAsesorias() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 2xl:gap-8 lg:grid-cols-3">
             {/* Detalle (izquierda) */}
-            <div className={`lg:col-span-2 rounded-xl shadow-md border ${kColor.border} bg-white p-4 sm:p-6`}>
-              <div className="mb-4 flex items-center gap-2">
+            <div className={`lg:col-span-2 rounded-xl shadow-md border ${kColor.border} bg-white p-4 sm:p-6 2xl:p-7`}>
+              <div className="mb-4 2xl:mb-5 flex items-center gap-2 2xl:gap-3">
                 <IconCalendar />
-                <h2 className={`text-lg font-semibold ${kColor.textStrong}`}>Detalle de Sesión</h2>
+                <h2 className={`text-lg 2xl:text-xl font-semibold ${kColor.textStrong}`}>Detalle de Sesión</h2>
               </div>
 
               {!sel && (
@@ -534,15 +534,15 @@ export default function DashboardAsesorias() {
             </div>
 
             {/* Lista (derecha) */}
-            <div className={`rounded-xl shadow-md border ${kColor.border} bg-white p-4 sm:p-6`}>
+            <div className={`rounded-xl shadow-md border ${kColor.border} bg-white p-4 sm:p-6 2xl:p-7`}>
               {/* Tabs para alternar entre próximas y realizadas */}
-              <div className="flex gap-2 mb-4 border-b border-gray-200">
+              <div className="flex gap-2 2xl:gap-3 mb-4 2xl:mb-5 border-b border-gray-200">
                 <button
                   onClick={() => {
                     setActiveTab('proximas');
                     setSelId(null);
                   }}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'proximas'
+                  className={`px-4 py-2 2xl:py-2.5 2xl:text-base text-sm font-medium transition-colors ${activeTab === 'proximas'
                     ? 'text-indigo-600 border-b-2 border-indigo-600'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
@@ -559,7 +559,7 @@ export default function DashboardAsesorias() {
                     setActiveTab('realizadas');
                     setSelId(null);
                   }}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'realizadas'
+                  className={`px-4 py-2 2xl:py-2.5 2xl:text-base text-sm font-medium transition-colors ${activeTab === 'realizadas'
                     ? 'text-indigo-600 border-b-2 border-indigo-600'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}

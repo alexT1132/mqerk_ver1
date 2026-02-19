@@ -757,7 +757,7 @@ function ListaAlumnos_Admin_comp() {
       <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
 
         <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-3 sm:pb-4 px-2 xs:px-4 sm:px-6">
-          <div className="w-full max-w-7xl mx-auto">
+          <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
 
             <div className="text-center mb-4 xs:mb-6 sm:mb-8">
               <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold 
@@ -873,7 +873,7 @@ function ListaAlumnos_Admin_comp() {
         {/* Información del grupo seleccionado */}
         {activeCategory && activeTurno && (
           <div className="px-2 xs:px-4 sm:px-6 mb-4 xs:mb-6">
-            <div className="w-full max-w-7xl mx-auto">
+            <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
               <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 xs:px-6 sm:px-8 py-4 xs:py-5 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg border-2 border-purple-400/40 ring-2 ring-purple-200/20">
                 <div className="text-center">
                   <p className="text-base xs:text-lg sm:text-xl md:text-2xl font-extrabold mb-2 xs:mb-3">
@@ -890,7 +890,7 @@ function ListaAlumnos_Admin_comp() {
 
         {/* Contenido principal de la tabla */}
         <div className="flex-1 px-2 xs:px-4 sm:px-6 pb-4 xs:pb-6">
-          <div className="w-full max-w-7xl mx-auto">
+          <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
             {/* Tabla de alumnos completa - Solo se muestra cuando hay curso Y turno seleccionados */}
             {activeCategory && activeTurno ? (
               <>

@@ -647,16 +647,16 @@ function Legend() {
   const entries = Object.entries(CATEGORIES);
 
   return (
-    <div className="rounded-2xl border-2 border-slate-200 bg-white p-3 sm:p-4 shadow-lg ring-1 ring-slate-100/50">
+    <div className="rounded-2xl border-2 border-slate-200 bg-white p-3 sm:p-4 2xl:p-5 shadow-lg ring-1 ring-slate-100/50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between group focus:outline-none"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
-            <Tag className="size-4" />
+        <div className="flex items-center gap-3 2xl:gap-4">
+          <div className="p-1.5 2xl:p-2 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
+            <Tag className="size-4 2xl:size-5" />
           </div>
-          <span className="font-bold text-sm text-slate-700">
+          <span className="font-bold text-sm 2xl:text-base text-slate-700">
             Leyenda de Eventos
           </span>
         </div>
@@ -673,8 +673,8 @@ function Legend() {
         <div className="overflow-hidden">
           <ul className="space-y-2">
             {entries.map(([k, v]) => (
-              <li key={k} className="flex items-center gap-2.5 text-xs group">
-                <span className={`w-3 h-3 rounded-full ${v.dot} shrink-0 ring-1 ring-white shadow-sm group-hover:scale-110 transition-transform duration-200`} />
+              <li key={k} className="flex items-center gap-2.5 text-xs 2xl:text-sm group">
+                <span className={`w-3 h-3 2xl:w-4 2xl:h-4 rounded-full ${v.dot} shrink-0 ring-1 ring-white shadow-sm group-hover:scale-110 transition-transform duration-200`} />
                 <span className="text-slate-600 font-bold group-hover:text-slate-900 transition-colors uppercase tracking-tight">{v.name}</span>
               </li>
             ))}
@@ -777,29 +777,29 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
       {/* header */}
-      <div className="flex items-center justify-between px-5 sm:px-6 py-5 bg-slate-900 text-white shadow-md">
+      <div className="flex items-center justify-between px-5 sm:px-6 py-5 2xl:py-7 bg-slate-900 text-white shadow-md">
         <button
           onClick={() => go(-1)}
-          className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95 text-slate-400 hover:text-white border border-white/10"
+          className="p-2.5 2xl:p-3.5 rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95 text-slate-400 hover:text-white border border-white/10"
           aria-label="Mes anterior"
         >
-          <ChevronLeft className="size-5" />
+          <ChevronLeft className="size-5 2xl:size-7" />
         </button>
-        <div className="text-lg sm:text-xl font-extrabold uppercase tracking-widest flex items-center gap-2">
-          <CalendarIcon className="size-5 sm:size-6" />
+        <div className="text-lg sm:text-xl 2xl:text-3xl font-extrabold uppercase tracking-widest flex items-center gap-2">
+          <CalendarIcon className="size-5 sm:size-6 2xl:size-8" />
           <span>{monthNames[monthDate.getMonth()].toUpperCase()} {monthDate.getFullYear()}</span>
         </div>
         <button
           onClick={() => go(1)}
-          className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95 text-slate-400 hover:text-white border border-white/10"
+          className="p-2.5 2xl:p-3.5 rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95 text-slate-400 hover:text-white border border-white/10"
           aria-label="Mes siguiente"
         >
-          <ChevronRight className="size-5" />
+          <ChevronRight className="size-5 2xl:size-7" />
         </button>
       </div>
 
       {/* labels */}
-      <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400 px-2 sm:px-3 py-3 bg-slate-50 border-b border-slate-200">
+      <div className="grid grid-cols-7 text-center text-[10px] 2xl:text-sm font-bold text-slate-400 px-2 sm:px-3 py-3 2xl:py-5 bg-slate-50 border-b border-slate-200">
         {dayLabel.map((d) => (
           <div key={d} className="py-1 tracking-widest uppercase">
             {d}
@@ -810,7 +810,7 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
       {/* celdas */}
       <div className="grid grid-cols-7 gap-px bg-slate-200">
         {meta.cells.map((date, i) => {
-          if (!date) return <div key={`e-${i}`} className="bg-white h-12 sm:h-14 lg:h-16 min-[2200px]:h-24" />;
+          if (!date) return <div key={`e-${i}`} className="bg-white h-12 sm:h-14 lg:h-16 2xl:h-28 min-[2200px]:h-32" />;
           const iso = toISO(date);
           const evs = meta.map[iso] || [];
           const today = toISO(new Date()) === iso;
@@ -828,11 +828,11 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
                   onCreate(iso);
                 }
               }}
-              className={`relative bg-white h-12 sm:h-14 lg:h-16 min-[2200px]:h-24 p-1 hover:bg-slate-50 transition-all duration-200 cursor-pointer border-r border-b border-slate-100 ${today ? "bg-indigo-50/30" : ""
+              className={`relative bg-white h-12 sm:h-14 lg:h-16 2xl:h-28 min-[2200px]:h-32 p-1 2xl:p-2 hover:bg-slate-50 transition-all duration-200 cursor-pointer border-r border-b border-slate-100 ${today ? "bg-indigo-50/30" : ""
                 } ${isPast ? "opacity-60" : ""}`}
             >
               <div
-                className={`text-xs font-bold w-7 h-7 grid place-items-center rounded-full transition-all duration-200 ${today
+                className={`text-xs 2xl:text-base font-bold w-7 h-7 2xl:w-10 2xl:h-10 grid place-items-center rounded-full transition-all duration-200 ${today
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
                   }`}
@@ -866,12 +866,12 @@ function Calendar({ monthDate, setMonthDate, events, onCreate, onDayClick }) {
       </div>
 
       {/* footer */}
-      <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-center">
+      <div className="p-4 2xl:p-6 bg-slate-50 border-t border-slate-200 flex justify-center">
         <button
           onClick={() => onCreate?.(toISO(new Date()))}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm px-6 py-2.5 font-bold shadow-sm transition-all duration-200 active:scale-95"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm 2xl:text-lg px-6 py-2.5 2xl:py-4 2xl:px-8 font-bold shadow-sm transition-all duration-200 active:scale-95"
         >
-          <Plus className="size-4" />
+          <Plus className="size-4 2xl:size-6" />
           Nuevo recordatorio
         </button>
       </div>
@@ -1501,20 +1501,20 @@ export default function AgendaDashboard() {
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
       <div className="relative z-10 min-h-screen">
-        <div className="mx-auto max-w-[1920px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mx-auto max-w-[1920px] w-full 2xl:max-w-none px-4 sm:px-6 lg:px-8 2xl:px-4 py-6 sm:py-8 2xl:py-10">
           {/* Header */}
-          <div className="mb-8 sm:mb-10">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
-                <CalendarIcon className="size-8 sm:size-10 text-white" />
+          <div className="mb-8 sm:mb-10 2xl:mb-12">
+            <div className="flex items-center gap-4 mb-4 2xl:gap-6 2xl:mb-6">
+              <div className="p-4 2xl:p-5 rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-600 shadow-xl ring-4 ring-violet-200">
+                <CalendarIcon className="size-8 sm:size-10 2xl:size-12 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-normal text-slate-900">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl 2xl:text-6xl font-extrabold mb-2 tracking-tight leading-normal text-slate-900">
                   <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block pb-4">
                     Agenda y Calendario
                   </span>
                 </h1>
-                <p className="text-slate-600 text-sm sm:text-base font-medium">
+                <p className="text-slate-600 text-sm sm:text-base 2xl:text-lg font-medium">
                   Organiza tus actividades y mantén al día a tus estudiantes
                 </p>
               </div>
@@ -1527,9 +1527,9 @@ export default function AgendaDashboard() {
             </div>
           )}
 
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 2xl:gap-10 items-start">
             {/* Calendario */}
-            <section className="space-y-4">
+            <section className="space-y-4 2xl:space-y-6">
               <Calendar
                 monthDate={monthDate}
                 setMonthDate={setMonthDate}
@@ -1547,14 +1547,14 @@ export default function AgendaDashboard() {
             </section>
 
             {/* Eventos */}
-            <section className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <section className="space-y-4 2xl:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 2xl:mb-6">
+                <div className="flex items-center gap-3 2xl:gap-4">
+                  <h2 className="text-2xl sm:text-3xl 2xl:text-4xl font-extrabold text-slate-900 tracking-tight">
                     Recordatorios
                   </h2>
                   {upcomingEvents.length > 0 && (
-                    <span className="inline-flex items-center justify-center bg-violet-100 text-violet-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-violet-200">
+                    <span className="inline-flex items-center justify-center bg-violet-100 text-violet-700 text-xs 2xl:text-sm font-bold px-2.5 py-0.5 2xl:px-3 2xl:py-1 rounded-full border border-violet-200">
                       {upcomingEvents.length} pendientes
                     </span>
                   )}
@@ -1562,27 +1562,27 @@ export default function AgendaDashboard() {
               </div>
 
               {/* Filtros y búsqueda */}
-              <div className="space-y-3">
+              <div className="space-y-3 2xl:space-y-4">
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
-                    <Search className="size-4" />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 2xl:p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                    <Search className="size-4 2xl:size-5" />
                   </div>
                   <input
                     type="text"
                     placeholder="Buscar recordatorios..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-14 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all shadow-sm hover:shadow-md font-medium"
+                    className="w-full pl-14 pr-4 py-3 2xl:py-4 2xl:text-base rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all shadow-sm hover:shadow-md font-medium"
                   />
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
-                    <Filter className="size-4" />
+                  <div className="p-2 2xl:p-2.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                    <Filter className="size-4 2xl:size-5" />
                   </div>
                   <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
-                    className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all bg-white shadow-sm hover:shadow-md font-medium"
+                    className="flex-1 px-4 py-3 2xl:py-4 2xl:text-base rounded-xl border-2 border-slate-200 focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 outline-none transition-all bg-white shadow-sm hover:shadow-md font-medium"
                   >
                     <option value="all">Todas las categorías</option>
                     {Object.entries(CATEGORIES).map(([key, value]) => (
@@ -1596,7 +1596,7 @@ export default function AgendaDashboard() {
 
               {/* Lista de eventos con Scroll */}
               <div className="rounded-2xl border-2 border-slate-200 bg-white shadow-lg overflow-hidden">
-                <div className="max-h-[380px] overflow-y-auto custom-scrollbar px-1">
+                <div className="max-h-[380px] 2xl:max-h-[500px] overflow-y-auto custom-scrollbar px-1 2xl:px-2">
                   {filteredEvents.length === 0 ? (
                     <div className="p-10 text-center">
                       <div className="inline-flex p-4 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-xl ring-4 ring-violet-200 mb-4">

@@ -171,7 +171,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
           `relative z-10 pt-14 ` +
           (contentClassName && contentClassName.includes('px-0')
             ? ''
-            : 'px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8') +
+            : 'px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-4') +
           (contentClassName && contentClassName.includes('pb-0')
             ? ''
             : ' pb-10') +

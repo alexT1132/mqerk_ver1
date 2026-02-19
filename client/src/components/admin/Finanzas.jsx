@@ -67,16 +67,16 @@ export default function FinanzasHome() {
   }, [ingresos]);
 
   return (
-    <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-slate-50">
+    <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white">
       {/* Header con título grande pegado arriba */}
-      <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-0 px-4 sm:px-6">
-        <div className="w-full max-w-7xl mx-auto">
+      <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-0 px-4 sm:px-6 2xl:px-4">
+        <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
           <div className="text-center mb-4 sm:mb-6">
-            <h2 className="relative inline-block text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 mb-2 sm:mb-3 tracking-tight leading-[1.1]">
+            <h2 className="relative inline-block text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-5xl 2xl:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 mb-2 sm:mb-3 lg:mb-4 tracking-tight leading-[1.1]">
               <span className="inline-block pb-1">Finanzas</span>
             </h2>
-            <div className="w-12 xs:w-16 sm:w-20 lg:w-24 h-1 sm:h-1.5 bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 mx-auto mb-2 sm:mb-3 rounded-full"></div>
-            <p className="text-xs sm:text-sm lg:text-base text-slate-600 font-semibold max-w-md mx-auto leading-relaxed">
+            <div className="w-12 xs:w-16 sm:w-20 lg:w-24 xl:w-24 2xl:w-28 h-1 sm:h-1.5 lg:h-2 bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 mx-auto mb-2 sm:mb-3 lg:mb-4 rounded-full"></div>
+            <p className="text-xs sm:text-sm lg:text-base xl:text-base 2xl:text-lg text-slate-600 font-semibold max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-lg mx-auto leading-relaxed">
               Gestiona los ingresos y egresos de MQerKAcademy
             </p>
           </div>
@@ -84,14 +84,14 @@ export default function FinanzasHome() {
       </div>
 
       {/* Grid de tarjetas estilo dashboard */}
-      <div className="flex-1 flex flex-col justify-center items-center py-4 sm:py-6">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12 auto-rows-fr">
+      <div className="flex-1 flex flex-col justify-center items-center py-4 sm:py-6 2xl:py-8">
+        <div className="w-full max-w-6xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 2xl:gap-14 auto-rows-fr">
 
             {/* Tarjeta Ingresos */}
             <Link
               to="/administrativo/finanzas/ingresos"
-              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-emerald-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-4 xs:p-5 sm:p-6 lg:p-8 min-h-[180px] sm:min-h-[220px] lg:min-h-[280px] flex flex-col justify-between overflow-hidden"
+              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-emerald-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-4 xs:p-5 sm:p-6 lg:p-8 xl:p-9 2xl:p-10 min-h-[180px] sm:min-h-[220px] lg:min-h-[320px] xl:min-h-[380px] 2xl:min-h-[440px] flex flex-col justify-between overflow-hidden"
             >
               {/* Línea decorativa superior */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400"></div>
@@ -105,30 +105,30 @@ export default function FinanzasHome() {
               </div>
 
               {/* Header */}
-              <div className="relative z-10 flex items-start justify-between mb-4 sm:mb-6">
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-50 border-2 border-emerald-200 group-hover:bg-emerald-100 group-hover:border-emerald-300 transition-colors duration-300 shadow-sm">
+              <div className="relative z-10 flex items-start justify-between mb-4 sm:mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
+                <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-4 xl:space-x-5 2xl:space-x-5">
+                  <div className="flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-16 2xl:h-16 rounded-xl bg-emerald-50 border-2 border-emerald-200 group-hover:bg-emerald-100 group-hover:border-emerald-300 transition-colors duration-300 shadow-sm">
                     {/* Icono: Entrada (flecha hacia abajo a una base) */}
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="w-6 h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-8 2xl:h-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v10m0 0l-3-3m3 3l3-3M4 20h16" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg xs:text-xl sm:text-2xl font-extrabold text-slate-900 mb-0.5">Ingresos</h3>
-                    <p className="text-xs sm:text-sm font-extrabold text-emerald-700 uppercase tracking-wider">Gestión Financiera</p>
+                    <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-0.5">Ingresos</h3>
+                    <p className="text-xs sm:text-sm lg:text-sm xl:text-base 2xl:text-base font-extrabold text-emerald-700 uppercase tracking-wider">Gestión Financiera</p>
                   </div>
                 </div>
 
                 <div className="hidden sm:block text-right">
-                  <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">{loading ? '…' : fmtMoney(metrics.totalMonth)}</div>
-                  <div className="text-[10px] sm:text-xs text-slate-600 font-semibold bg-slate-100 border border-slate-200 px-2 py-0.5 sm:py-1 rounded-lg">Este mes</div>
+                  <div className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-1">{loading ? '…' : fmtMoney(metrics.totalMonth)}</div>
+                  <div className="text-[10px] sm:text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold bg-slate-100 border border-slate-200 px-2 py-0.5 sm:py-1 xl:py-1.5 2xl:py-1.5 rounded-lg">Este mes</div>
                 </div>
               </div>
 
               {/* Contenido principal */}
-              <div className="relative z-10 flex-1 mb-4 sm:mb-6">
+              <div className="relative z-10 flex-1 mb-4 sm:mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
                 {/* Descripción: resumida en móvil */}
-                <p className="hidden sm:block text-gray-600 leading-relaxed mb-6">
+                <p className="hidden sm:block text-gray-600 leading-relaxed mb-6 lg:mb-6 xl:mb-7 2xl:text-base 2xl:mb-8">
                   Administra cobros, depósitos y conciliación bancaria. Control completo de todos los ingresos de la academia.
                 </p>
                 <p className="block sm:hidden text-[11px] text-gray-600 mb-3">Resumen de ingresos de la academia</p>
@@ -155,43 +155,43 @@ export default function FinanzasHome() {
                 </div>
 
                 {/* Completo en desktop */}
-                <div className="hidden sm:flex items-center justify-between bg-slate-50 rounded-lg border-2 border-slate-200 p-4 mb-6">
+                <div className="hidden sm:flex items-center justify-between bg-slate-50 rounded-lg border-2 border-slate-200 p-4 lg:p-4 xl:p-5 2xl:p-5 mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
                   <div className="text-center">
-                    <div className="text-lg font-extrabold text-emerald-700">{loading ? '…' : metrics.countMonth}</div>
-                    <div className="text-xs text-slate-600 font-semibold">Transacciones</div>
+                    <div className="text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold text-emerald-700">{loading ? '…' : metrics.countMonth}</div>
+                    <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Transacciones</div>
                   </div>
-                  <div className="w-px h-8 bg-slate-300"></div>
+                  <div className="w-px h-8 xl:h-9 2xl:h-10 bg-slate-300"></div>
                   <div className="text-center">
                     <div
                       title={loading ? '' : `Actual: ${fmtMoney(metrics.totalMonth)} | Anterior (${metrics.prevLabel}): ${fmtMoney(metrics.totalPrev)}`}
-                      className={`text-lg font-extrabold ${loading ? '' : (metrics.growthRaw > 0 ? 'text-emerald-700' : (metrics.growthRaw < 0 ? 'text-rose-700' : 'text-slate-400'))}`}
+                      className={`text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold ${loading ? '' : (metrics.growthRaw > 0 ? 'text-emerald-700' : (metrics.growthRaw < 0 ? 'text-rose-700' : 'text-slate-400'))}`}
                     >
                       {loading ? '…' : `${metrics.growthRaw.toFixed(0)}%`}
                     </div>
-                    <div className="text-xs text-slate-600 font-semibold">Crecimiento vs mes anterior</div>
+                    <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Crecimiento vs mes anterior</div>
                     {!loading && metrics.growthRaw < 0 ? (
                       <div className="mt-0.5 text-[11px] text-rose-700 font-semibold">{`${Math.abs(Math.min(0, metrics.growthRaw)).toFixed(0)}% menos que el mes anterior`}</div>
                     ) : null}
                   </div>
-                  <div className="w-px h-8 bg-slate-300"></div>
+                  <div className="w-px h-8 xl:h-9 2xl:h-10 bg-slate-300"></div>
                   <div className="text-center">
-                    <div className="text-lg font-extrabold text-emerald-700">{loading ? '…' : fmtMoney(metrics.avg)}</div>
-                    <div className="text-xs text-slate-600 font-semibold">Ticket promedio</div>
+                    <div className="text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold text-emerald-700">{loading ? '…' : fmtMoney(metrics.avg)}</div>
+                    <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Ticket promedio</div>
                   </div>
                 </div>
               </div>
 
               {/* Footer */}
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center text-emerald-700 font-extrabold group-hover:text-emerald-800 transition-colors">
+                <div className="flex items-center text-emerald-700 font-extrabold group-hover:text-emerald-800 transition-colors xl:text-base 2xl:text-lg">
                   <span className="hidden sm:inline mr-2">Administrar</span>
-                  <svg className="w-4 h-4 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-4 sm:h-4 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                   </svg>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-emerald-700"></div>
-                  <span className="text-xs text-slate-600 font-semibold">Sistema activo</span>
+                  <div className="w-2.5 h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3 bg-emerald-500 rounded-full border-2 border-emerald-700"></div>
+                  <span className="text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Sistema activo</span>
                 </div>
               </div>
 
@@ -205,7 +205,7 @@ export default function FinanzasHome() {
               tabIndex={0}
               onClick={() => setShowEgresosMenu(true)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowEgresosMenu(true); } }}
-              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-rose-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-3 xs:p-4 sm:p-6 lg:p-8 min-h-[180px] sm:min-h-[220px] lg:min-h-[280px] flex flex-col justify-between overflow-hidden cursor-pointer"
+              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-rose-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-9 2xl:p-10 min-h-[180px] sm:min-h-[220px] lg:min-h-[320px] xl:min-h-[380px] 2xl:min-h-[440px] flex flex-col justify-between overflow-hidden cursor-pointer"
             >
               {/* Línea decorativa superior */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-rose-400 to-pink-400"></div>
@@ -219,17 +219,17 @@ export default function FinanzasHome() {
               </div>
 
               {/* Header */}
-              <div className="relative z-10 flex items-start justify-between mb-1 sm:mb-4">
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-xl bg-rose-50 border-2 border-rose-200 group-hover:bg-rose-100 group-hover:border-rose-300 transition-colors duration-300 shadow-sm">
+              <div className="relative z-10 flex items-start justify-between mb-1 sm:mb-4 lg:mb-6 xl:mb-7 2xl:mb-8">
+                <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-4 xl:space-x-5 2xl:space-x-5">
+                  <div className="flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-16 2xl:h-16 rounded-xl bg-rose-50 border-2 border-rose-200 group-hover:bg-rose-100 group-hover:border-rose-300 transition-colors duration-300 shadow-sm">
                     {/* Icono: Salida (flecha hacia arriba desde una base) */}
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7 text-rose-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="w-6 h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-8 2xl:h-8 text-rose-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20V10m0 0l-3 3m3-3l3 3M4 4h16" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg xs:text-xl sm:text-2xl font-extrabold text-slate-900 mb-0.5">Egresos</h3>
-                    <p className="text-xs sm:text-sm font-extrabold text-rose-700 uppercase tracking-wider">Control de Gastos</p>
+                    <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-0.5">Egresos</h3>
+                    <p className="text-xs sm:text-sm lg:text-sm xl:text-base 2xl:text-base font-extrabold text-rose-700 uppercase tracking-wider">Control de Gastos</p>
                   </div>
                 </div>
                 {/* Indicadores de presupuesto (dot móvil + badge desktop) */}
@@ -263,9 +263,9 @@ export default function FinanzasHome() {
               </div>
 
               {/* Contenido principal */}
-              <div className="relative z-10 flex-1 mb-1 sm:mb-4">
+              <div className="relative z-10 flex-1 mb-1 sm:mb-4 lg:mb-6 xl:mb-7 2xl:mb-8">
                 {/* Descripción: resumida en móvil */}
-                <p className="hidden sm:block text-gray-600 leading-relaxed mb-6">
+                <p className="hidden sm:block text-gray-600 leading-relaxed mb-6 lg:mb-6 xl:mb-7 2xl:text-base 2xl:mb-8">
                   Controla gastos, proveedores y recibos. Administración completa de todos los egresos operativos de la academia.
                 </p>
                 <p className="hidden sm:hidden text-[11px] text-gray-600 mb-3">Gastos operativos y control de presupuestos</p>
@@ -318,27 +318,27 @@ export default function FinanzasHome() {
                 </div>
 
                 {/* Completo en desktop */}
-                <div className="hidden sm:flex items-center justify-between bg-slate-50 rounded-lg border-2 border-slate-200 p-4 mb-6">
+                <div className="hidden sm:flex items-center justify-between bg-slate-50 rounded-lg border-2 border-slate-200 p-4 lg:p-4 xl:p-5 2xl:p-5 mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
                   <div className="text-center">
-                    <div className="text-lg font-extrabold text-rose-700">{fmtMoney(egresosSnap.spent)}</div>
-                    <div className="text-xs text-slate-600 font-semibold">Gastos</div>
+                    <div className="text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold text-rose-700">{fmtMoney(egresosSnap.spent)}</div>
+                    <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Gastos</div>
                   </div>
-                  <div className="w-px h-8 bg-slate-300"></div>
+                  <div className="w-px h-8 xl:h-9 2xl:h-10 bg-slate-300"></div>
                   <div className="text-center">
-                    <div className="text-lg font-extrabold text-slate-700">{fmtMoney(egresosSnap.budget)}</div>
-                    <div className="text-xs text-slate-600 font-semibold">Presupuesto</div>
+                    <div className="text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold text-slate-700">{fmtMoney(egresosSnap.budget)}</div>
+                    <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Presupuesto</div>
                   </div>
-                  <div className="w-px h-8 bg-slate-300"></div>
+                  <div className="w-px h-8 xl:h-9 2xl:h-10 bg-slate-300"></div>
                   <div className="text-center">
-                    <div className={`text-lg font-extrabold ${egresosSnap.leftover <= LOW_REMAINING_THRESHOLD ? 'text-rose-700' : 'text-emerald-700'}`}>{fmtMoney(egresosSnap.leftover)}</div>
-                    <div className="text-xs text-slate-600 font-semibold">Disponible</div>
+                    <div className={`text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold ${egresosSnap.leftover <= LOW_REMAINING_THRESHOLD ? 'text-rose-700' : 'text-emerald-700'}`}>{fmtMoney(egresosSnap.leftover)}</div>
+                    <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Disponible</div>
                   </div>
                   {egresosSnap.spent > egresosSnap.budget && (
                     <>
-                      <div className="w-px h-8 bg-slate-300"></div>
+                      <div className="w-px h-8 xl:h-9 2xl:h-10 bg-slate-300"></div>
                       <div className="text-center">
-                        <div className="text-lg font-extrabold text-rose-800">{fmtMoney(Math.max(0, egresosSnap.spent - egresosSnap.budget))}</div>
-                        <div className="text-xs text-slate-600 font-semibold">Excedente</div>
+                        <div className="text-lg lg:text-lg xl:text-xl 2xl:text-xl font-extrabold text-rose-800">{fmtMoney(Math.max(0, egresosSnap.spent - egresosSnap.budget))}</div>
+                        <div className="text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Excedente</div>
                       </div>
                     </>
                   )}
@@ -347,15 +347,15 @@ export default function FinanzasHome() {
 
               {/* Footer: igual que Ingresos */}
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center text-rose-700 font-extrabold group-hover:text-rose-800 transition-colors">
+                <div className="flex items-center text-rose-700 font-extrabold group-hover:text-rose-800 transition-colors xl:text-base 2xl:text-lg">
                   <span className="hidden sm:inline mr-2">Administrar</span>
-                  <svg className="w-4 h-4 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-4 sm:h-4 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                   </svg>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-rose-700"></div>
-                  <span className="text-xs text-slate-600 font-semibold">Sistema activo</span>
+                  <div className="w-2.5 h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3 bg-rose-500 rounded-full border-2 border-rose-700"></div>
+                  <span className="text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Sistema activo</span>
                 </div>
               </div>
 
@@ -374,80 +374,81 @@ export default function FinanzasHome() {
       {/* Selector de subopciones Egresos */}
       {showEgresosMenu && createPortal(
         <div
-          className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm bg-slate-900/50"
+          className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 min-[1920px]:p-6 min-[2560px]:p-8 backdrop-blur-sm bg-slate-900/50"
           onClick={(e) => { if (e.target === e.currentTarget) setShowEgresosMenu(false); }}
         >
-          <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col">
-            <div className="px-5 sm:px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between flex-shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+          {/* Compacto hasta 1800px (14"). Desde 1920px más ancha y algo más alta de forma proporcional; desde 2560px aún más */}
+          <div className="bg-white w-full max-w-sm sm:max-w-md min-[1800px]:max-w-lg min-[1920px]:max-w-7xl min-[2560px]:max-w-[88rem] min-[1920px]:min-h-[50vh] min-[2560px]:min-h-[55vh] rounded-xl min-[1920px]:rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden max-h-[calc(100vh-3rem)] min-[1920px]:max-h-[90vh] flex flex-col">
+            <div className="px-4 sm:px-4 min-[1800px]:px-6 min-[1920px]:px-14 min-[2560px]:px-20 py-3 min-[1800px]:py-4 min-[1920px]:py-6 min-[2560px]:py-8 border-b border-slate-200 flex items-center justify-between flex-shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Egresos</h3>
-                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-0.5">Control de gastos y presupuesto</p>
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight min-[1800px]:text-xl min-[1920px]:text-4xl min-[2560px]:text-5xl">Egresos</h3>
+                <p className="text-[10px] sm:text-[10px] min-[1800px]:text-xs min-[1920px]:text-base min-[2560px]:text-lg font-bold text-rose-500 uppercase tracking-widest mt-0.5 min-[1920px]:mt-1">Control de gastos y presupuesto</p>
               </div>
-              <button onClick={() => setShowEgresosMenu(false)} className="text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-100 rounded-lg transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button onClick={() => setShowEgresosMenu(false)} className="text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-100 rounded-lg transition-colors min-[1920px]:p-2 min-[2560px]:p-3">
+                <svg className="w-5 h-5 min-[1800px]:w-6 min-[1800px]:h-6 min-[1920px]:w-10 min-[1920px]:h-10 min-[2560px]:w-12 min-[2560px]:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>
             </div>
-            <div className="p-5 sm:p-6 grid grid-cols-1 gap-3 overflow-y-auto flex-1 min-h-0 no-scrollbar">
+            <div className="p-3 sm:p-4 min-[1800px]:p-5 min-[1920px]:p-10 min-[1920px]:py-8 min-[2560px]:p-14 min-[2560px]:py-10 grid grid-cols-1 gap-2 min-[1800px]:gap-3 min-[1920px]:gap-6 min-[2560px]:gap-8 overflow-y-auto flex-1 min-h-0 no-scrollbar">
               <Link
                 to="/administrativo/finanzas/egresos/fijos"
-                className="group rounded-xl bg-gradient-to-br from-rose-50 to-white border-2 border-rose-200 hover:border-rose-300 hover:shadow-lg transition-all p-4 flex items-center justify-between"
+                className="group rounded-lg min-[1800px]:rounded-xl bg-gradient-to-br from-rose-50 to-white border border-rose-200 hover:border-rose-300 hover:shadow transition-all p-2.5 sm:p-3 min-[1800px]:p-4 min-[1920px]:p-7 min-[1920px]:py-6 min-[2560px]:p-9 min-[2560px]:py-7 flex items-center justify-between"
                 onClick={() => setShowEgresosMenu(false)}
               >
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 text-rose-700 text-sm font-extrabold border-2 border-rose-300">F</span>
-                  <div>
-                    <div className="text-sm font-extrabold text-rose-700">Gastos fijos</div>
-                    <div className="text-xs text-slate-600 font-medium">Costos recurrentes: renta, nómina, servicios.</div>
+                <div className="flex items-center gap-2 min-[1800px]:gap-3 min-[1920px]:gap-6 min-w-0">
+                  <span className="inline-flex h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 items-center justify-center rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-rose-100 text-rose-700 text-xs min-[1800px]:text-sm min-[1920px]:text-2xl font-extrabold border border-rose-300 shrink-0">F</span>
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm min-[1800px]:text-base min-[1920px]:text-2xl font-extrabold text-rose-700 truncate">Gastos fijos</div>
+                    <div className="text-[10px] sm:text-[10px] min-[1800px]:text-xs min-[1920px]:text-base text-slate-600 font-medium leading-tight">Costos recurrentes: renta, nómina, servicios.</div>
                   </div>
                 </div>
-                <span className="h-8 w-8 rounded-lg bg-white/70 border-2 border-rose-200 flex items-center justify-center text-rose-700 font-extrabold">→</span>
+                <span className="h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-white/70 border border-rose-200 flex items-center justify-center text-rose-700 font-extrabold text-xs min-[1800px]:text-sm min-[1920px]:text-2xl shrink-0">→</span>
               </Link>
 
               <Link
                 to="/administrativo/finanzas/egresos/variables"
-                className="group rounded-xl bg-gradient-to-br from-amber-50 to-white border-2 border-amber-200 hover:border-amber-300 hover:shadow-lg transition-all p-4 flex items-center justify-between"
+                className="group rounded-lg min-[1800px]:rounded-xl bg-gradient-to-br from-amber-50 to-white border border-amber-200 hover:border-amber-300 hover:shadow transition-all p-2.5 sm:p-3 min-[1800px]:p-4 min-[1920px]:p-7 min-[1920px]:py-6 min-[2560px]:p-9 min-[2560px]:py-7 flex items-center justify-between"
                 onClick={() => setShowEgresosMenu(false)}
               >
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700 text-sm font-extrabold border-2 border-amber-300">V</span>
-                  <div>
-                    <div className="text-sm font-extrabold text-amber-700">Gastos variables</div>
-                    <div className="text-xs text-slate-600 font-medium">Compras, materiales, logística y otros.</div>
+                <div className="flex items-center gap-2 min-[1800px]:gap-3 min-[1920px]:gap-6 min-w-0">
+                  <span className="inline-flex h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 items-center justify-center rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-amber-100 text-amber-700 text-xs min-[1800px]:text-sm min-[1920px]:text-2xl font-extrabold border border-amber-300 shrink-0">V</span>
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm min-[1800px]:text-base min-[1920px]:text-2xl font-extrabold text-amber-700 truncate">Gastos variables</div>
+                    <div className="text-[10px] sm:text-[10px] min-[1800px]:text-xs min-[1920px]:text-base text-slate-600 font-medium leading-tight">Compras, materiales, logística y otros.</div>
                   </div>
                 </div>
-                <span className="h-8 w-8 rounded-lg bg-white/70 border-2 border-amber-200 flex items-center justify-center text-amber-700 font-extrabold">→</span>
+                <span className="h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-white/70 border border-amber-200 flex items-center justify-center text-amber-700 font-extrabold text-xs min-[1800px]:text-sm min-[1920px]:text-2xl shrink-0">→</span>
               </Link>
 
               <Link
                 to="/administrativo/finanzas/egresos/presupuesto"
-                className="group rounded-xl bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all p-4 flex items-center justify-between"
+                className="group rounded-lg min-[1800px]:rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 hover:border-slate-300 hover:shadow transition-all p-2.5 sm:p-3 min-[1800px]:p-4 min-[1920px]:p-7 min-[1920px]:py-6 min-[2560px]:p-9 min-[2560px]:py-7 flex items-center justify-between"
                 onClick={() => setShowEgresosMenu(false)}
               >
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 text-sm font-extrabold border-2 border-slate-300">P</span>
-                  <div>
-                    <div className="text-sm font-extrabold text-slate-700">Presupuesto</div>
-                    <div className="text-xs text-slate-600 font-medium">Asigna y controla el presupuesto mensual de egresos.</div>
+                <div className="flex items-center gap-2 min-[1800px]:gap-3 min-[1920px]:gap-6 min-w-0">
+                  <span className="inline-flex h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 items-center justify-center rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-slate-100 text-slate-700 text-xs min-[1800px]:text-sm min-[1920px]:text-2xl font-extrabold border border-slate-300 shrink-0">P</span>
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm min-[1800px]:text-base min-[1920px]:text-2xl font-extrabold text-slate-700 truncate">Presupuesto</div>
+                    <div className="text-[10px] sm:text-[10px] min-[1800px]:text-xs min-[1920px]:text-base text-slate-600 font-medium leading-tight">Asigna y controla el presupuesto mensual de egresos.</div>
                   </div>
                 </div>
-                <span className="h-8 w-8 rounded-lg bg-white/70 border-2 border-slate-200 flex items-center justify-center text-slate-700 font-extrabold">→</span>
+                <span className="h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-white/70 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold text-xs min-[1800px]:text-sm min-[1920px]:text-2xl shrink-0">→</span>
               </Link>
 
               <Link
                 to="/administrativo/finanzas/pagos-asesores"
-                className="group rounded-xl bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all p-4 flex items-center justify-between"
+                className="group rounded-lg min-[1800px]:rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 hover:border-slate-300 hover:shadow transition-all p-2.5 sm:p-3 min-[1800px]:p-4 min-[1920px]:p-7 min-[1920px]:py-6 min-[2560px]:p-9 min-[2560px]:py-7 flex items-center justify-between"
                 onClick={() => setShowEgresosMenu(false)}
               >
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 text-sm font-extrabold border-2 border-slate-300">A</span>
-                  <div>
-                    <div className="text-sm font-extrabold text-slate-700">Pagos asesores</div>
-                    <div className="text-xs text-slate-600 font-medium">Honorarios y comisiones de asesores.</div>
+                <div className="flex items-center gap-2 min-[1800px]:gap-3 min-[1920px]:gap-6 min-w-0">
+                  <span className="inline-flex h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 items-center justify-center rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-slate-100 text-slate-700 text-xs min-[1800px]:text-sm min-[1920px]:text-2xl font-extrabold border border-slate-300 shrink-0">A</span>
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm min-[1800px]:text-base min-[1920px]:text-2xl font-extrabold text-slate-700 truncate">Pagos asesores</div>
+                    <div className="text-[10px] sm:text-[10px] min-[1800px]:text-xs min-[1920px]:text-base text-slate-600 font-medium leading-tight">Honorarios y comisiones de asesores.</div>
                   </div>
                 </div>
-                <span className="h-8 w-8 rounded-lg bg-white/70 border-2 border-slate-200 flex items-center justify-center text-slate-700 font-extrabold">→</span>
+                <span className="h-7 w-7 min-[1800px]:h-8 min-[1800px]:w-8 min-[1920px]:h-14 min-[1920px]:w-14 rounded-md min-[1800px]:rounded-lg min-[1920px]:rounded-xl bg-white/70 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold text-xs min-[1800px]:text-sm min-[1920px]:text-2xl shrink-0">→</span>
               </Link>
             </div>
           </div>

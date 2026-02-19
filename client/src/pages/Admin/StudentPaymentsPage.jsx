@@ -103,7 +103,7 @@ export default function StudentPaymentsPage() {
     if (now <= dueWithTolerance) return candidate;
     return null;
   }, [schedule, toleranceDays]);
-  const daysPastDue = withinTolerancePayment ? Math.max(0, Math.ceil((now.getTime() - withinTolerancePayment.dueDate.getTime()) / (1000*60*60*24))) : 0;
+  const daysPastDue = withinTolerancePayment ? Math.max(0, Math.ceil((now.getTime() - withinTolerancePayment.dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
   const daysToBlock = withinTolerancePayment ? Math.max(0, toleranceDays - daysPastDue) : 0;
 
   const handleViewReceipt = (payment) => {
@@ -113,7 +113,7 @@ export default function StudentPaymentsPage() {
     const total = baseAmount + penalty;
     const paymentData = {
       id: payment.paymentNumber,
-  paymentNumber: payment.paymentNumber,
+      paymentNumber: payment.paymentNumber,
       date: payment.paymentDate?.toISOString?.() || new Date().toISOString(),
       amount: total,
       baseAmount,
@@ -159,7 +159,7 @@ export default function StudentPaymentsPage() {
 
   return (
     <div className="pt-6 sm:pt-8 pb-4 sm:pb-6 px-3 sm:px-4 md:px-6">
-      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6">
+      <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-5 sm:space-y-6">
         {/* Header mejorado con fondo destacado */}
         <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-lg p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -204,16 +204,15 @@ export default function StudentPaymentsPage() {
 
         {/* Alertas de estado */}
         {(isLocked || withinTolerancePayment) && (
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 shadow-lg ${
-            isLocked 
-              ? 'bg-red-50 border-red-300' 
+          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 shadow-lg ${isLocked
+              ? 'bg-red-50 border-red-300'
               : 'bg-amber-50 border-amber-300'
-          }`}>
+            }`}>
             {isLocked ? (
               <div className="flex items-center gap-3 text-red-800 text-sm sm:text-base">
                 <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center border-2 border-red-300">
                   <svg className="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 5a7 7 0 100 14 7 7 0 000-14z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 5a7 7 0 100 14 7 7 0 000-14z" />
                   </svg>
                 </div>
                 <div>
@@ -225,7 +224,7 @@ export default function StudentPaymentsPage() {
               <div className="flex items-center gap-3 text-amber-900 text-sm sm:text-base">
                 <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center border-2 border-amber-300">
                   <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
@@ -290,36 +289,36 @@ export default function StudentPaymentsPage() {
                 {schedule.map((payment) => {
                   const isWithinTol = (payment.status === 'pending' && now > payment.dueDate && now <= new Date(new Date(payment.dueDate).setDate(payment.dueDate.getDate() + toleranceDays)));
                   return (
-                  <tr key={payment.id} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${
-                    payment.isOverdue ? 'bg-red-50/50' : isWithinTol ? 'bg-yellow-50/50' : ''
-                  }`}>
-                    <td className="py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">#{payment.paymentNumber}</td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-4 text-slate-700 font-medium text-sm sm:text-base">{payment.month}</td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">{formatCurrencyMXN(payment.amount)}</td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-4 text-slate-700 font-medium text-sm sm:text-base">{payment.dueDate.toLocaleDateString('es-ES')}</td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-4">
-                      <span className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold border-2 shadow-sm ${getStatusPill(payment.status, payment.isOverdue)}`}>
-                        {getStatusLabel(payment.status, payment.isOverdue)}
-                      </span>
-                    </td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-4">
-                      {payment.status === 'paid' ? (
-                        <button
-                          className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg bg-slate-600 text-white hover:bg-slate-700 shadow-sm border border-slate-700 font-semibold transition-all duration-200"
-                          onClick={() => handleViewReceipt(payment)}
-                          title="Ver comprobante del pago"
-                        >
-                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Ver comprobante
-                        </button>
-                      ) : (
-                        <span className="text-xs sm:text-sm text-slate-500 font-medium">Próximamente</span>
-                      )}
-                    </td>
-                  </tr>
-                );})}
+                    <tr key={payment.id} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${payment.isOverdue ? 'bg-red-50/50' : isWithinTol ? 'bg-yellow-50/50' : ''
+                      }`}>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">#{payment.paymentNumber}</td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-slate-700 font-medium text-sm sm:text-base">{payment.month}</td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">{formatCurrencyMXN(payment.amount)}</td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-slate-700 font-medium text-sm sm:text-base">{payment.dueDate.toLocaleDateString('es-ES')}</td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold border-2 shadow-sm ${getStatusPill(payment.status, payment.isOverdue)}`}>
+                          {getStatusLabel(payment.status, payment.isOverdue)}
+                        </span>
+                      </td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4">
+                        {payment.status === 'paid' ? (
+                          <button
+                            className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg bg-slate-600 text-white hover:bg-slate-700 shadow-sm border border-slate-700 font-semibold transition-all duration-200"
+                            onClick={() => handleViewReceipt(payment)}
+                            title="Ver comprobante del pago"
+                          >
+                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Ver comprobante
+                          </button>
+                        ) : (
+                          <span className="text-xs sm:text-sm text-slate-500 font-medium">Próximamente</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

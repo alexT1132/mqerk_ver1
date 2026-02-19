@@ -2,6 +2,8 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getQuizFull, updateQuiz, createQuiz } from '../../../api/quizzes.js';
 import { getSimulacionFull, updateSimulacion, deleteSimulacion } from '../../../api/simulaciones.js';
+import { uploadPreguntaImagen } from '../../../api/uploads.js';
+import { buildStaticUrl } from '../../../utils/url.js';
 // Nota: reemplazado react-katex por un componente local liviano para evitar dependencia
 import InlineMath from './InlineMath.jsx';
 import MathExamplesHint from './MathExamplesHint.jsx';
@@ -65,7 +67,7 @@ function MathText({ text = "", onFormulaClick }) {
     if (!html) return '';
     const div = document.createElement('div');
     div.innerHTML = html;
-    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br'];
+    const allowedTags = ['strong', 'b', 'em', 'i', 'u', 'br', 'pre', 'code', 'div', 'span'];
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_ELEMENT, null);
     const nodesToRemove = [];
     let node;
@@ -85,114 +87,150 @@ function MathText({ text = "", onFormulaClick }) {
   // ✅ Procesador de Markdown simple
   const processMarkdown = (txt) => {
     if (!txt) return '';
-    return txt.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+    let processed = txt;
+
+    // Bloques de código (triple backtick)
+    processed = processed.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre class="bg-slate-800 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto my-2 shadow-sm border border-slate-700"><div class="opacity-50 text-[10px] uppercase mb-1 border-b border-slate-600 pb-1">${lang || 'code'}</div><code>${code}</code></pre>`;
+    });
+
+    // Código en línea (backtick simple)
+    processed = processed.replace(/`([^`]+)`/g, '<code class="bg-violet-50 px-1.5 py-0.5 rounded-md font-mono text-sm text-violet-700 border border-violet-100 font-semibold">$1</code>');
+
+    // Negrita
+    processed = processed.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+
+    return processed;
   };
 
-  const parts = [];
-  let i = 0;
-  let lastIndex = 0;
+  const getParts = (txt) => {
+    const ranges = [];
+    if (!txt) return [];
 
-  // Parser robusto carácter a carácter para manejar anidamientos y escapes
-  while (i < text.length) {
-    const char = text[i];
+    const occupied = [];
+    let i = 0;
 
-    // 1. Saltar escapes
-    if (char === '\\') {
-      i += 2;
-      continue;
-    }
-
-    // 2. Detectar inicio fórmula ($)
-    if (char === '$') {
-      const start = i;
-      const isBlock = i + 1 < text.length && text[i + 1] === '$';
-      const delimiter = isBlock ? '$$' : '$';
-      // Avanzar más allá del delimitador de apertura
-      i += delimiter.length;
-
-      let content = '';
-      let closed = false;
-
-      // Buscar cierre
-      while (i < text.length) {
-        const c = text[i];
-        if (c === '\\') {
-          content += c;
-          if (i + 1 < text.length) content += text[i + 1];
-          i += 2;
-          continue;
-        }
-        if (c === '$') {
-          let isClosing = false;
-          if (isBlock) {
-            // Para $$ necesitamos otro $ seguido
-            if (i + 1 < text.length && text[i + 1] === '$') isClosing = true;
-          } else {
-            isClosing = true;
-          }
-
-          if (isClosing) {
-            closed = true;
-            break;
-          }
-        }
-        content += c;
+    // 1. Detectar Bloques de código, Inline Code y Fórmulas Explícitas
+    while (i < txt.length) {
+      // A. Bloques de Código
+      if (txt.startsWith('```', i)) {
+        const start = i;
+        i += 3;
+        while (i < txt.length && !txt.startsWith('```', i)) i++;
+        i += 3;
+        occupied.push({ start, end: i });
+        continue;
+      }
+      // B. Inline Code
+      if (txt[i] === '`') {
+        const start = i;
         i++;
-      }
-
-      if (closed) {
-        // Validar heurística SÓLO para inline ($)
-        let isValidMath = true;
-        if (!isBlock) {
-          const formulaTrimmed = content.trim();
-          // Heurística de moneda: $120 pesos
-          const beginsWithNumber = /^\d+/.test(formulaTrimmed);
-          const hasTextWords = /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,}/.test(formulaTrimmed);
-          const hasMathOperators = /[=\+\-\^_{}\\]/.test(formulaTrimmed);
-          if (beginsWithNumber && hasTextWords && !hasMathOperators) {
-            isValidMath = false;
-          }
+        while (i < txt.length && txt[i] !== '`' && txt[i] !== '\n') i++;
+        if (i < txt.length && txt[i] === '`') {
+          i++;
+          occupied.push({ start, end: i });
         }
-
-        if (isValidMath) {
-          // Agregar texto previo
-          if (start > lastIndex) {
-            const txtSegment = text.substring(lastIndex, start);
-            parts.push({ type: 'text', content: processMarkdown(txtSegment) });
-          }
-
-          // Agregar fórmula
-          const fullMatchEnd = i + delimiter.length;
-          const fullMatch = text.substring(start, fullMatchEnd);
-
-          parts.push({
-            type: 'math',
-            content: content.trim(),
-            full: fullMatch,
-            start: start,
-            end: fullMatchEnd,
-            isBlock: isBlock
-          });
-
-          // Avanzar cursor principal más allá del cierre
-          i += delimiter.length;
-          lastIndex = i;
-          continue;
-        } else {
-          // Interpretar como texto
-          i = start + 1;
-          continue;
-        }
+        continue;
       }
+      // C. Escapes
+      if (txt[i] === '\\') { i += 2; continue; }
+
+      // D. Fórmulas Explícitas ($)
+      if (txt[i] === '$') {
+        const start = i;
+        const isBlock = (i + 1 < txt.length && txt[i + 1] === '$');
+        const delimiter = isBlock ? '$$' : '$';
+        i += delimiter.length;
+        let content = '';
+        let closed = false;
+        let j = i;
+        while (j < txt.length) {
+          const c = txt[j];
+          if (c === '\\') { content += c + (txt[j + 1] || ''); j += 2; continue; }
+          if (c === '$') {
+            let isClosing = false;
+            if (isBlock) { if (j + 1 < txt.length && txt[j + 1] === '$') isClosing = true; }
+            else { isClosing = true; }
+            if (isClosing) { closed = true; i = j; break; }
+          }
+          content += c;
+          j++;
+        }
+        if (closed) {
+          const fullMatch = txt.substring(start, i + delimiter.length);
+          let isValid = true;
+          if (!isBlock) {
+            const trimmed = content.trim();
+            if (/^\d+/.test(trimmed) && /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,}/.test(trimmed) && !/[=\+\-\^_{}\\]/.test(trimmed)) isValid = false;
+          }
+          if (isValid) {
+            ranges.push({ start, end: i + delimiter.length, content, fullMatch, isBlock, isExplicit: true });
+            occupied.push({ start, end: i + delimiter.length });
+            i += delimiter.length;
+            continue;
+          } else {
+            i = start + 1; continue;
+          }
+        } else { break; }
+      }
+      i++;
     }
-    i++;
-  }
 
-  // Agregar resto del texto
-  if (lastIndex < text.length) {
-    const txtSegment = text.substring(lastIndex);
-    parts.push({ type: 'text', content: processMarkdown(txtSegment) });
-  }
+    // E. Implícitos
+    const implicitPatterns = [
+      /(?:∫|\\int)(?:[^=]+?)d[a-z]\b/gi,
+      /\b[a-zA-Z]{1,2}\([a-z0-9]+\)\s*=\s*[a-zA-Z0-9\.\+\-\*\/\^\s()]+/g,
+      /[a-zA-Z0-9_]+\^\{?[a-zA-Z0-9\-\+\.]+\}?/g,
+      /\\[a-zA-Z]+(?:\{[^}]*\})?/g
+    ];
+
+    const skipRanges = [...occupied].sort((a, b) => a.start - b.start);
+    let currentIdx = 0;
+    const implicitRanges = [];
+
+    const findInSegment = (seg, offset) => {
+      implicitPatterns.forEach(p => {
+        const regex = new RegExp(p.source, p.flags.includes('g') ? p.flags : p.flags + 'g');
+        let m;
+        while ((m = regex.exec(seg)) !== null) {
+          if (m.index > 0 && seg[m.index - 1] === ':') continue;
+          if (m[0].includes('=') && !/[0-9+\-*/^]/.test(m[0].split('=')[1])) continue;
+
+          const startRaw = offset + m.index;
+          const endRaw = offset + m.index + m[0].length;
+          // Evitar colisiones internas
+          if (!implicitRanges.some(r => (startRaw < r.end && endRaw > r.start))) {
+            implicitRanges.push({ start: startRaw, end: endRaw, content: m[0], fullMatch: m[0], isBlock: false, isImplicit: true });
+          }
+        }
+      });
+    }
+
+    for (const r of skipRanges) {
+      if (r.start > currentIdx) findInSegment(txt.substring(currentIdx, r.start), currentIdx);
+      currentIdx = r.end;
+    }
+    if (currentIdx < txt.length) findInSegment(txt.substring(currentIdx), currentIdx);
+
+    const allRanges = [...ranges, ...implicitRanges].sort((a, b) => a.start - b.start);
+
+    // Construir partes
+    const parts = [];
+    let cursor = 0;
+    for (const r of allRanges) {
+      if (r.start > cursor) {
+        parts.push({ type: 'text', content: processMarkdown(txt.substring(cursor, r.start)) });
+      }
+      parts.push({ type: 'math', content: r.content, full: r.fullMatch, start: r.start, end: r.end, isBlock: r.isBlock });
+      cursor = r.end;
+    }
+    if (cursor < txt.length) {
+      parts.push({ type: 'text', content: processMarkdown(txt.substring(cursor)) });
+    }
+    return parts;
+  };
+
+  const parts = getParts(text);
 
   const handleFormulaClick = (formula, fullMatch, start, end) => {
     if (onFormulaClick) {
@@ -1067,51 +1105,34 @@ export default function EspanolFormBuilder() {
     }
     try {
       setSaving(true);
-      // ✅ Incluir imágenes en las preguntas
-      const preguntas = questions.map(q => {
-        const preguntaBase = {
-          type: q.type,
-          text: q.text,
-          points: q.points,
-          answer: q.answer
-        };
-
-        // ✅ Incluir imagen de la pregunta si existe
-        if (q.image) {
-          preguntaBase.image = q.image.preview || q.image.url || null;
-        }
-
-        // ✅ Incluir opciones con sus imágenes
+      const resolved = await resolveQuestionImages(questions);
+      const preguntas = resolved.map(q => {
+        const preguntaBase = { type: q.type, text: q.text, points: q.points, answer: q.answer };
+        if (q.image?.url) preguntaBase.image = q.image.url;
         if (q.type === 'multiple' && q.options) {
-          preguntaBase.options = q.options.map(o => {
-            const opcionBase = { text: o.text, correct: o.correct };
-            // ✅ Incluir imagen de la opción si existe
-            if (o.image) {
-              opcionBase.image = o.image.preview || o.image.url || null;
-            }
-            return opcionBase;
-          });
+          preguntaBase.options = q.options.map(o => ({
+            text: o.text,
+            correct: o.correct,
+            image: o.image?.url || null
+          }));
         }
-
         return preguntaBase;
       });
       const body = {
         titulo: meta.titulo || `Quiz ${new Date().toLocaleDateString()}`,
-        descripcion: descripcion && descripcion.trim().length > 0 ? descripcion.trim() : '', // ✅ Incluir descripción
+        descripcion: descripcion && descripcion.trim().length > 0 ? descripcion.trim() : '',
         materia: meta.materia || areaTitle || 'Español',
         max_intentos: meta.max_intentos ?? null,
         time_limit_min: meta.time_limit_min ?? null,
-        id_area: areaId || null, // Conservar el id_area del quiz
-        publico: false, // Guardar como borrador
+        id_area: areaId || null,
+        publico: false,
         fecha_limite: null,
         shuffle_questions: true,
         preguntas
       };
       if (quizId) {
-        // Actualizar quiz existente
         await updateQuiz(quizId, body);
       } else {
-        // Crear nuevo quiz como borrador
         await createQuiz(body);
       }
       await showAlert("Borrador guardado exitosamente.", 'Borrador guardado', 'success');
@@ -1165,6 +1186,49 @@ export default function EspanolFormBuilder() {
     return fd;
   };
 
+  // Sube imágenes nuevas (file) y devuelve preguntas con image.url listas para guardar
+  const resolveQuestionImages = async (questionsList) => {
+    const out = [];
+    for (const q of questionsList) {
+      let questionImage = q.image;
+      if (q.image?.file) {
+        try {
+          const url = await uploadPreguntaImagen(q.image.file);
+          const urlStr = typeof url === 'string' ? url : (url?.url || '');
+          questionImage = urlStr ? { url: urlStr, preview: buildStaticUrl(urlStr) } : null;
+        } catch (err) {
+          console.error('Error subiendo imagen de pregunta:', err);
+          questionImage = q.image?.url ? { url: q.image.url, preview: buildStaticUrl(q.image.url) } : null;
+        }
+      } else if (q.image && !String(q.image.preview || q.image.url || '').startsWith('blob:')) {
+        const existing = q.image.url || q.image.preview || '';
+        questionImage = existing ? { url: existing, preview: buildStaticUrl(existing) } : null;
+      }
+      let options = q.options;
+      if (q.type === 'multiple' && Array.isArray(q.options)) {
+        options = await Promise.all(q.options.map(async (o) => {
+          let optImg = o.image;
+          if (o.image?.file) {
+            try {
+              const url = await uploadPreguntaImagen(o.image.file);
+              const urlStr = typeof url === 'string' ? url : (url?.url || '');
+              optImg = urlStr ? { url: urlStr, preview: buildStaticUrl(urlStr) } : null;
+            } catch (err) {
+              console.error('Error subiendo imagen de opción:', err);
+              optImg = o.image?.url ? { url: o.image.url, preview: buildStaticUrl(o.image.url) } : null;
+            }
+          } else if (o.image && !String(o.image.preview || o.image.url || '').startsWith('blob:')) {
+            const existing = o.image.url || o.image.preview || '';
+            optImg = existing ? { url: existing, preview: buildStaticUrl(existing) } : null;
+          }
+          return { ...o, image: optImg };
+        }));
+      }
+      out.push({ ...q, image: questionImage, options });
+    }
+    return out;
+  };
+
   const handleSave = async () => {
     const v = validate();
     if (!v.ok) {
@@ -1177,31 +1241,22 @@ export default function EspanolFormBuilder() {
     }
     try {
       setSaving(true);
-      // ✅ Incluir imágenes en las preguntas: si hay file, incluir la URL de preview temporalmente
-      // Si hay preview pero no file, es una imagen existente (URL), incluirla también
-      const preguntas = questions.map(q => {
+      const resolved = await resolveQuestionImages(questions);
+      const preguntas = resolved.map(q => {
         const preguntaBase = {
           type: q.type,
           text: q.text,
           points: q.points,
           answer: q.answer
         };
-
-        // ✅ Incluir imagen de la pregunta si existe
-        if (q.image) {
-          preguntaBase.image = q.image.preview || q.image.url || null;
-        }
-
-        // ✅ Incluir opciones con sus imágenes
+        if (q.image?.url) preguntaBase.image = q.image.url;
         if (q.type === 'multiple' && q.options) {
           preguntaBase.options = q.options.map(o => ({
             text: o.text,
             correct: o.correct,
-            // ✅ Incluir imagen de la opción si existe
-            image: o.image ? (o.image.preview || o.image.url || null) : null
+            image: o.image?.url || null
           }));
         }
-
         return preguntaBase;
       });
 
@@ -1259,25 +1314,18 @@ export default function EspanolFormBuilder() {
     }
     try {
       if (publish) setPublishing(true); else setSaving(true);
-      const preguntas = questions.map((q, i) => {
+      const resolved = await resolveQuestionImages(questions);
+      const preguntas = resolved.map((q, i) => {
         const preguntaBase = {
           orden: i + 1,
           text: q.text,
           puntos: Number(q.points || 1)
         };
-
-        // ✅ Incluir imagen de la pregunta si existe
-        if (q.image) {
-          preguntaBase.image = q.image.preview || q.image.url || null;
-        }
-
+        if (q.image?.url) preguntaBase.image = q.image.url;
         if (q.type === 'multiple') {
           const opciones = (q.options || []).map(o => {
             const opcionBase = { texto: o.text, es_correcta: !!o.correct };
-            // ✅ Incluir imagen de la opción si existe
-            if (o.image) {
-              opcionBase.image = o.image.preview || o.image.url || null;
-            }
+            if (o.image?.url) opcionBase.image = o.image.url;
             return opcionBase;
           });
           if (!opciones.some(o => o.es_correcta) && opciones.length) opciones[0].es_correcta = true;
@@ -1301,11 +1349,15 @@ export default function EspanolFormBuilder() {
       if (!silent) {
         await showAlert(publish ? 'Simulador publicado exitosamente' : 'Borrador guardado exitosamente', publish ? 'Publicado' : 'Guardado', 'success');
       }
-      if (areaId) {
-        const areaParam = encodeURIComponent(areaTitle || areaId);
-        navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
+      if (window.history.length > 1) {
+        navigate(-1);
       } else {
-        navigate('/asesor/simuladores/generales', { replace: true });
+        if (areaId) {
+          const areaParam = encodeURIComponent(areaTitle || areaId);
+          navigate(`/asesor/simuladores/modulo?area=${areaParam}`, { replace: true });
+        } else {
+          navigate('/asesor/simuladores/generales', { replace: true });
+        }
       }
     } catch (e) {
       await showAlert(e?.response?.data?.message || 'No se pudo guardar el simulador', 'Error', 'error');

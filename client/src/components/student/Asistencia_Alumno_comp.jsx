@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getAsistenciasEstudiante, getResumenAsistenciaEstudiante } from '../../api/asistencias.js';
+import { toDisplayTitle } from '../../utils/text.js';
 
 // Iconos SVG
 const IconoAsistencia = () => (
@@ -508,7 +509,7 @@ export function Asistencia_Alumno_comp() {
           </h1>
           {currentCourse && (
             <p className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">
-              {currentCourse.title}
+              {toDisplayTitle(currentCourse?.title)}
             </p>
           )}
         </div>

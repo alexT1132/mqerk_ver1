@@ -3,6 +3,7 @@ import { Sparkles, Calculator, Code, X } from 'lucide-react';
 import FormulaChip from './FormulaChip.jsx';
 import MathPalette from './MathPalette.jsx';
 import { AIFormulaModal } from './AIFormulaModal.jsx';
+import 'katex/dist/katex.min.css'; // Mismo origen (npm), evita bloqueo por Tracking Prevention
 
 /**
  * Editor de texto enriquecido con soporte para fórmulas matemáticas
@@ -24,31 +25,9 @@ export default function RichTextEditor({
     const [isKatexReady, setIsKatexReady] = useState(false);
     const textareaRef = useRef(null);
 
-    // Efecto para detectar/cargar KaTeX y asegurar que las fórmulas se vean
+    // KaTeX viene del paquete npm (mismo origen); no usar CDN para evitar Tracking Prevention
     useEffect(() => {
-        // 1. Verificar si ya existe en window
-        if (window.katex) {
-            setIsKatexReady(true);
-        } else {
-            // 2. Si no, intentar inyectarlo (seguridad) o esperar a que cargue
-            const checkInterval = setInterval(() => {
-                if (window.katex) {
-                    setIsKatexReady(true);
-                    clearInterval(checkInterval);
-                }
-            }, 200);
-
-            // Inyección de estilos de seguridad si faltan
-            if (!document.getElementById('katex-css')) {
-                const link = document.createElement("link");
-                link.id = 'katex-css';
-                link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css";
-                link.rel = "stylesheet";
-                document.head.appendChild(link);
-            }
-
-            return () => clearInterval(checkInterval);
-        }
+        setIsKatexReady(true);
     }, []);
 
     // Utilidades: detectar rangos de LaTeX ($...$ o $$...$$) con soporte escape y heurística
@@ -57,23 +36,23 @@ export default function RichTextEditor({
         if (!text) return ranges;
 
         let i = 0;
+        let lastEnd = 0;
+
+        // 1. Detectar rangos explícitos ($...$)
         while (i < text.length) {
             const char = text[i];
 
-            // 1. Saltar escapes
+            // Saltar escapes
             if (char === '\\') {
                 i += 2;
                 continue;
             }
 
-            // 2. Detectar inicio ($)
+            // Detectar inicio ($)
             if (char === '$') {
                 const start = i;
-                // Verificar si es bloque ($$)
                 const isBlock = (i + 1 < text.length && text[i + 1] === '$');
                 const delimiter = isBlock ? '$$' : '$';
-
-                // Avanzar cursor más allá del delimitador de apertura
                 i += delimiter.length;
 
                 let content = '';
@@ -88,17 +67,11 @@ export default function RichTextEditor({
                         i += 2;
                         continue;
                     }
-
-                    // Checar cierre
                     if (c === '$') {
                         let isClosing = false;
                         if (isBlock) {
-                            // Para $$ necesitamos otro $ seguido
-                            if (i + 1 < text.length && text[i + 1] === '$') {
-                                isClosing = true;
-                            }
+                            if (i + 1 < text.length && text[i + 1] === '$') isClosing = true;
                         } else {
-                            // Para $ es suficiente uno
                             isClosing = true;
                         }
 
@@ -116,25 +89,15 @@ export default function RichTextEditor({
                     const fullMatchEnd = i + delimiter.length;
                     const fullMatch = text.substring(start, fullMatchEnd);
 
-                    // Validar heurística SÓLO para inline ($)
-                    // Para $$ asumimos que SIEMPRE es fórmula explícita
+                    // Validar heurística para inline ($)
                     let isValidMath = true;
                     if (!isBlock) {
                         const formulaTrimmed = formulaRaw.trim();
-
-                        // Heurística de moneda: "120 pesos" -> No es fórmula
+                        // Heurística de moneda
                         const beginsWithNumber = /^\d+/.test(formulaTrimmed);
                         const hasTextWords = /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,}/.test(formulaTrimmed);
-                        const hasMathOperators = /[=\+\-\^_{}\\]/.test(formulaTrimmed); // Símbolos matemáticos fuertes
-                        const looksLikeCurrencyRange = beginsWithNumber && hasTextWords && !hasMathOperators;
-
-                        // Condición adicional: Si hay espacio INMEDIATO después del $ inicial, casi nunca es LaTeX válido/deseado
-                        // ej: "$ 100" -> suele ser dinero. "$ f(x)" -> válido, pero raro tener espacio. 
-                        // KaTeX tolera espacios, pero en textos mixtos es mejor ser conservador.
-                        // Dejaremos pasar espacios si hay operadores matemáticos.
-                        // const spaceAfterDollar = /^\s/.test(formulaRaw);
-
-                        if (looksLikeCurrencyRange) isValidMath = false;
+                        const hasMathOperators = /[=\+\-\^_{}\\]/.test(formulaTrimmed);
+                        if (beginsWithNumber && hasTextWords && !hasMathOperators) isValidMath = false;
                     }
 
                     if (isValidMath) {
@@ -142,24 +105,63 @@ export default function RichTextEditor({
                             fullMatch,
                             formula: formulaRaw,
                             start,
-                            end: fullMatchEnd
+                            end: fullMatchEnd,
+                            isExplicit: true
                         });
-                        // Avanzar cursor principal más allá del cierre
+                        lastEnd = fullMatchEnd; // Actualizar último fin conocido
                         i += delimiter.length;
                         continue;
                     } else {
-                        // Interpretar como texto (ej. moneda), resetear búsqueda al char siguiente al primer $
                         i = start + 1;
                         continue;
                     }
                 } else {
-                    // No se cerró el delimitador, llegamos al final del texto
                     break;
                 }
             }
             i++;
         }
-        return ranges;
+
+        // 2. Detectar rangos IMPLÍCITOS en los huecos (texto plano)
+        // Patrones: exponenciales (x^2), comandos (\int), funciones (f(x)=)
+        const implicitMathRe = /(?:[a-zA-Z_]\w*\^\{?[a-zA-Z0-9\-\+\.]+\}?)|(?:\\[a-zA-Z]+)|(?:\b[fgh]\w*\([\w,]+\)\s*=)/g;
+
+        const explicitRanges = [...ranges]; // Copia de explícitos para iterar huecos
+        explicitRanges.sort((a, b) => a.start - b.start);
+
+        let currentIdx = 0;
+
+        // Función helper para buscar en un segmento de texto
+        const findImplicitInSegment = (segmentText, offsetBase) => {
+            let m;
+            while ((m = implicitMathRe.exec(segmentText)) !== null) {
+                // Filtrar rutas de windows simples (ej C:\Windows) - heurística básica
+                // Si empieza con \ y la letra anterior es :, es ruta
+                if (m.index > 0 && segmentText[m.index - 1] === ':') continue;
+
+                ranges.push({
+                    fullMatch: m[0],
+                    formula: m[0], // La fórmula es el contenido mismo
+                    start: offsetBase + m.index,
+                    end: offsetBase + m.index + m[0].length,
+                    isImplicit: true
+                });
+            }
+        };
+
+        // Buscar en huecos
+        for (const r of explicitRanges) {
+            if (r.start > currentIdx) {
+                findImplicitInSegment(text.substring(currentIdx, r.start), currentIdx);
+            }
+            currentIdx = r.end;
+        }
+        if (currentIdx < text.length) {
+            findImplicitInSegment(text.substring(currentIdx), currentIdx);
+        }
+
+        // Reordenar todo
+        return ranges.sort((a, b) => a.start - b.start);
     };
 
     const findRangeAtPos = (ranges, pos) => {
@@ -299,19 +301,21 @@ export default function RichTextEditor({
         }
 
         // Invertimos el array de matches porque los fuimos agregando (push) pero procesamos de atrás adelante
-        // Wait: placeholderIndex incrementa.
-        // El replace de abajo recupera por ID. El orden no importa mientras el ID coincida.
-        // Pero hemos reemplazado texto.
-        // Ejemplo: "A $x$ B $y$".
-        // Range 2 ($y$): text -> "A $x$ B ___PH0___". (ID 0)
-        // Range 1 ($x$): text -> "A ___PH1___ B ___PH0___". (ID 1)
-        // Matches: [ "$y$", "$x$" ]
-        // IDs usados: 0, 1.
-        // Luego recuperamos:
-        // match 0 -> "$y$". Reemplaza PH0. Correcto.
-        // match 1 -> "$x$". Reemplaza PH1. Correcto.
-        // OJO: push agrega al final. matches[0] es el PRIMERO QUE AGREGAMOS ($y$).
-        // Así que latexMatches[0] es "$y$". Placeholder PH0 es para "$y$". Correcto.
+
+        // --- NUEVO: Soporte para Bloques de Código (```...```) y Código en Línea (`...`) ---
+        // Procesamos esto ANTES de bold/italic para evitar conflictos
+
+        // Bloques de código (triple backtick)
+        // Ejemplo: ```javascript ... ```
+        processedText = processedText.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+            return `<pre class="bg-slate-800 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto my-2 shadow-sm border border-slate-700"><div class="opacity-50 text-[10px] uppercase mb-1 border-b border-slate-600 pb-1">${lang || 'code'}</div><code>${code}</code></pre>`;
+        });
+
+        // Código en línea (backtick simple)
+        // Ejemplo: `variable`
+        processedText = processedText.replace(/`([^`]+)`/g, '<code class="bg-violet-50 px-1.5 py-0.5 rounded-md font-mono text-sm text-violet-700 border border-violet-100 font-semibold">$1</code>');
+
+        // -----------------------------------------------------------------------------------
 
 
         // Negrita
@@ -331,7 +335,7 @@ export default function RichTextEditor({
         let out = s
             .replace(/<\s*script[\s\S]*?>[\s\S]*?<\s*\/\s*script\s*>/gi, '')
             .replace(/<\s*style[\s\S]*?>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
-        const allowed = new Set(['b', 'strong', 'i', 'em', 'u', 'br', 'p', 'ul', 'ol', 'li', 'span', 'div']);
+        const allowed = new Set(['b', 'strong', 'i', 'em', 'u', 'br', 'p', 'ul', 'ol', 'li', 'span', 'div', 'pre', 'code']);
         out = out.replace(/<\/?([a-z0-9]+)(\s[^>]*)?>/gi, (m, tagName) => {
             const t = String(tagName || '').toLowerCase();
             return allowed.has(t) ? m : m.replace(/</g, '&lt;').replace(/>/g, '&gt;');

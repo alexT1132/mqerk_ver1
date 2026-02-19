@@ -6,6 +6,7 @@ import { AlumnoDashboardMetrics } from './Metrics_dash_alumnos_comp.jsx';
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useComprobante } from "../../context/ComprobantesContext.jsx";
 import { resolvePlanType, getActivationDate, generatePaymentSchedule } from '../../utils/payments.js';
+import { toDisplayTitle } from '../../utils/text.js';
 
 // BACKEND: Frases motivacionales que se muestran de forma rotativa diariamente
 // Estas frases se pueden personalizar desde el backend o mantener como están
@@ -765,16 +766,16 @@ const InicioAlumnoDashboard = ({
                               </p>
                               {/* BACKEND: Título del curso actual desde la API */}
                               <h3 className="text-white font-extrabold text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight sm:leading-relaxed group-hover:text-purple-100 transition-colors mb-2 px-2">
-                                {currentCourse.title}
+                                {toDisplayTitle(currentCourse?.title)}
                               </h3>
                               {/* BACKEND: Instructor del curso actual */}
-                              {currentCourse.instructor && currentCourse.instructor !== "XXXX" && (
+                              {(() => { const instr = toDisplayTitle(currentCourse?.instructor); return instr && instr !== 'XXXX' ? (
                                 <div className="bg-white/25 backdrop-blur-md rounded-full px-3 py-1.5 sm:px-5 sm:py-3 border-2 border-white/40 shadow-md">
                                   <p className="text-purple-50 text-xs sm:text-sm font-semibold">
-                                    Instructor: <span className="text-white font-bold">{currentCourse.instructor}</span>
+                                    Instructor: <span className="text-white font-bold">{instr}</span>
                                   </p>
                                 </div>
-                              )}
+                              ) : null; })()}
                             </div>
                           </div>
                         )}

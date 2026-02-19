@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStudent } from '../../context/StudentContext.jsx';
+import { toDisplayTitle } from '../../utils/text.js';
 
 // Iconos para metadata de cursos - MEJORADOS PARA MÓVIL
 const IconoReloj = () => (
@@ -41,8 +42,10 @@ const IconoEstudiante = () => (
  * }
  */
 function CourseCard({ course, onAction, isDashboardButton, isCurrentCourse }) {
-  // BACKEND: Extraer datos del objeto course que viene de la API
-  const { title, instructor, image, metadata, category, type } = course;
+  // BACKEND: Extraer datos del objeto course que viene de la API (toDisplayTitle evita "Object" si title/instructor vienen como objeto)
+  const title = toDisplayTitle(course?.title ?? course?.titulo);
+  const instructor = toDisplayTitle(course?.instructor ?? course?.instructor_name);
+  const { image, metadata, category, type } = course;
 
   // BACKEND: Sistema de colores para categorías - estos valores deben coincidir 
   // con las categorías que manda el backend en el campo 'category' del curso

@@ -777,7 +777,13 @@ export const StudentProvider = ({ children }) => {
           }
         } catch (_) { }
       };
-      ws.onerror = (e) => { console.warn('[WS] onerror', e?.message || e); setWsStatus('error'); };
+      // Evitar saturar consola cuando el backend no está (solo log en primer intento)
+      ws.onerror = (e) => {
+        setWsStatus('error');
+        if (import.meta.env?.DEV && attempt === 1) {
+          console.debug('[WS] Error de conexión. Si el backend no está en marcha, inicia el servidor (puerto 1002) o ignora este mensaje.');
+        }
+      };
       ws.onclose = (ev) => {
         setWsStatus('closed');
         if (!closedManually) {

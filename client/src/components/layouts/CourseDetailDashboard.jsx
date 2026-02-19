@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import { toDisplayTitle } from '../../utils/text.js';
 import { Calendar, BookOpen, TrendingUp, Clock, Users, Award, ChevronRight } from 'lucide-react';
 
 const CourseDetailDashboard = () => {
@@ -54,12 +55,12 @@ const CourseDetailDashboard = () => {
               Estás en el curso de:
             </h2>
             <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-yellow-300 mb-4">
-              {currentCourse.title}
+              {toDisplayTitle(currentCourse?.title)}
             </h3>
             <div className="flex flex-wrap items-center justify-center gap-4 text-white/80">
               <div className="flex items-center gap-2">
                 <Users size={20} />
-                <span>Instructor: {currentCourse.instructor}</span>
+                <span>Instructor: {toDisplayTitle(currentCourse?.instructor)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <TrendingUp size={20} />

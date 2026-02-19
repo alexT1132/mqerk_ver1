@@ -13,6 +13,7 @@ import {
 import { CheckCircle2, AlertTriangle, Timer, Send, Loader2, Maximize2 } from 'lucide-react';
 import MathEquationEditor, { isMathSubject, isMathQuestion } from '../shared/MathEquationEditor.jsx';
 import InlineMath from '../Asesor/simGen/InlineMath.jsx';
+import { buildStaticUrl } from '../../utils/url.js';
 
 // --- Ícono de Check para opciones seleccionadas ---
 const CheckIcon = () => (
@@ -743,11 +744,11 @@ export default function Simulacion_Review() {
                         <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
                       </p>
 
-                      {/* ✅ Imagen de la pregunta si existe */}
+                      {/* ✅ Imagen de la pregunta si existe (buildStaticUrl para rutas /uploads/...) */}
                       {(p.imagen || p.image) && (
                         <div className="mb-3 sm:mb-4">
                           <img
-                            src={p.imagen || p.image}
+                            src={buildStaticUrl(p.imagen || p.image) || (p.imagen || p.image)}
                             alt="Imagen de la pregunta"
                             className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-64 sm:max-h-80"
                             onError={(e) => {
@@ -813,7 +814,7 @@ export default function Simulacion_Review() {
                                     {(op.imagen || op.image) && (
                                       <div className="mb-2">
                                         <img
-                                          src={op.imagen || op.image}
+                                          src={buildStaticUrl(op.imagen || op.image) || (op.imagen || op.image)}
                                           alt="Imagen de la opción"
                                           className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-32 sm:max-h-40"
                                           onError={(e) => {

@@ -18,7 +18,7 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
         localStorage.setItem("cursoSeleccionado", title);
       }}
       className={[
-        "group relative flex flex-col items-center justify-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 rounded-xl sm:rounded-2xl border-2 p-2 sm:p-3 md:p-3.5 lg:p-4 shadow-xl transition-all duration-500 w-full overflow-visible",
+        "group relative flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border-2 p-2 sm:p-3 shadow-xl transition-all duration-500 w-full overflow-visible",
         selected
           ? "border-violet-500 ring-2 ring-violet-400/40 bg-gradient-to-br from-violet-100 via-purple-100 to-indigo-100 hover:shadow-2xl scale-[1.02] backdrop-blur-sm"
           : "border-violet-200 bg-gradient-to-br from-white to-violet-50/50 hover:border-violet-400 hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:scale-[1.01] backdrop-blur-sm"
@@ -36,7 +36,7 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 
       {/* Contenedor del icono */}
       <div className={[
-        "relative z-10 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl transition-all duration-500 flex-shrink-0",
+        "relative z-10 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl transition-all duration-500 flex-shrink-0",
         selected
           ? "ring-2 ring-violet-400/60 scale-105 shadow-violet-500/30"
           : "ring-1 ring-violet-200/50 group-hover:ring-violet-300/60 group-hover:scale-105 group-hover:shadow-lg"
@@ -59,7 +59,7 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"></div>
             <GraduationCap
               size={20}
-              className="text-white drop-shadow-xl relative z-10 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
+              className="text-white drop-shadow-xl relative z-10 w-5 h-5 sm:w-6 sm:h-6"
             />
           </div>
         )}
@@ -67,7 +67,7 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 
       {/* Título del curso */}
       <h3 className={[
-        "relative z-10 text-[10px] sm:text-xs md:text-sm lg:text-base font-extrabold text-center transition-all duration-300 leading-tight px-1 sm:px-1.5 md:px-2 break-words w-full line-clamp-2",
+        "relative z-10 text-[10px] sm:text-xs md:text-sm font-extrabold text-center transition-all duration-300 leading-tight px-1 sm:px-1.5 break-words w-full line-clamp-2",
         selected
           ? "text-violet-800 drop-shadow-sm"
           : "text-violet-700 group-hover:text-violet-600 font-bold"
@@ -77,7 +77,7 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 
       {/* Indicador de selección - Check superior derecho */}
       {selected && (
-        <span className="pointer-events-none absolute top-0 right-0 grid h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-[10px] sm:text-xs font-bold shadow-xl z-[50] ring-1 ring-white -translate-y-1/2 translate-x-1/2">
+        <span className="pointer-events-none absolute top-0 right-0 grid h-5 w-5 sm:h-6 sm:w-6 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-[10px] sm:text-xs font-bold shadow-xl z-[50] ring-1 ring-white -translate-y-1/2 translate-x-1/2">
           ✓
         </span>
       )}
@@ -92,11 +92,11 @@ const CourseChip = ({ title, image, selected, onSelect }) => {
 
       {/* Efecto de hover - flecha */}
       <div className={[
-        "absolute bottom-1.5 sm:bottom-2 md:bottom-3 right-1.5 sm:right-2 md:right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10",
+        "absolute bottom-1.5 sm:bottom-2 right-1.5 sm:right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10",
         selected ? "opacity-100" : ""
       ].join(" ")}>
         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg">
-          <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
+          <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" aria-hidden />
         </div>
       </div>
     </Link>
@@ -253,30 +253,30 @@ export default function AsesorDashboard({
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
       {/* Elementos decorativos de fondo - Fijos y en capa inferior */}
-      <div className="fixed top-0 right-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] bg-gradient-to-br from-violet-400/40 to-indigo-400/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none -z-40"></div>
-      <div className="fixed bottom-0 left-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] bg-gradient-to-br from-indigo-400/40 to-purple-400/40 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none -z-40"></div>
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] bg-gradient-to-br from-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none -z-40"></div>
+      <div className="fixed top-0 right-0 w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] md:w-[420px] md:h-[420px] 2xl:w-[500px] 2xl:h-[500px] bg-gradient-to-br from-violet-400/40 to-indigo-400/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none -z-40"></div>
+      <div className="fixed bottom-0 left-0 w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] md:w-[420px] md:h-[420px] 2xl:w-[500px] 2xl:h-[500px] bg-gradient-to-br from-indigo-400/40 to-purple-400/40 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none -z-40"></div>
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] sm:w-[300px] sm:h-[300px] md:w-[360px] md:h-[360px] 2xl:w-[420px] 2xl:h-[420px] bg-gradient-to-br from-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none -z-40"></div>
 
       {/* Contenido Principal */}
-      <div className="relative z-10 w-full max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-8 sm:pb-12">
-        {/* Header mejorado */}
-        <div className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 space-y-4 sm:space-y-5 md:space-y-6">
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
-            <div className="p-2 sm:p-3 md:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 sm:ring-4 ring-violet-200/50">
-              <Sparkles className="size-5 sm:size-6 md:size-8 lg:size-10 text-white" />
+      <div className="relative z-10 w-full max-w-[min(1920px,100vw)] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-12 pt-6 sm:pt-8 md:pt-10 pb-8 sm:pb-10 md:pb-12">
+        {/* Header mejorado — mobile-first, escalado moderado en lg para no verse enorme en 1080p */}
+        <div className="mb-6 sm:mb-8 md:mb-10 space-y-4 sm:space-y-5">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 sm:ring-4 ring-violet-200/50">
+              <Sparkles className="size-5 sm:size-6 md:size-7 text-white" />
             </div>
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-100 to-indigo-100 border-2 border-violet-300 shadow-md">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-100 to-indigo-100 border-2 border-violet-300 shadow-md">
               <span className="text-xs sm:text-sm font-extrabold text-violet-800 uppercase tracking-wider">Panel de Asesor</span>
             </div>
           </div>
 
-          <div className="space-y-2 sm:space-y-3 md:space-y-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 sm:mb-3 tracking-tight leading-tight">
+          <div className="space-y-2 sm:space-y-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl 2xl:text-6xl font-extrabold mb-2 sm:mb-3 tracking-tight leading-tight">
               <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                 Bienvenido de vuelta
               </span>
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-violet-800 font-extrabold break-words">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl 2xl:text-3xl text-violet-800 font-extrabold break-words">
               {userName}
             </p>
             <p className="text-sm sm:text-base md:text-lg text-violet-700 max-w-3xl leading-relaxed font-bold">
@@ -287,38 +287,38 @@ export default function AsesorDashboard({
 
         {/* Sección de Cursos */}
         <div className="space-y-4 sm:space-y-6 md:space-y-8">
-          {/* Encabezado de sección mejorado */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 pb-4 sm:pb-5 md:pb-6 border-b-2 sm:border-b-3 md:border-b-4 border-violet-300/50">
+          {/* Encabezado de sección — escalado moderado para 1080p */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 pb-4 sm:pb-5 border-b-2 border-violet-300/50">
             <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
-              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
-                <div className="h-2 sm:h-2.5 md:h-3 w-12 sm:w-16 md:w-20 lg:w-24 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 shadow-xl"></div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <div className="h-2 sm:h-2.5 w-12 sm:w-16 md:w-20 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 shadow-xl"></div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl 2xl:text-5xl font-extrabold">
                   <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block pb-1" style={{ lineHeight: '1.2', paddingBottom: '0.2em' }}>
                     Mis Cursos
                   </span>
                 </h2>
               </div>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-violet-700 ml-0 sm:ml-16 md:ml-20 lg:ml-24 xl:ml-28 font-bold break-words">
+              <p className="text-sm sm:text-base md:text-lg text-violet-700 ml-0 sm:ml-14 md:ml-20 font-bold break-words">
                 Elige el curso para acceder a su dashboard completo
               </p>
             </div>
             {cursosMostrar.length > 0 && !loadingData && (
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 shadow-lg ring-2 ring-violet-200 flex-shrink-0">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 shadow-lg ring-2 ring-violet-200 flex-shrink-0">
                 <span className="text-xs sm:text-sm font-extrabold text-white">Total:</span>
-                <span className="text-lg sm:text-xl font-extrabold text-white">{cursosMostrar.length}</span>
+                <span className="text-base sm:text-lg font-extrabold text-white">{cursosMostrar.length}</span>
               </div>
             )}
           </div>
 
-          {/* Grid de cursos */}
+          {/* Grid de cursos — gaps moderados para no verse enorme en 1080p */}
           {loadingData && cursosMostrar.length === 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-full h-[140px] sm:h-[150px] md:h-[160px] animate-pulse rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-200 to-indigo-200 border-2 border-violet-300 shadow-lg"></div>
+                <div key={i} className="w-full h-[140px] sm:h-[150px] animate-pulse rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-200 to-indigo-200 border-2 border-violet-300 shadow-lg"></div>
               ))}
             </div>
           ) : cursosMostrar.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5" style={{ gridAutoRows: 'minmax(140px, auto)' }}>
               {cursosMostrar.map((c, i) => (
                 <div key={c.id ?? i} className="w-full" style={{ minHeight: '140px' }}>
                   <CourseChip
@@ -331,15 +331,14 @@ export default function AsesorDashboard({
               ))}
             </div>
           ) : (
-            <div className="relative overflow-hidden text-center py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-violet-100/80 via-indigo-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl border-2 border-violet-300 shadow-2xl ring-2 sm:ring-4 ring-violet-200/50">
-              {/* Efectos de fondo */}
+            <div className="relative overflow-hidden text-center py-12 sm:py-16 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-violet-100/80 via-indigo-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl border-2 border-violet-300 shadow-2xl ring-2 sm:ring-4 ring-violet-200/50">
               <div className="absolute inset-0 bg-gradient-to-br from-violet-200/30 via-purple-200/20 to-indigo-200/30"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-gradient-to-br from-violet-400/30 to-indigo-400/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-gradient-to-br from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 bg-gradient-to-br from-violet-400/30 to-indigo-400/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 bg-gradient-to-br from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
               <div className="relative z-10">
-                <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-4 sm:mb-5 md:mb-6 shadow-xl ring-2 sm:ring-4 ring-violet-200">
-                  <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-white" />
+                <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-4 sm:mb-5 shadow-xl ring-2 sm:ring-4 ring-violet-200">
+                  <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
                 </div>
                 <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-violet-800 mb-2 sm:mb-3 px-2">No tienes cursos asignados aún</h3>
                 <p className="text-sm sm:text-base md:text-lg text-violet-700 max-w-md mx-auto leading-relaxed font-bold px-2">

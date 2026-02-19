@@ -682,7 +682,7 @@ export default function FinanzasIngresos() {
 
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl mx-auto">
+    <section className="px-4 sm:px-6 lg:px-10 2xl:px-4 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-8 max-w-screen-2xl 2xl:max-w-none mx-auto">
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">Ingresos</h1>

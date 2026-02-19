@@ -51,7 +51,8 @@ function SidebarItem({
   sectionKey,
   badge,
   onSectionChange,
-  logoutPath = "/login"
+  logoutPath = "/login",
+  userRole
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -136,7 +137,12 @@ function SidebarItem({
     }
   } else {
     // Desktop
-    containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " + (isSidebarOpen ? "min-h-[48px]" : "min-h-[52px]");
+    const isAdmin = userRole === 'admin';
+    containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " +
+      (isSidebarOpen
+        ? (isAdmin ? "min-h-[44px] xl:min-h-[54px] 2xl:min-h-[62px]" : "min-h-[42px]")
+        : (isAdmin ? "min-h-[48px] xl:min-h-[58px] 2xl:min-h-[66px]" : "min-h-[46px]"));
+
     if (isSidebarOpen) {
       // Desplegado: estilo listado limpio, sin cajas ni scale
       linkClasses += "justify-start pl-3 pr-3 gap-3 rounded-xl w-full py-2.5 ";
@@ -418,10 +424,10 @@ export function DesktopSidebarBase({
   const isSmallScreen = viewport.height < 600;
   const isLargeScreen = viewport.height > 900;
 
-  // Usamos effectiveOpen en lugar de isSidebarOpen para calcular el ancho
+  // Altura y anchos consistentes con Layout.jsx
   const sidebarWidth = effectiveOpen
-    ? (isTablet ? 'w-60' : 'w-56 md:w-60 lg:w-64')
-    : (isTablet ? 'w-20' : 'w-16 md:w-20');
+    ? (isTablet ? 'w-60' : 'w-64 2xl:w-72')
+    : (isTablet ? 'w-20' : 'w-20');
 
   // Altura dinámica para pantallas pequeñas
   const sidebarHeight = isSmallScreen
@@ -510,7 +516,7 @@ export function DesktopSidebarBase({
           data-sidebar-scroll
           className="flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar"
         >
-          <ul className="px-3 pt-4 pb-2 space-y-0.5 list-none">
+          <ul className={`px-3 pt-4 pb-2 list-none ${userRole === 'admin' ? 'space-y-1.5 xl:space-y-3 2xl:space-y-5' : 'space-y-0.5'}`}>
             {mainItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}
@@ -523,12 +529,13 @@ export function DesktopSidebarBase({
                 onSectionChange={onSectionChange}
                 isActive={item.sectionKey ? activeSection === item.sectionKey : undefined}
                 logoutPath={logoutPath}
+                userRole={userRole}
               />
             ))}
           </ul>
         </div>
         <div className="flex-shrink-0 px-4 pt-2 pb-4 border-t border-gray-200/60 bg-white/50">
-          <ul className="space-y-1 list-none">
+          <ul className={`space-y-1 list-none ${userRole === 'admin' ? 'xl:space-y-2' : ''}`}>
             {bottomItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}
@@ -541,6 +548,7 @@ export function DesktopSidebarBase({
                 onSectionChange={onSectionChange}
                 isActive={item.sectionKey ? activeSection === item.sectionKey : undefined}
                 logoutPath={logoutPath}
+                userRole={userRole}
               />
             ))}
           </ul>

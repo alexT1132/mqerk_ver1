@@ -554,20 +554,20 @@ export default function Recursos() {
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
 
       <div className="relative z-10 w-full">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <div className="max-w-[1920px] w-full 2xl:max-w-none mx-auto px-4 sm:px-6 lg:px-8 2xl:px-4 py-6 lg:py-8 2xl:py-10">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-4 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
-                <GraduationCap className="size-8 sm:size-10 text-white" />
+          <div className="mb-8 2xl:mb-10">
+            <div className="flex items-center gap-4 mb-4 2xl:gap-6 2xl:mb-6">
+              <div className="p-4 2xl:p-5 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl ring-2 ring-violet-200">
+                <GraduationCap className="size-8 sm:size-10 2xl:size-12 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 tracking-tight leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl 2xl:text-6xl font-extrabold mb-2 tracking-tight leading-tight">
                   <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
                     Recursos Educativos
                   </span>
                 </h1>
-                <p className="text-slate-600 text-sm sm:text-base font-medium">
+                <p className="text-slate-600 text-sm sm:text-base 2xl:text-lg font-medium">
                   {activeTab === 'asesor' && 'Recursos que subes para tus grupos y alumnos — organiza, visualiza y descarga tus materiales.'}
                   {activeTab === 'admin' && 'Recursos que el administrador sube para ti — materiales proporcionados por la academia.'}
                 </p>
@@ -576,28 +576,28 @@ export default function Recursos() {
           </div>
 
           {/* Tabs */}
-          <div className="mb-6 flex gap-2 border-b border-slate-200">
+          <div className="mb-6 2xl:mb-8 flex gap-2 border-b border-slate-200">
             <button
               onClick={() => setActiveTab('asesor')}
-              className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'asesor'
+              className={`px-6 py-3 2xl:py-4 2xl:text-base font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'asesor'
                 ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
                 : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
                 }`}
             >
               <div className="flex items-center gap-2">
-                <GraduationCap className="size-4" />
+                <GraduationCap className="size-4 2xl:size-5" />
                 <span>Mis Recursos</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('admin')}
-              className={`px-6 py-3 font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'admin'
+              className={`px-6 py-3 2xl:py-4 2xl:text-base font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'admin'
                 ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
                 : 'text-slate-600 hover:text-violet-600 hover:bg-slate-50'
                 }`}
             >
               <div className="flex items-center gap-2">
-                <Shield className="size-4" />
+                <Shield className="size-4 2xl:size-5" />
                 <span>Recursos del Administrador</span>
               </div>
             </button>
@@ -611,17 +611,17 @@ export default function Recursos() {
                 <>
                   <button
                     onClick={openFileModal}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-5 py-3 2xl:px-6 2xl:py-4 2xl:text-base rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                   >
-                    <UploadCloud className="size-5" />
+                    <UploadCloud className="size-5 2xl:size-6" />
                     <span>Subir archivo</span>
                   </button>
                   <button
                     onClick={openLinkModal}
                     disabled={uploading}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-5 py-3 2xl:px-6 2xl:py-4 2xl:text-base rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <LinkIcon className="size-5" />
+                    <LinkIcon className="size-5 2xl:size-6" />
                     <span>Agregar enlace</span>
                   </button>
                 </>
@@ -630,9 +630,9 @@ export default function Recursos() {
               {selected.size > 0 && activeTab !== 'admin' && (
                 <button
                   onClick={handleBulkDelete}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-5 py-3 2xl:px-6 2xl:py-4 2xl:text-base rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                 >
-                  <Trash2 className="size-5" />
+                  <Trash2 className="size-5 2xl:size-6" />
                   Eliminar ({selected.size})
                 </button>
               )}
@@ -641,7 +641,7 @@ export default function Recursos() {
             <div className="flex items-center gap-2">
               <button
                 onClick={selectAll}
-                className="text-sm text-slate-600 hover:text-slate-800 font-semibold px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                className="text-sm 2xl:text-base text-slate-600 hover:text-slate-800 font-semibold px-3 py-2 2xl:px-4 2xl:py-2.5 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 {selected.size === filtered.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
               </button>
@@ -680,7 +680,7 @@ export default function Recursos() {
           )}
 
           {/* Buscador y filtros */}
-          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 p-5 sm:p-6 mb-6">
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg ring-2 ring-slate-100/50 p-5 sm:p-6 2xl:p-7 mb-6 2xl:mb-8">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <div className="flex items-center gap-3 flex-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus-within:border-violet-500 focus-within:ring-4 focus-within:ring-violet-500/30 transition-all shadow-sm hover:shadow-md">
                 <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
@@ -738,16 +738,16 @@ export default function Recursos() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,380px))] justify-center gap-4 sm:gap-6">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,380px))] 2xl:grid-cols-[repeat(auto-fit,minmax(360px,480px))] justify-center gap-4 sm:gap-6 2xl:gap-8">
               {filtered.map(r => (
                 <div
                   key={r.id}
-                  className={`bg-white rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 border-2 ${getFileBorderColor(r.file_type_display)} hover:-translate-y-1 ring-2 ring-slate-100/50 hover:ring-slate-200`}
+                  className={`bg-white rounded-2xl p-5 sm:p-6 2xl:p-8 shadow-lg hover:shadow-xl transition-all duration-200 border-2 ${getFileBorderColor(r.file_type_display)} hover:-translate-y-1 ring-2 ring-slate-100/50 hover:ring-slate-200`}
                 >
                   {/* Header de la tarjeta */}
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`shrink-0 w-16 h-16 rounded-xl bg-white flex items-center justify-center border-2 ${getFileBorderColor(r.file_type_display)}`}>
+                  <div className="flex items-start justify-between gap-3 mb-4 2xl:mb-5">
+                    <div className="flex items-center gap-3 2xl:gap-4 flex-1 min-w-0">
+                      <div className={`shrink-0 w-16 h-16 2xl:w-20 2xl:h-20 rounded-xl bg-white flex items-center justify-center border-2 [&_svg]:size-8 2xl:[&_svg]:size-10 ${getFileBorderColor(r.file_type_display)}`}>
                         {getFileIcon(r.file_type_display)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -756,15 +756,15 @@ export default function Recursos() {
                             type="text"
                             value={editForm.title}
                             onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                            className="w-full px-2 py-1 text-sm font-semibold border-2 border-violet-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            className="w-full px-2 py-1 2xl:py-1.5 2xl:text-base text-sm font-semibold border-2 border-violet-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                             placeholder="Título"
                           />
                         ) : (
-                          <h3 className="font-semibold text-slate-800 truncate" title={r.title}>
+                          <h3 className="font-semibold text-slate-800 truncate 2xl:text-base" title={r.title}>
                             {r.title}
                           </h3>
                         )}
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs 2xl:text-sm text-slate-500 mt-1">
                           {r.file_type_display} {r.file_size_mb ? `• ${r.file_size_mb} MB` : r.resource_type === 'link' ? '• Enlace externo' : ''}
                         </p>
                       </div>
@@ -777,17 +777,17 @@ export default function Recursos() {
                         onChange={() => toggleSelect(r.id)}
                         className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
                       />
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 2xl:gap-2 [&_button]:p-2 2xl:[&_button]:p-2.5 [&_svg]:size-4 2xl:[&_svg]:size-5">
                         <button
                           onClick={() => openPreview(r)}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-600 hover:text-violet-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                          className="rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-600 hover:text-violet-600 transition-all duration-200 shadow-sm hover:shadow-md"
                           title="Vista previa"
                         >
                           <Eye className="size-4" />
                         </button>
                         <button
                           onClick={() => handleDownload(r.id, r.file_name, r.resource_type, r.link_url)}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                          className="rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-600 transition-all duration-200 shadow-sm hover:shadow-md"
                           title={r.resource_type === 'link' ? 'Abrir enlace' : 'Descargar'}
                         >
                           {r.resource_type === 'link' ? <LinkIcon className="size-4" /> : <Download className="size-4" />}
@@ -846,11 +846,11 @@ export default function Recursos() {
                       rows={2}
                     />
                   ) : r.description ? (
-                    <p className="text-xs text-slate-600 mb-3 line-clamp-2">{r.description}</p>
+                    <p className="text-xs 2xl:text-sm text-slate-600 mb-3 2xl:mb-4 line-clamp-2">{r.description}</p>
                   ) : null}
 
                   {/* Tags */}
-                  <div className="mb-3">
+                  <div className="mb-3 2xl:mb-4">
                     {editing === r.id ? (
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-1.5">
@@ -905,7 +905,7 @@ export default function Recursos() {
                   </div>
 
                   {/* Footer */}
-                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-400">
+                  <div className="pt-3 2xl:pt-4 border-t border-slate-200 flex items-center justify-between text-xs 2xl:text-sm text-slate-400">
                     <div className="flex flex-col gap-1">
                       <span>Subido: {new Date(r.created_at).toLocaleDateString('es-ES')}</span>
                       {activeTab === 'admin' && r.admin_usuario && (
@@ -923,44 +923,44 @@ export default function Recursos() {
 
           {/* Modal de preview */}
           {preview && createPortal(
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setPreview(null)}>
-              <div className="relative bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200/80" onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 2xl:p-6" onClick={() => setPreview(null)}>
+              <div className="relative bg-white rounded-3xl w-full max-w-3xl 2xl:max-w-5xl max-h-[85vh] 2xl:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200/80" onClick={e => e.stopPropagation()}>
                 {/* Header del modal */}
-                <div className="px-5 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-lg">
+                <div className="px-5 py-4 2xl:px-6 2xl:py-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0 shadow-lg">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold truncate">{preview.title}</h3>
-                    <p className="text-xs text-white/90 font-medium mt-1">
+                    <h3 className="text-lg 2xl:text-xl font-bold truncate">{preview.title}</h3>
+                    <p className="text-xs 2xl:text-sm text-white/90 font-medium mt-1">
                       {preview.file_type_display} {preview.file_size_mb ? `• ${preview.file_size_mb} MB` : preview.resource_type === 'link' ? '• Enlace externo' : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     <button
                       onClick={() => handleDownload(preview.id, preview.file_name, preview.resource_type, preview.link_url)}
-                      className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg"
+                      className="px-4 py-2 2xl:py-2.5 2xl:text-base rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg"
                     >
                       {preview.resource_type === 'link' ? (
                         <>
-                          <LinkIcon className="size-4" />
+                          <LinkIcon className="size-4 2xl:size-5" />
                           Abrir enlace
                         </>
                       ) : (
                         <>
-                          <Download className="size-4" />
+                          <Download className="size-4 2xl:size-5" />
                           Descargar
                         </>
                       )}
                     </button>
                     <button
                       onClick={() => setPreview(null)}
-                      className="p-2 rounded-xl hover:bg-white/20 transition-all duration-200 ring-2 ring-white/20 hover:ring-white/40"
+                      className="p-2 2xl:p-2.5 rounded-xl hover:bg-white/20 transition-all duration-200 ring-2 ring-white/20 hover:ring-white/40"
                     >
-                      <X className="size-5 text-white" />
+                      <X className="size-5 2xl:size-6 text-white" />
                     </button>
                   </div>
                 </div>
 
                 {/* Contenido del preview */}
-                <div className="flex-1 overflow-auto p-4 bg-white">
+                <div className="flex-1 overflow-auto p-4 2xl:p-6 bg-white">
                   {preview.resource_type === 'link' ? (
                     isYouTubeUrl(preview.link_url) ? (
                       <div className="w-full">
@@ -1015,7 +1015,7 @@ export default function Recursos() {
                     <div className="flex flex-col items-center">
                       <iframe
                         src={buildFileUrl(preview)}
-                        className="w-full h-full min-h-[400px] max-h-[60vh] rounded-lg border-2 border-slate-200"
+                        className="w-full h-full min-h-[400px] 2xl:min-h-[500px] max-h-[60vh] 2xl:max-h-[70vh] rounded-lg border-2 border-slate-200"
                         title={preview.title}
                       />
                       <div className="mt-3 text-center">
@@ -1044,16 +1044,16 @@ export default function Recursos() {
                     <video
                       src={buildFileUrl(preview)}
                       controls
-                      className="w-full max-h-[60vh] rounded-lg border-2 border-slate-200"
+                      className="w-full max-h-[60vh] 2xl:max-h-[70vh] rounded-lg border-2 border-slate-200"
                     >
                       Tu navegador no soporta la reproducción de video.
                     </video>
                   ) : preview.file_type_display === 'IMAGE' ? (
-                    <div className="flex items-center justify-center max-h-[60vh] overflow-auto">
+                    <div className="flex items-center justify-center max-h-[60vh] 2xl:max-h-[70vh] overflow-auto">
                       <img
                         src={buildFileUrl(preview)}
                         alt={preview.title}
-                        className="max-w-full max-h-[60vh] object-contain rounded-lg border-2 border-slate-200 shadow-lg"
+                        className="max-w-full max-h-[60vh] 2xl:max-h-[70vh] object-contain rounded-lg border-2 border-slate-200 shadow-lg"
                         onError={(e) => {
                           // Si falla, intentar con diferentes variantes
                           const path = preview.file_path;

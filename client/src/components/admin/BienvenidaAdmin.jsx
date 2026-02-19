@@ -376,7 +376,7 @@ const QuoteCard = memo(({ quote, author }) => {
         active:scale-[0.98] touch-manipulation
         hover:scale-[1.01] hover:shadow-2xl hover:border-indigo-300/60
         relative overflow-hidden
-        max-w-full xs:max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto
+        max-w-full xs:max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-7xl mx-auto
         ring-2 ring-indigo-100/50
       ">
 
@@ -557,7 +557,7 @@ function Bienvenida_Admin1() {
 
         {/* Tarjetas con info - los datos vienen de los contextos/hooks */}
         <div className="px-3 py-4 xs:px-4 xs:py-5 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 xl:px-10 xl:py-12">
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-7 lg:gap-8 xl:gap-10 w-full max-w-full md:max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-7 lg:gap-8 xl:gap-10 w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
 
             {/* Tarjeta de Fecha (esto se queda en frontend) */}
             <InfoCard

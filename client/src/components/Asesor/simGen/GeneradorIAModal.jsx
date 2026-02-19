@@ -258,12 +258,12 @@ export default function GeneradorIAModal({
   return (
     <>
       <AlertComponent />
-      <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6">
+      <div className="mqerk-sim-ia-overlay fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24 pb-6 xl:px-6 2xl:px-8 2xl:pt-28 2xl:pb-8">
         <div
           className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px]"
           onClick={handleClose}
         />
-        <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-2xl max-h-[75vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
+        <div className="mqerk-sim-ia-dialog relative z-10 w-full max-w-2xl 2xl:max-w-4xl min-[1800px]:max-w-5xl max-h-[75vh] 2xl:max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-2 ring-emerald-200/40 border border-slate-100 overflow-hidden">
           {/* Header */}
           <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-indigo-50 px-4 py-2.5">
             <div className="flex items-center gap-2.5">

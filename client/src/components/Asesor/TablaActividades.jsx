@@ -751,7 +751,7 @@ export default function ActivitiesTable({
   return (
     <div className="min-h-screen relative">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 -z-50"></div>
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <section className="w-full px-4 sm:px-6 lg:px-8 2xl:px-4 py-6 sm:py-8 2xl:py-10">
         {error && (
           <div className="mb-4 rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 flex items-start gap-3 shadow-sm">
             <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
@@ -829,33 +829,33 @@ export default function ActivitiesTable({
           </div>
         </div>
 
-        {/* Tabla desktop */}
+        {/* Tabla desktop — 2xl: más altura y texto para 1920×1080 */}
         <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200">
+          <table className="min-w-full table-fixed divide-y divide-slate-200">
             <thead className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-md">
               <tr>
-                <th scope="col" className="sticky left-0 z-20 bg-indigo-600 px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 w-[50px]">
+                <th scope="col" className="sticky left-0 z-20 bg-indigo-600 px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 w-[50px]">
                   #
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[220px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 text-left text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 w-[260px] max-w-[260px] min-w-[180px]">
                   Actividad
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">
                   Recurso
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
                   Fecha límite
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[110px]">
                   Estado
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[100px]">
                   Calificación
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 text-center text-[11px] 2xl:text-xs font-bold uppercase tracking-wider border-r border-white/30 min-w-[80px]">
                   Visualizar
                 </th>
-                <th scope="col" className="px-4 py-3 min-w-[150px]">
+                <th scope="col" className="px-4 py-3 2xl:py-4 min-w-[150px]">
                   Acciones
                 </th>
               </tr>
@@ -876,17 +876,17 @@ export default function ActivitiesTable({
                 ))
               )}
               {!loading && data.map((r, idx) => (
-                <tr key={r.id} className="bg-white hover:bg-slate-50/50 transition-colors duration-150 group border-b border-slate-100 last:border-0">
+                <tr key={r.id} className="bg-white hover:bg-slate-50/50 transition-colors duration-150 group border-b border-slate-100 last:border-0 2xl:[&_td]:py-4">
                   <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-4 py-3 border-r border-slate-200 text-center">
                     <span className="font-mono text-[11px] font-bold text-slate-400">#{idx + 1}</span>
                   </td>
-                  <td className="px-4 py-3 border-r border-slate-200">
-                    <div className="max-w-[200px] lg:max-w-xs xl:max-w-md">
-                      <div className="font-bold text-slate-900 truncate text-sm mb-0.5" title={r.title}>
+                  <td className="w-[260px] max-w-[260px] px-4 py-3 border-r border-slate-200 overflow-hidden">
+                    <div className="min-w-0 max-w-full">
+                      <div className="font-bold text-slate-900 truncate text-sm mb-0.5 break-words" title={r.title}>
                         {r.title}
                       </div>
                       {r.description && (
-                        <div className="mb-1 text-[11px] text-slate-500 line-clamp-2 leading-tight">
+                        <div className="mb-1 text-[11px] text-slate-500 line-clamp-2 leading-tight break-words overflow-hidden">
                           {r.description}
                         </div>
                       )}
