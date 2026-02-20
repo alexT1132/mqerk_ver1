@@ -6,7 +6,6 @@ import { AlumnoDashboardMetrics } from './Metrics_dash_alumnos_comp.jsx';
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useComprobante } from "../../context/ComprobantesContext.jsx";
 import { resolvePlanType, getActivationDate, generatePaymentSchedule } from '../../utils/payments.js';
-import { toDisplayTitle } from '../../utils/text.js';
 
 // BACKEND: Frases motivacionales que se muestran de forma rotativa diariamente
 // Estas frases se pueden personalizar desde el backend o mantener como están
@@ -148,28 +147,7 @@ const InicioAlumnoDashboard = ({
     forceCompleteReset,
     goToWelcome
   } = useStudent();
-  
-  // Session validation
-  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate('/login', { replace: true });
-    }
-  }, [loading, isAuthenticated, navigate]);
-  
-  // Show loading state while checking authentication
-  if (loading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-purple-600 font-medium">Verificando sesión...</p>
-        </div>
-      </div>
-    );
-  }
 
   const { user, alumno: DatosAlumno } = useAuth();
 
@@ -623,31 +601,28 @@ const InicioAlumnoDashboard = ({
 
       {/* Mostrar mensaje de bienvenida cuando NO hay sección activa o cuando hay BLOQUEO */}
       {(!activeSection || mostrarBloqueo) && (
-        <div className={`min-h-full w-full relative transition-all duration-1000`}>
-          {/* Fondo a pantalla completa sin scroll secundario */}
-          <div className={`fixed inset-0 bg-gradient-to-br ${themes[currentTheme]} z-0 pointer-events-none`} />
-
+        <div className={`min-h-[calc(100vh-3.5rem+2.5rem)] -mb-10 w-full relative transition-all duration-1000 flex flex-col bg-gradient-to-br ${themes[currentTheme]}`}>
           {/* Partículas flotantes */}
           <FloatingParticles />
 
           {/* Elementos de fondo animados mejorados */}
           <div className="absolute inset-0 overflow-hidden">
             <div
-              className="absolute w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse duration-[8000ms] transform-gpu transition-all duration-1000"
+              className="absolute w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse [animation-duration:8000ms] transform-gpu transition-all duration-1000"
               style={{
                 left: `${mousePosition.x * 0.02}px`,
                 top: `${mousePosition.y * 0.02}px`,
               }}
             ></div>
             <div
-              className="absolute w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse duration-[8000ms] delay-[2000ms] transform-gpu transition-all duration-1000"
+              className="absolute w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse [animation-duration:8000ms] delay-[2000ms] transform-gpu transition-all duration-1000"
               style={{
                 right: `${mousePosition.x * 0.01}px`,
                 top: `${mousePosition.y * 0.03 + 80}px`,
               }}
             ></div>
             <div
-              className="absolute w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse duration-[8000ms] delay-[4000ms] transform-gpu transition-all duration-1000"
+              className="absolute w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse [animation-duration:8000ms] delay-[4000ms] transform-gpu transition-all duration-1000"
               style={{
                 left: `${mousePosition.x * 0.015 + 80}px`,
                 bottom: `${mousePosition.y * 0.02}px`,
@@ -671,14 +646,15 @@ const InicioAlumnoDashboard = ({
             ))}
           </div>
 
-          {/* Layout principal para bienvenida - Padding fluido */}
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 lg:py-24">
-            {/* Header con saludo animado - Tipografía fluida y robusta */}
-            <div className={`text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16 transition-all duration-1000 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 drop-shadow-xl hover:scale-[1.02] transition-transform cursor-default px-2 pb-2"
+          {/* Layout principal para bienvenida - Bento grid centrado y proporcional */}
+          <div className="relative z-10 flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-8 sm:py-10 md:py-12 lg:py-16 flex flex-col items-center justify-center">
+            {/* Header con saludo - Centrado e integrado */}
+            <div className={`w-full text-center mb-6 sm:mb-8 md:mb-10 transition-all duration-700 ease-out ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+              style={{ transitionDelay: '0ms' }}>
+              <h1 className="font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 drop-shadow-xl transition-transform duration-300 hover:scale-[1.01] cursor-default px-2"
                 style={{
-                  fontSize: 'clamp(2rem, 5vw + 1rem, 4.5rem)',
-                  lineHeight: 1.1,
+                  fontSize: 'clamp(1.75rem, 4vw + 1rem, 3.5rem)',
+                  lineHeight: 1.15,
                   textWrap: 'balance',
                   WebkitTextStroke: '0.5px rgba(255, 255, 255, 0.2)'
                 }}>
@@ -686,18 +662,19 @@ const InicioAlumnoDashboard = ({
               </h1>
             </div>
 
-            {/* Grid principal - Adaptable */}
-            <div className={`w-full ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12' : 'flex justify-center'} items-start`}>
+            {/* Bento grid principal - Proporcional: en pantallas grandes las columnas se limitan para mantener equilibrio */}
+            <div className={`w-full max-w-5xl ${mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido) ? 'grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 xl:justify-items-center 2xl:gap-16' : 'flex justify-center'} items-stretch place-items-center lg:place-items-stretch`}>
 
-              {/* Columna izquierda - Área de comprobante O nombre del curso */}
+              {/* Columna izquierda - Card de curso (bento) */}
               {(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) && (
-                <div className={`space-y-4 sm:space-y-6 md:order-1 transition-all duration-1000 delay-300 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
-                  <div className="w-full max-w-md mx-auto px-2 sm:px-4 md:px-0">
+                <div className={`w-full max-w-md lg:max-w-none xl:max-w-[440px] 2xl:max-w-[480px] transition-all duration-700 ease-out delay-150 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} flex flex-col justify-center`}
+                  style={{ animationFillMode: 'forwards' }}>
+                  <div className="w-full h-full flex flex-col justify-center">
 
-                    {/* Mensaje de estado con efectos mejorados O nombre del curso - Optimizado para móviles */}
-                    <div className="relative group mx-auto">
-                      <div className={`absolute inset-0 ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/40 via-amber-300/40 to-orange-400/40' : 'bg-gradient-to-r from-purple-500/40 via-pink-500/40 to-indigo-500/40'} blur-xl rounded-2xl sm:rounded-3xl`}></div>
-                      <div className={`relative ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/30 via-amber-300/30 to-orange-400/30' : 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-indigo-500/30'} backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 border-2 ${mostrarBloqueo ? 'border-yellow-300/60' : 'border-purple-300/60'} text-center mb-2 sm:mb-6 shadow-2xl ${mostrarBloqueo ? 'shadow-yellow-500/40 hover:shadow-yellow-500/60' : 'shadow-purple-500/40 hover:shadow-purple-500/60'} transition-all duration-500 group-hover:scale-[1.01] ring-1 ${mostrarBloqueo ? 'ring-yellow-200/40' : 'ring-purple-200/40'}`}>
+                    {/* Card curso/comprobante - Glassmorphism equilibrado */}
+                    <div className="relative group mx-auto w-full">
+                      <div className={`absolute inset-0 ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/40 via-amber-300/40 to-orange-400/40' : 'bg-gradient-to-r from-purple-500/40 via-pink-500/40 to-indigo-500/40'} blur-xl rounded-2xl lg:rounded-3xl`}></div>
+                      <div className={`relative ${mostrarBloqueo ? 'bg-gradient-to-r from-yellow-400/25 via-amber-300/25 to-orange-400/25' : 'bg-white/10'} backdrop-blur-xl rounded-2xl lg:rounded-3xl p-6 sm:p-8 lg:p-8 xl:p-10 border border-white/20 ${mostrarBloqueo ? 'border-yellow-300/50' : 'border-purple-300/30'} text-center shadow-xl ${mostrarBloqueo ? 'shadow-yellow-500/20' : 'shadow-purple-500/20'} hover:shadow-2xl transition-all duration-500 group-hover:scale-[1.02] group-hover:border-white/30 min-h-[200px] lg:min-h-[240px] flex flex-col justify-center`}>
 
                         {/* Contenido cuando está en modo bloqueo (pago) - Mejorado para móviles */}
                         {mostrarBloqueo && (
@@ -754,28 +731,26 @@ const InicioAlumnoDashboard = ({
                           </>
                         )}
 
-                        {/* BACKEND: Contenido cuando está verificado y con curso seleccionado - Mejorado para móviles */}
+                        {/* Contenido curso verificado - Proporciones equilibradas */}
                         {!mostrarBloqueo && tieneNumCursoValido && (
-                          <div className="flex flex-col items-center gap-2 sm:gap-6 py-1 sm:py-4">
-                            <div className="bg-gradient-to-br from-purple-500 via-indigo-500 to-pink-500 rounded-full p-3 sm:p-5 shadow-xl ring-4 ring-purple-300/50 group-hover:scale-110 transition-transform">
-                              <GraduationCap size={40} className="sm:w-12 sm:h-12 text-white" />
+                          <div className="flex flex-col items-center gap-4 sm:gap-5">
+                            <div className="bg-gradient-to-br from-purple-500 via-indigo-500 to-pink-500 rounded-2xl p-4 sm:p-5 shadow-xl ring-2 ring-white/30 group-hover:scale-105 group-hover:ring-white/50 transition-all duration-300">
+                              <GraduationCap size={44} className="sm:w-12 sm:h-12 text-white" strokeWidth={2} />
                             </div>
-                            <div className="text-center">
-                              <p className="text-purple-100 font-bold text-base sm:text-xl md:text-2xl mb-1 sm:mb-4">
+                            <div className="text-center space-y-2">
+                              <p className="text-purple-200/90 font-semibold text-sm sm:text-base uppercase tracking-wider">
                                 Curso Actual
                               </p>
-                              {/* BACKEND: Título del curso actual desde la API */}
-                              <h3 className="text-white font-extrabold text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight sm:leading-relaxed group-hover:text-purple-100 transition-colors mb-2 px-2">
-                                {toDisplayTitle(currentCourse?.title)}
+                              <h3 className="text-white font-extrabold text-2xl sm:text-3xl lg:text-4xl leading-tight transition-colors duration-300 group-hover:text-purple-100 px-1">
+                                {currentCourse.title}
                               </h3>
-                              {/* BACKEND: Instructor del curso actual */}
-                              {(() => { const instr = toDisplayTitle(currentCourse?.instructor); return instr && instr !== 'XXXX' ? (
-                                <div className="bg-white/25 backdrop-blur-md rounded-full px-3 py-1.5 sm:px-5 sm:py-3 border-2 border-white/40 shadow-md">
-                                  <p className="text-purple-50 text-xs sm:text-sm font-semibold">
-                                    Instructor: <span className="text-white font-bold">{instr}</span>
+                              {currentCourse.instructor && currentCourse.instructor !== "XXXX" && (
+                                <div className="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30 mt-2">
+                                  <p className="text-purple-100 text-xs sm:text-sm font-medium">
+                                    Instructor: <span className="text-white font-semibold">{currentCourse.instructor}</span>
                                   </p>
                                 </div>
-                              ) : null; })()}
+                              )}
                             </div>
                           </div>
                         )}
@@ -845,49 +820,43 @@ const InicioAlumnoDashboard = ({
                 </div>
               )}
 
-              {/* Columna derecha - Reloj y frase */}
-              <div className={`space-y-2 ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'md:order-2' : ''} ${(!mostrarBloqueo && !tieneNumCursoValido) ? 'w-full max-w-6xl' : ''} transition-all duration-1000 delay-500 ${elementsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
-
-                {/* Reloj grande con efecto 3D grueso y sólido - Optimizado para móviles */}
-                <div className="text-center mb-6 sm:mb-8 group">
-                  <div
-                    className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-[18vw] sm:text-7xl md:text-8xl lg:text-9xl xl:text-[11rem] 2xl:text-[13rem]' : 'text-[16vw] sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem] 2xl:text-[11rem]'} font-black text-white mb-4 sm:mb-4 leading-[0.85] transition-all duration-300 ${clockPulse ? 'scale-[1.02]' : 'scale-100'} group-hover:scale-[1.02] cursor-pointer select-none tracking-tighter`}
-                    style={{
-                      fontFamily: 'system-ui, -apple-system, sans-serif',
-                      textShadow: `
-                        ${(!mostrarBloqueo && !tieneNumCursoValido) ?
-                          '2px 2px 0px rgba(139, 92, 246, 1), 4px 4px 0px rgba(139, 92, 246, 0.9), 6px 6px 0px rgba(139, 92, 246, 0.8), 8px 8px 20px rgba(0, 0, 0, 0.5)' :
-                          '1px 1px 0px rgba(139, 92, 246, 1), 3px 3px 0px rgba(139, 92, 246, 0.8), 5px 5px 15px rgba(0, 0, 0, 0.5)'
-                        }
-                      `,
-                      WebkitTextStroke: `${(!mostrarBloqueo && !tieneNumCursoValido) ? '2px' : '1px'} rgba(255, 255, 255, 0.5)`,
-                      animation: 'breathe 8s ease-in-out infinite'
-                    }}
-                    aria-hidden="true"
-                  >
-                    {hora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {/* Columna derecha - Widget hora + fecha + frase (bento) */}
+              <div className={`w-full max-w-md lg:max-w-none xl:max-w-[440px] 2xl:max-w-[480px] flex flex-col justify-center ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'lg:order-2' : ''} ${(!mostrarBloqueo && !tieneNumCursoValido) ? 'w-full max-w-2xl' : ''} transition-all duration-700 ease-out delay-300 ${elementsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                <div className="relative group w-full p-6 sm:p-8 lg:p-8 xl:p-10 min-h-[200px] lg:min-h-[240px] flex flex-col justify-center">
+                  {/* Reloj - Proporcional */}
+                  <div className="text-center mb-5 sm:mb-6">
+                    <div
+                      className={`font-black text-white leading-[0.9] transition-transform duration-300 ${clockPulse ? 'scale-[1.02]' : 'scale-100'} select-none tracking-tighter`}
+                      style={{
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        fontSize: 'clamp(3.5rem, 12vw, 7rem)',
+                        textShadow: '2px 2px 0 rgba(139,92,246,0.8), 4px 4px 0 rgba(139,92,246,0.6), 6px 6px 12px rgba(0,0,0,0.3)',
+                        WebkitTextStroke: '1px rgba(255,255,255,0.4)'
+                      }}
+                      aria-hidden="true"
+                    >
+                      {hora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    </div>
+                    <span className="inline-block mt-6 sm:mt-8 text-purple-200/90 font-medium text-xs sm:text-sm bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10 hover:bg-white/15 transition-colors duration-300">
+                      {hora.toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
                   </div>
 
-                  {/* Fecha pequeña con hover - Mejorado para móviles */}
-                  <span className={`text-purple-200 font-semibold bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full ${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} inline-block relative z-30 mt-3 sm:mt-4 hover:bg-white/20 transition-all duration-300 cursor-default border border-white/10`}>
-                    {hora.toLocaleDateString('es-ES', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                </div>
-
-                {/* Frase motivacional con efectos - Mejorado para móviles */}
-                <div className="text-center group px-2 sm:px-0">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 justify-center group-hover:scale-105 transition-transform duration-300">
-                    <Calendar className="text-yellow-300 w-5 h-5 sm:w-6 sm:h-6 animate-pulse group-hover:animate-bounce" />
-                    <span className="text-yellow-300 font-bold text-sm sm:text-base md:text-lg group-hover:text-yellow-200 transition-colors">Frase del día</span>
+                  {/* Frase del día - Integrada */}
+                  <div className="text-center pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 mb-3 justify-center">
+                      <Calendar className="text-amber-300/90 w-5 h-5 flex-shrink-0" />
+                      <span className="text-amber-200/90 font-semibold text-sm uppercase tracking-wider">Frase del día</span>
+                    </div>
+                    <p className="text-white/95 font-semibold text-base sm:text-lg lg:text-xl leading-relaxed">
+                      {frase}
+                    </p>
                   </div>
-                  <p className={`${(mostrarBloqueo || (!mostrarBloqueo && tieneNumCursoValido)) ? 'text-base sm:text-lg md:text-xl lg:text-2xl' : 'text-lg sm:text-xl md:text-2xl lg:text-3xl'} font-bold text-white leading-relaxed group-hover:text-yellow-100 transition-all duration-500 cursor-pointer`}>
-                    {frase}
-                  </p>
                 </div>
               </div>
             </div>
@@ -926,12 +895,12 @@ const InicioAlumnoDashboard = ({
             }
           `}</style>
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-1 sm:p-1.5 md:p-2">
-            <div className="bg-white/95 backdrop-blur-lg rounded-lg sm:rounded-xl shadow-2xl w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col border border-indigo-200/60">
+            <div className="bg-white/95 backdrop-blur-lg rounded-lg sm:rounded-xl shadow-2xl w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col border border-indigo-200/60">
 
               {/* Header del Modal - Paleta armoniosa */}
-              <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-t-lg sm:rounded-t-xl flex items-center justify-between shadow-md">
-                <h2 className="text-[10px] sm:text-xs md:text-sm font-extrabold text-white flex items-center gap-1">
-                  <span className="text-sm sm:text-base">💳</span>
+              <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 px-2 sm:px-2.5 md:px-3 xl:px-4 py-1 sm:py-1.5 md:py-2 xl:py-2.5 rounded-t-lg sm:rounded-t-xl flex items-center justify-between shadow-md">
+                <h2 className="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-extrabold text-white flex items-center gap-1">
+                  <span className="text-sm sm:text-base lg:text-lg xl:text-xl">💳</span>
                   <span className="truncate">Información de Pago</span>
                 </h2>
                 <button
@@ -944,27 +913,27 @@ const InicioAlumnoDashboard = ({
 
               {/* Contenido del Modal con scroll interno - Scrollbar oculto */}
               <div className="flex-1 overflow-y-auto payment-modal-scroll">
-                <div className="p-1.5 sm:p-2 md:p-2.5 space-y-1 sm:space-y-1.5 md:space-y-2">
+                <div className="p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 space-y-1 sm:space-y-1.5 md:space-y-2 lg:space-y-2.5 xl:space-y-3">
 
                   {/* Métodos de Pago - Paleta armoniosa */}
-                  <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-indigo-200/60 shadow-sm">
-                    <h3 className="text-[9px] sm:text-[10px] md:text-xs font-extrabold text-indigo-800 mb-1 sm:mb-1.5 flex items-center gap-0.5 sm:gap-1">
-                      <span className="text-xs sm:text-sm">🏦</span>
+                  <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 lg:p-2.5 xl:p-3 border border-indigo-200/60 shadow-sm">
+                    <h3 className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base font-extrabold text-indigo-800 mb-1 sm:mb-1.5 lg:mb-2 flex items-center gap-0.5 sm:gap-1">
+                      <span className="text-xs sm:text-sm lg:text-base">🏦</span>
                       <span>Métodos de Pago</span>
                     </h3>
 
                     {/* Mobile: Stack vertical, Desktop: Grid 2 columnas balanceado */}
-                    <div className="space-y-1 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-1 md:gap-1.5">
+                    <div className="space-y-1 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-1 md:gap-1.5 lg:gap-2 xl:gap-3">
 
                       {/* Transferencia Bancaria - Paleta armoniosa */}
-                      <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-indigo-200/60 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
-                          <span className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full text-[10px] sm:text-xs flex items-center justify-center shadow-sm flex-shrink-0">💳</span>
-                          <h4 className="font-extrabold text-indigo-800 text-[9px] sm:text-[10px] md:text-xs">Transferencia</h4>
+                      <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 lg:p-2.5 xl:p-3 border border-indigo-200/60 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1 lg:mb-1.5">
+                          <span className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full text-[10px] sm:text-xs lg:text-sm flex items-center justify-center shadow-sm flex-shrink-0">💳</span>
+                          <h4 className="font-extrabold text-indigo-800 text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base">Transferencia</h4>
                         </div>
 
                         {/* Info bancaria compacta */}
-                        <div className="text-[9px] sm:text-[10px] md:text-xs mb-1.5 space-y-0.5 sm:space-y-1">
+                        <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm mb-1.5 space-y-0.5 sm:space-y-1 lg:space-y-1.5">
                           <div className="flex flex-wrap items-center gap-0.5">
                             <span className="text-indigo-600 font-semibold">Banco:</span>
                             <span className="font-bold text-indigo-800">BANCOPPEL</span>
@@ -978,9 +947,9 @@ const InicioAlumnoDashboard = ({
                         {/* Cuenta y CLABE compactos */}
                         <div className="space-y-1 sm:space-y-1.5">
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-1">
-                            <span className="text-indigo-600 text-[9px] sm:text-[10px] font-semibold w-full sm:w-12 flex-shrink-0">Cuenta:</span>
+                            <span className="text-indigo-600 text-[9px] sm:text-[10px] lg:text-xs font-semibold w-full sm:w-12 lg:w-14 flex-shrink-0">Cuenta:</span>
                             <div className="flex-1 flex items-center gap-0.5 sm:gap-1 min-w-0">
-                              <span className="font-mono bg-gray-50 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] flex-1 border border-gray-200 truncate">4169 1608 5392 8977</span>
+                              <span className="font-mono bg-gray-50 px-1 sm:px-1.5 lg:px-2 py-0.5 sm:py-1 lg:py-1.5 rounded text-[9px] sm:text-[10px] lg:text-sm flex-1 border border-gray-200 truncate">4169 1608 5392 8977</span>
                               <button
                                 onClick={() => handleCopy('4169 1608 5392 8977', 'account')}
                                 className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-[9px] sm:text-[10px] rounded hover:from-indigo-600 hover:to-indigo-700 active:scale-95 transition-all shadow-sm touch-manipulation relative flex-shrink-0"
@@ -995,9 +964,9 @@ const InicioAlumnoDashboard = ({
                             </div>
                           </div>
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-1">
-                            <span className="text-indigo-600 text-[9px] sm:text-[10px] font-semibold w-full sm:w-12 flex-shrink-0">CLABE:</span>
+                            <span className="text-indigo-600 text-[9px] sm:text-[10px] lg:text-xs font-semibold w-full sm:w-12 lg:w-14 flex-shrink-0">CLABE:</span>
                             <div className="flex-1 flex items-center gap-0.5 sm:gap-1 min-w-0">
-                              <span className="font-mono bg-gray-50 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] flex-1 break-all border border-gray-200">137628103732170052</span>
+                              <span className="font-mono bg-gray-50 px-1 sm:px-1.5 lg:px-2 py-0.5 sm:py-1 lg:py-1.5 rounded text-[9px] sm:text-[10px] lg:text-sm flex-1 break-all border border-gray-200">137628103732170052</span>
                               <button
                                 onClick={() => handleCopy('137628103732170052', 'clabe')}
                                 className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-[9px] sm:text-[10px] rounded hover:from-indigo-600 hover:to-indigo-700 active:scale-95 transition-all shadow-sm touch-manipulation relative flex-shrink-0"
@@ -1019,13 +988,13 @@ const InicioAlumnoDashboard = ({
                       </div>
 
                       {/* Pago en Efectivo - Paleta armoniosa */}
-                      <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-purple-200/60 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
-                          <span className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full text-[10px] sm:text-xs flex items-center justify-center shadow-sm flex-shrink-0">💵</span>
-                          <h4 className="font-extrabold text-purple-800 text-[9px] sm:text-[10px] md:text-xs">Efectivo</h4>
+                      <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 lg:p-2.5 xl:p-3 border border-purple-200/60 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1 lg:mb-1.5">
+                          <span className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full text-[10px] sm:text-xs lg:text-sm flex items-center justify-center shadow-sm flex-shrink-0">💵</span>
+                          <h4 className="font-extrabold text-purple-800 text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base">Efectivo</h4>
                         </div>
 
-                        <div className="text-[9px] sm:text-[10px] md:text-xs space-y-0.5 sm:space-y-1">
+                        <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm space-y-0.5 sm:space-y-1 lg:space-y-1.5">
                           <div>
                             <span className="text-purple-600 font-semibold">Dir:</span>
                             <a
@@ -1056,26 +1025,26 @@ const InicioAlumnoDashboard = ({
                   </div>
 
                   {/* Sección de Upload - Paleta armoniosa */}
-                  <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border border-indigo-200/60 shadow-sm">
-                    <h3 className="text-[9px] sm:text-[10px] md:text-xs font-extrabold text-indigo-800 mb-1 sm:mb-1.5 flex items-center gap-0.5 sm:gap-1">
-                      <span className="text-xs sm:text-sm">📤</span>
+                  <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 lg:p-2.5 xl:p-3 border border-indigo-200/60 shadow-sm">
+                    <h3 className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base font-extrabold text-indigo-800 mb-1 sm:mb-1.5 lg:mb-2 flex items-center gap-0.5 sm:gap-1">
+                      <span className="text-xs sm:text-sm lg:text-base">📤</span>
                       <span>Subir Comprobante</span>
                     </h3>
 
-                    <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 border-2 border-dashed border-indigo-300 hover:border-indigo-400 active:border-indigo-500 transition-all shadow-inner">
+                    <div className="bg-white rounded-lg sm:rounded-xl p-1 sm:p-1.5 md:p-2 lg:p-3 xl:p-4 border-2 border-dashed border-indigo-300 hover:border-indigo-400 active:border-indigo-500 transition-all shadow-inner">
                       <div className="text-center">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mx-auto mb-1.5 sm:mb-2 text-indigo-400">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 mx-auto mb-1.5 sm:mb-2 lg:mb-3 text-indigo-400">
                           <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-full h-full">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                           </svg>
                         </div>
-                        <p className="text-[10px] sm:text-xs text-gray-700 mb-1 font-semibold">
+                        <p className="text-[10px] sm:text-xs lg:text-sm xl:text-base text-gray-700 mb-1 font-semibold">
                           <span className="text-indigo-600 font-bold">
                             Toca aquí
                           </span>
                           <span className="hidden sm:inline"> o arrastra tu archivo</span>
                         </p>
-                        <p className="text-[9px] sm:text-[10px] text-gray-500 mb-1.5 sm:mb-2">
+                        <p className="text-[9px] sm:text-[10px] lg:text-xs text-gray-500 mb-1.5 sm:mb-2 lg:mb-3">
                           JPG, PNG, PDF (máx. 5MB)
                         </p>
 

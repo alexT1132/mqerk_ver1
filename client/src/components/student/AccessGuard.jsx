@@ -13,10 +13,10 @@ export function AccessGuard({ allowWhilePending = false, children }) {
   if (approved || allowWhilePending) return children;
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-6">
-      <div className="max-w-lg w-full bg-white border border-amber-300 rounded-2xl shadow-xl p-8 text-center">
+    <div className="min-h-[60vh] flex items-center justify-center p-4">
+      <div className="w-11/12 sm:w-4/5 md:w-3/4 lg:w-1/2 xl:w-2/5 max-w-[90vw] bg-white border border-amber-300 rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-10 text-center mx-auto">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+          <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg>
         </div>
         <h2 className="text-2xl font-extrabold text-amber-700 mb-3">Acceso restringido</h2>
         <p className="text-amber-800 font-medium mb-4">Tu comprobante aún no ha sido aprobado.</p>

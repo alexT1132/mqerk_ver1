@@ -60,12 +60,14 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen }) {
       menuItems={allAlumnoMenuItems}
       userRole="alumno"
       showPinnedToggle={true}
-      showAutoCollapse={true}
+      showAutoCollapse={false}
+      expandOnHoverOnly={true}
+      setDesktopSidebarOpen={setDesktopSidebarOpen}
       onSectionChange={handleSectionChange}
       activeSection={activeSection}
       logoutPath="/alumno/logout"
-      topOffset="80px"
-      heightOffset="80px"
+      topOffset="84px"
+      heightOffset="84px"
       badgeConfig={{}}
     />
   );
@@ -94,24 +96,18 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
       {isMenuOpen && (
         <>
           <div
-            className="sm:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+            className="sm:hidden fixed inset-0 bg-black/40 z-40"
             onClick={closeMenu}
             aria-hidden="true"
-            style={{
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)'
-            }}
           ></div>
-          <aside className={`sm:hidden fixed top-[80px] left-0 w-64 h-[calc(100vh-80px)] bg-white/95 backdrop-blur-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out overflow-hidden flex flex-col
-              ${isMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-90'}`}
-            style={{
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)'
-            }}>
+          <aside className={`sm:hidden fixed top-[80px] left-0 w-56 h-[calc(100vh-80px)] bg-white border-r border-gray-100 z-50 overflow-hidden flex flex-col transition-transform duration-200 ease-out
+              ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            >
             <nav className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar px-0 py-3">
+              <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-visible no-scrollbar px-0 py-2">
+                <div className="flex-1 flex flex-col justify-between min-h-full gap-0.5 px-2">
                 {[...alumnoMenuItems, ...alumnoBottomItems.filter(i => i.path !== '/alumno/logout')].map((item) => (
-                  <div key={item.path} className="w-full mb-1 px-3">
+                  <div key={item.path} className="w-full">
                     <Link
                       to={item.path}
                       onClick={(e) => {
@@ -121,42 +117,43 @@ export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu }) {
                         }
                         closeMenu();
                       }}
-                      className={`flex items-center justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none transition-all duration-300
-                        ${isItemActive(item) ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md' : 'text-gray-600 bg-transparent active:bg-indigo-50'}`}
+                      className={`flex items-center justify-start pl-3 pr-3 gap-2 py-2.5 rounded-lg w-full border-l-2 transition-colors duration-150
+                        ${isItemActive(item) ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-transparent text-gray-600 active:bg-gray-50'}`}
                     >
                       <div className="flex-shrink-0">
                         {React.cloneElement(item.icon, {
-                          stroke: isItemActive(item) ? "#ffffff" : "#3818c3",
+                          stroke: isItemActive(item) ? "#4338ca" : "#6b7280",
                           fill: "none",
-                          className: "w-6 h-6",
+                          className: "w-5 h-5",
                           strokeWidth: 2,
                         })}
                       </div>
-                      <span className="text-[15px] leading-normal font-medium ml-1 truncate">
+                      <span className="text-sm font-medium truncate">
                         {item.label}
                       </span>
                     </Link>
                   </div>
                 ))}
+                </div>
               </div>
-              <div className="flex-shrink-0 px-3 pt-2 pb-4 border-t border-gray-200/60 bg-white/50">
+              <div className="flex-shrink-0 px-3 pt-2 pb-4 border-t border-gray-100">
                 {alumnoBottomItems.filter(i => i.path === '/alumno/logout').map((item) => (
                   <div key={item.path} className="w-full mb-1">
                     <Link
                       to={item.path}
                       onClick={() => closeMenu()}
-                      className={`flex items-center justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none transition-all duration-300
-                        ${isItemActive(item) ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md' : item.path === '/alumno/logout' ? 'text-red-500 bg-transparent active:bg-red-50' : 'text-gray-600 bg-transparent active:bg-indigo-50'}`}
+                      className={`flex items-center justify-start pl-3 pr-3 gap-2 py-2.5 rounded-lg w-full border-l-2 border-transparent transition-colors duration-150
+                        ${item.path === '/alumno/logout' ? 'text-red-500 active:bg-red-50' : ''}`}
                     >
                       <div className="flex-shrink-0">
                         {React.cloneElement(item.icon, {
-                          stroke: item.path === '/alumno/logout' ? "#EA3323" : (isItemActive(item) ? "#ffffff" : "#3818c3"),
+                          stroke: item.path === '/alumno/logout' ? "#dc2626" : "#6b7280",
                           fill: "none",
-                          className: "w-6 h-6",
+                          className: "w-5 h-5",
                           strokeWidth: 2,
                         })}
                       </div>
-                      <span className={`text-[15px] leading-normal font-medium ml-1 truncate ${item.path === '/alumno/logout' ? 'text-red-500' : ''}`}>
+                      <span className={`text-sm font-medium truncate ${item.path === '/alumno/logout' ? 'text-red-500' : ''}`}>
                         {item.label}
                       </span>
                     </Link>

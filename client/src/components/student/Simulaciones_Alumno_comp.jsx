@@ -1465,15 +1465,20 @@ export function Simulaciones_Alumno_comp() {
   // NIVEL 1: Tipos de simuladores - Mejorado para móviles
   const renderTipos = () => (
     <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-8 sm:py-10 lg:py-12">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full max-w-full mx-auto">
         {/* Header - Mejorado para móviles */}
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
           <div className="px-4 sm:px-6 py-5 sm:py-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center relative gap-4">
               <div className="text-center w-full">
-                <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 tracking-tight">
-                  SIMULACIONES
-                </h1>
+                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+                    <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                  <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+                    SIMULACIONES
+                  </h1>
+                </div>
                 <p className="text-sm sm:text-base text-gray-600 font-medium">
                   Simuladores para exámenes de ingreso y evaluaciones académicas
                 </p>
@@ -1644,7 +1649,7 @@ export function Simulaciones_Alumno_comp() {
 
     return (
       <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-4 lg:py-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full max-w-full mx-auto">
           {/* Modal de Solicitudes */}
           <MisSolicitudesModal
             isOpen={showMisSolicitudes}
@@ -1806,7 +1811,7 @@ export function Simulaciones_Alumno_comp() {
   // NIVEL 3: Tabla de simulaciones
   const renderSimulaciones = () => (
     <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 pt-6 sm:pt-8 md:pt-10 py-4 lg:py-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full max-w-full mx-auto">
         {/* Header con navegación - Mejorado para móviles */}
         <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8 mt-4 sm:mt-6 md:mt-8">
           <div className="px-4 sm:px-6 py-5 sm:py-8">
@@ -2157,7 +2162,7 @@ export function Simulaciones_Alumno_comp() {
         </div>
 
         {/* Vista móvil - Cards de simulaciones - Mejoradas */}
-        <div className={`${viewMode === 'cards' ? 'block' : 'hidden'} grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 lg:gap-6`}>
+        <div className={`${viewMode === 'cards' ? 'block' : 'hidden'} space-y-4 sm:space-y-5`}>
           {filteredSimulaciones.length > 0 ? (
             filteredSimulaciones.map((simulacion, index) => (
               <div
@@ -2403,7 +2408,8 @@ export function Simulaciones_Alumno_comp() {
                               {new Date(intento.fecha).toLocaleDateString('es-ES')} a las{' '}
                               {new Date(intento.fecha).toLocaleTimeString('es-ES', {
                                 hour: '2-digit',
-                                minute: '2-digit'
+                                minute: '2-digit',
+                                hour12: true
                               })}
                             </div>
                           </div>

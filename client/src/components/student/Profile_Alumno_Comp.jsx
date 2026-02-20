@@ -1,9 +1,11 @@
 // src/components/Profile_Alumno_comp.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getEstudianteByIdRequest, updateEstudianteRequest } from '../../api/estudiantes.js';
 import { buildStaticUrl, getApiOrigin } from '../../utils/url';
+import { UserRound } from 'lucide-react';
 
 // Componente para input con validaciones completas restauradas
 const InputField = ({ name, type = "text", placeholder, value, onChange, className, isAcademic = false, isCourse = false, helpText = null, errors = {}, maxLength = null }) => {
@@ -62,10 +64,27 @@ const InputField = ({ name, type = "text", placeholder, value, onChange, classNa
 /**
  * Modal para editar perfil del alumno - ARREGLADA RESPONSIVIDAD
  */
+const ANIM_DURATION_MS = 200;
+
 function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsExiting((prev) => {
+      if (prev) return prev;
+      setTimeout(() => {
+        onClose();
+      }, ANIM_DURATION_MS);
+      return true;
+    });
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) setIsExiting(false);
+  }, [isOpen]);
 
   // Sincronizar datos cuando se abre la modal
   useEffect(() => {
@@ -73,7 +92,44 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
     setErrors({}); // Limpiar errores al abrir
   }, [initialData, isOpen]);
 
-  if (!isOpen) return null;
+  // Bloquear scroll del fondo para que la modal quede fija al viewport.
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const scrollY = window.scrollY;
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalTop = document.body.style.top;
+    const originalWidth = document.body.style.width;
+    const originalTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
+      document.body.style.touchAction = originalTouchAction;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
+  const visible = isOpen || isExiting;
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    if (visible) window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [visible, handleClose]);
+
+  if (!visible) return null;
 
   // Funciones de validación completas restauradas
   const validateEmail = (email) => {
@@ -256,9 +312,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
         await onSave(formData);
         // Mostrar mensaje de éxito
         setErrors({ success: 'Perfil actualizado exitosamente' });
-        setTimeout(() => {
-          onClose();
-        }, 1500);
+        setTimeout(handleClose, 1500);
       } catch (error) {
         console.error('Error al guardar:', error);
         setErrors({ submit: 'Error al guardar los datos. Por favor inténtalo nuevamente.' });
@@ -268,22 +322,35 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
     setIsSubmitting(false);
   };
 
-  return (
-    <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm animate-in fade-in duration-500 overflow-y-auto">
-   <div className="min-h-screen flex items-start justify-center p-1 sm:p-2 md:p-3 pb-1 sm:pb-2 md:pb-3 pt-30 sm:pt-12 md:pt-16">
-        <div className="relative w-full max-w-sm mx-auto rounded-xl sm:rounded-2xl shadow-2xl border-2 border-gray-200/50 bg-white overflow-hidden animate-in zoom-in-95 duration-600 mb-0 sm:my-auto ring-4 ring-violet-100/50 max-h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-5rem)] flex flex-col">
+  const modalContent = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      className={`fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden overscroll-none ${isExiting ? 'pointer-events-none' : ''}`}
+    >
+      {/* Backdrop: clic aquí cierra el modal (blur estilo ReciboModal) */}
+      <div
+        aria-hidden="true"
+        onClick={handleClose}
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
+      />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative z-10 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-[min(92vw,720px)] mx-auto rounded-xl sm:rounded-2xl shadow-2xl border-2 border-gray-200/50 bg-white overflow-hidden ring-4 ring-violet-100/50 max-h-[min(92vh,800px)] flex flex-col transition-[opacity,transform] duration-200 ease-out ${isExiting ? 'opacity-0 scale-95' : 'animate-fade-in-scale'}`}
+      >
 
-          {/* Header visual mejorado - Compacto */}
-          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-3 py-1.5 text-center shadow-lg flex-shrink-0">
+          {/* Header visual mejorado */}
+          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-center shadow-lg flex-shrink-0">
             <div className="flex items-center justify-center gap-2">
               <span className="inline-flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/30 shadow-xl border border-white/50 text-sm xs:text-base ring-1 ring-white/30">✏️</span>
-              <h2 className="text-xs xs:text-sm sm:text-base font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
+              <h2 id="modal-title" className="text-xs xs:text-sm sm:text-base font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
             </div>
           </div>
 
           {/* Formulario compacto */}
-          <form onSubmit={handleSubmit} className="p-1.5 xs:p-2 flex flex-col flex-1 min-h-0">
-            <div className="space-y-1 xs:space-y-1.5 flex-1 overflow-y-auto pr-1 min-h-0 no-scrollbar" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+          <form onSubmit={handleSubmit} className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 sm:py-4 flex flex-col flex-1 min-h-0">
+            <div className="space-y-1 xs:space-y-1.5 flex-1 overflow-y-auto pr-1 min-h-0 no-scrollbar">
 
               {/* Datos Personales */}
               <div>
@@ -431,7 +498,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
             <div className="flex gap-1.5 xs:gap-2 mt-1.5 xs:mt-2 pt-1.5 xs:pt-2 border-t border-gray-200/50 flex-shrink-0">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={isSubmitting}
                 className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 active:scale-95 transition-all duration-200 text-xs xs:text-sm disabled:opacity-50 touch-manipulation shadow-sm"
               >
@@ -475,10 +542,12 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
               </button>
             </div>
           </form>
-        </div>
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }
 
 
@@ -717,18 +786,26 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
   return (
     <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 pt-12 pb-4 font-inter text-gray-800 w-full max-w-full overflow-x-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
 
-      {/* Sección de Encabezado - Mejorado para móviles */}
-      <div className="flex flex-col items-center md:flex-row md:items-start md:justify-between mb-4 sm:mb-6 pb-4 border-b-2 border-gray-200/50 w-full">
-        <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3 md:mb-0 text-center md:text-left w-full md:w-auto tracking-tight">
-          MI PERFIL
-        </h2>
-        <button
-          onClick={handleEditClick}
-          className="w-full md:w-auto px-5 xs:px-6 py-2.5 xs:py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-violet-300/50 text-sm xs:text-base flex items-center justify-center gap-2 touch-manipulation"
-        >
-          <span className="text-base xs:text-lg">✏️</span>
-          <span>Editar perfil</span>
-        </button>
+      {/* Sección de Encabezado - Título centrado, botón a la derecha */}
+      <div className="flex flex-col items-center md:flex-row md:items-center md:justify-between mb-4 sm:mb-6 pb-4 border-b-2 border-gray-200/50 w-full">
+        <div className="flex-1 hidden md:block" aria-hidden="true" />
+        <div className="flex items-center justify-center gap-2 sm:gap-3 w-full md:w-auto mb-2 md:mb-0 md:flex-1 md:justify-center">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+            <UserRound className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </div>
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent text-center tracking-tight">
+            MI PERFIL
+          </h2>
+        </div>
+        <div className="flex-1 flex justify-center md:justify-end w-full md:w-auto">
+          <button
+            onClick={handleEditClick}
+            className="w-full md:w-auto px-5 xs:px-6 py-2.5 xs:py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-violet-300/50 text-sm xs:text-base flex items-center justify-center gap-2 touch-manipulation"
+          >
+            <span className="text-base xs:text-lg">✏️</span>
+            <span>Editar perfil</span>
+          </button>
+        </div>
       </div>
 
       {/* Sección de Información del Usuario - Mejorada para móviles */}

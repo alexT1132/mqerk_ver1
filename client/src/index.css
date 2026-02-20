@@ -27,6 +27,7 @@ body,
   padding: 0;
   overflow-x: hidden;
   max-width: 100vw;
+  overflow-anchor: none; /* Evita que el navegador ajuste scroll al cargar contenido (ej. ReactPlayer en EEAU23) */
 }
 
 .section {
@@ -174,6 +175,122 @@ body,
 }
 
 /* ------------------------------------------------ */
+/* Carrusel "Nuestros estudiantes" - contenedor con botones */
+.pasarela-3d-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pasarela-btn {
+  position: absolute;
+  z-index: 10;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pasarela-btn:hover {
+  background: rgba(244, 19, 138, 0.5);
+  color: white;
+  border-color: rgba(244, 19, 138, 0.7);
+  box-shadow: 0 0 16px rgba(244, 19, 138, 0.25);
+  transform: scale(1.08);
+}
+
+.pasarela-btn:active {
+  transform: scale(0.98);
+}
+
+.pasarela-btn-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.pasarela-btn-prev {
+  left: 8px;
+}
+
+.pasarela-btn-next {
+  right: 8px;
+}
+
+@media screen and (max-width: 855px) {
+  .pasarela-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .pasarela-btn-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .pasarela-btn-prev {
+    left: 4px;
+  }
+
+  .pasarela-btn-next {
+    right: 4px;
+  }
+}
+
+/* Animación de entrada al cambiar la foto central */
+.pasarela-img-center-enter {
+  animation: pasarela-fadeIn 0.45s ease-out forwards;
+}
+
+.pasarela-img-transition {
+  transition: opacity 0.35s ease-out;
+}
+
+@keyframes pasarela-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(0) scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1.8);
+  }
+}
+
+@media screen and (max-width: 930px) {
+  @keyframes pasarela-fadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(0) scale(1.2);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1.5);
+    }
+  }
+}
+
+@media screen and (max-width: 855px) {
+  @keyframes pasarela-fadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(0) scale(1);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1.2);
+    }
+  }
+}
 
 .pasarela-3d-container {
   width: 100%;
@@ -699,16 +816,6 @@ body::-webkit-scrollbar,
 /* Reduce base rem size slightly on ultra-wide screens to avoid oversized UI */
 :root {
   font-size: 16px;
-  --keyboard-zindex: 10005;
-  /* Asegurar que el teclado de MathLive esté por encima de los modales (z=9999) */
-}
-
-/* Forzar visibilidad del teclado virtual de MathLive */
-.ML__virtual-keyboard-container,
-.ML__keyboard,
-#mathlive-virtual-keyboard-container,
-[data-ml-container] {
-  z-index: 10005 !important;
 }
 
 @media (min-width: 1920px) {
@@ -816,6 +923,41 @@ body::-webkit-scrollbar,
   animation: fade-in-scale 0.3s ease-out forwards;
 }
 
+/* Animación de fade-out con escala (para salida de modales) */
+@keyframes fade-out-scale {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.animate-fade-out-scale {
+  animation: fade-out-scale 0.2s ease-in forwards;
+}
+
+/* Fade-in para overlay de modales */
+@keyframes fade-in-overlay {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-fade-in-overlay {
+  animation: fade-in-overlay 0.2s ease-out forwards;
+}
+
+@keyframes fade-out-overlay {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fade-out-overlay {
+  animation: fade-out-overlay 0.2s ease-in forwards;
+}
+
 /* Barra de progreso */
 @keyframes progress-bar {
   0% {
@@ -829,28 +971,4 @@ body::-webkit-scrollbar,
 
 .animate-progress-bar {
   animation: progress-bar 1.2s linear forwards;
-}
-
-/* Fix crítico para popups de MathLive y otros elementos flotantes */
-/* Asegura que los menús/teclados virtuales de MathLive se vean por encima de los modales */
-.ML__keyboard,
-.ML__popover,
-.ML__menu,
-.ML__suggestion-box,
-math-field::part(virtual-keyboard-toggle),
-math-field::part(menu-toggle) {
-  z-index: 11000 !important;
-}
-
-/* Asegurar que el contenedor del teclado virtual tenga el z-index correcto */
-body>div[style*="z-index"] {
-  /* Esto es un intento genérico, pero MathLive suele insertar sus elementos en el body */
-}
-
-/* Si MathLive usa shadow DOM, necesitamos configurar las variables CSS globales */
-math-field {
-  --keyboard-zindex: 11000;
-  --menu-zindex: 11000;
-  z-index: 0;
-  /* Contexto local */
 }

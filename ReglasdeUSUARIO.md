@@ -90,9 +90,618 @@ Este archivo es la **fuente de verdad** para el estilo de código y arquitectura
 
 ## 📅 HISTORIAL DE CAMBIOS
 
-### Re-aplicación scroll EEAU23 (contenido arriba)
-- **Contexto**: Se volvió a aplicar la corrección del scroll al entrar a `/mqerk/online/eeau23` (contenido que se veía "hasta abajo").
-- **Cambios**: En **EEAU23.jsx** se mantiene el `useEffect` al montar con `window.scrollTo(0, 0)` inmediato + `requestAnimationFrame` + `setTimeout(..., 50)` y se añadió un segundo `setTimeout(..., 150)` para cubrir contenido que se pinta más tarde (p. ej. ReactPlayer). En **ScrollToTop.jsx** se mantiene scroll inmediato + `requestAnimationFrame` en cada cambio de `pathname`. Archivos: `client/src/components/mqerk/online/EEAU23.jsx`, `client/src/components/common/ScrollToTop.jsx`.
+### 20/02/2026 - Modales Feedback_Alumno_Comp más proporcionales en escritorio
+
+#### Objetivo
+Los modales del componente Feedback (Nueva actividad, Subir/Cancelar tarea, Ver nota del asesor) tenían un ancho fijo `max-w-md` (448px) que en pantallas de escritorio se veía pequeño y desproporcionado. Se ajustó el tamaño para que escale según el viewport y abarque un tamaño considerable en función del equipo, manteniendo estética, diseño y responsividad.
+
+#### Qué se hizo
+- **Escala responsiva del ancho**: Los modales ahora usan una progresión de `max-width` según breakpoints:
+  - **Base (móvil)**: `max-w-[min(28rem,95vw)]` — hasta 448px o 95% del viewport (evita desbordes).
+  - **sm (≥640px)**: `max-w-md` (448px).
+  - **md (≥768px)**: `max-w-lg` (512px).
+  - **lg (≥1024px)**: `max-w-xl` (576px).
+  - **xl (≥1280px)**: `max-w-2xl` (672px).
+  - **2xl (≥1536px)**: `max-w-3xl` (768px).
+
+#### Cómo se hizo (paso a paso)
+1. Se localizaron los tres modales en `Feedback_Alumno_Comp.jsx` por su estructura común (div con `bg-white`, `rounded-2xl`, `shadow-2xl`).
+2. En cada modal, se identificó el atributo `className` del div contenedor del contenido.
+3. Se reemplazó la cadena `max-w-md w-full` por la nueva cadena responsiva.
+4. Se mantuvo `w-full` al inicio para que el modal ocupe el ancho disponible hasta el `max-w` correspondiente.
+
+#### Código exacto: antes y después
+
+**ANTES** (en cada uno de los 3 modales):
+```jsx
+<div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+```
+
+**DESPUÉS** (Modal Subir/Cancelar y Crear actividad):
+```jsx
+<div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+```
+
+**DESPUÉS** (Modal Ver nota del asesor — sin `transform`):
+```jsx
+<div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl overflow-hidden border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+```
+
+#### Explicación de cada clase de ancho
+| Clase | Valor | Cuándo aplica |
+|-------|-------|---------------|
+| `w-full` | 100% del padre | Siempre |
+| `max-w-[min(28rem,95vw)]` | El menor entre 448px y 95% del viewport | Base (móvil) |
+| `sm:max-w-md` | 448px (28rem) | viewport ≥ 640px |
+| `md:max-w-lg` | 512px (32rem) | viewport ≥ 768px |
+| `lg:max-w-xl` | 576px (36rem) | viewport ≥ 1024px |
+| `xl:max-w-2xl` | 672px (42rem) | viewport ≥ 1280px |
+| `2xl:max-w-3xl` | 768px (48rem) | viewport ≥ 1536px |
+
+#### Archivos modificados (detalle)
+| Archivo | Líneas aprox. | Descripción del cambio |
+|--------|---------------|------------------------|
+| `client/src/components/student/Feedback_Alumno_Comp.jsx` | ~1147, ~1326, ~1358 | En cada modal: reemplazo de `max-w-md w-full` por la cadena responsiva en el `className` del div con `bg-white`. |
+
+#### Resultado
+Los modales se ven más proporcionados en laptops y monitores grandes, sin perder usabilidad en móviles. Se sigue el principio de viewport lógico del skill de responsividad (no resolución física).
+
+---
+
+### 20/02/2026 - Animaciones de entrada y salida en modales (ReciboModal y Feedback_Alumno_Comp)
+
+#### Objetivo
+Añadir animaciones de entrada y salida a los modales ReciboModal y Feedback_Alumno_Comp usando Tailwind/CSS, para mejorar la experiencia visual al abrir y cerrar.
+
+#### Qué se hizo
+- **Entrada**: overlay con fade-in, contenido con fade-in + scale (0.9 → 1).
+- **Salida**: overlay con fade-out, contenido con fade-out + scale (1 → 0.95). Se retrasa el unmount 200 ms para que la animación se complete.
+- **Clases CSS** en `index.css`:
+  - `animate-fade-in-overlay`: overlay entra con opacidad 0→1 (0.2s).
+  - `animate-fade-out-overlay`: overlay sale con opacidad 1→0 (0.2s).
+  - `animate-fade-in-scale`: contenido entra con opacidad 0→1 y scale 0.9→1 (0.3s).
+  - `animate-fade-out-scale`: contenido sale con opacidad 1→0 y scale 1→0.95 (0.2s).
+
+#### Cómo se hizo (paso a paso)
+
+**Paso 1: index.css — nuevas keyframes y clases**
+
+Se insertó el siguiente bloque CSS **después** de `.animate-fade-in-scale` y **antes** del comentario `/* Barra de progreso */`:
+
+```css
+/* Animación de fade-out con escala (para salida de modales) */
+@keyframes fade-out-scale {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.animate-fade-out-scale {
+  animation: fade-out-scale 0.2s ease-in forwards;
+}
+
+/* Fade-in para overlay de modales */
+@keyframes fade-in-overlay {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-fade-in-overlay {
+  animation: fade-in-overlay 0.2s ease-out forwards;
+}
+
+@keyframes fade-out-overlay {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fade-out-overlay {
+  animation: fade-out-overlay 0.2s ease-in forwards;
+}
+```
+
+**Paso 2: ComprobanteVirtual.jsx — ReciboModal**
+
+- Se añadió `useState` para `isExiting` (ya estaba importado).
+- Se creó la función `handleClose` que: (1) evita doble cierre si `isExiting` es true; (2) pone `setIsExiting(true)`; (3) tras `setTimeout(..., 200)` llama `onClose()` y `setIsExiting(false)`.
+- Se cambió la condición de render: `if (!isOpen) return null` → `if (!isOpen && !isExiting) return null`.
+- Se reemplazó el JSX estático por clases dinámicas según `isExiting`:
+  - Overlay: `onClick={handleClose}`, `className` con `animate-fade-in-overlay` o `animate-fade-out-overlay`.
+  - Contenido: `onClick={(e) => e.stopPropagation()}`, `className` con `animate-fade-in-scale` o `animate-fade-out-scale`.
+- El botón de cerrar (X) ahora llama a `handleClose` en lugar de `onClose`.
+
+**Paso 3: Feedback_Alumno_Comp.jsx**
+
+- Se añadió estado: `const [modalExiting, setModalExiting] = useState(null);` (valores: `'upload' | 'note' | 'create'`).
+- Se crearon tres handlers que retrasan el cierre 200 ms:
+  ```jsx
+  const closeModalWithAnimation = () => {
+    if (modalExiting) return;
+    setModalExiting('upload');
+    setTimeout(() => { closeModal(); setModalExiting(null); }, 200);
+  };
+  const closeNoteModalWithAnimation = () => { ... };
+  const closeCreateTaskWithAnimation = () => { ... };
+  ```
+- En cada modal se añadieron al overlay: `onClick`, `role="dialog"`, `aria-modal="true"`, y clases dinámicas `animate-fade-in-overlay` / `animate-fade-out-overlay` según `modalExiting === 'upload'|'note'|'create'`.
+- En el div del contenido: `onClick={(e) => e.stopPropagation()}`, clases `animate-fade-in-scale` / `animate-fade-out-scale`.
+- Los botones "Cerrar" y "Cancelar" ahora llaman a los handlers con animación en lugar de los cierres directos.
+
+#### Código exacto: fragmentos clave
+
+**ReciboModal — overlay y contenido (ComprobanteVirtual.jsx):**
+```jsx
+const overlayClasses = `fixed inset-0 z-[9999] ... ${exiting ? 'animate-fade-out-overlay' : 'animate-fade-in-overlay'}`;
+const contentClasses = `relative bg-white ... ${exiting ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`;
+
+return createPortal(
+  <div className={overlayClasses} onClick={handleClose} role="dialog" aria-modal="true">
+    <div className={contentClasses} onClick={(e) => e.stopPropagation()}>
+```
+
+**Feedback — ejemplo Modal Subir/Cancelar:**
+```jsx
+<div className={`fixed inset-0 ... ${modalExiting === 'upload' ? 'animate-fade-out-overlay' : 'animate-fade-in-overlay'}`}
+     onClick={closeModalWithAnimation} role="dialog" aria-modal="true">
+  <div className={`bg-white ... ${modalExiting === 'upload' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+       onClick={(e) => e.stopPropagation()}>
+```
+
+#### Archivos modificados (detalle)
+| Archivo | Líneas/bloque | Cambio |
+|--------|---------------|--------|
+| `client/src/index.css` | Tras `.animate-fade-in-scale` | Nuevo bloque con 4 keyframes y 4 clases. |
+| `client/src/components/shared/ComprobanteVirtual.jsx` | ReciboModal (líneas ~27-100) | `useState(isExiting)`, `handleClose`, clases dinámicas, `onClick` en overlay. |
+| `client/src/components/student/Feedback_Alumno_Comp.jsx` | Estados ~56, handlers ~363, modales ~1147, ~1326, ~1358 | `modalExiting`, 3 handlers, overlays y contenidos con clases dinámicas. |
+
+#### Resultado
+Los modales tienen animación de entrada (fade + scale) y salida (fade + scale) de 200 ms, con cierre al hacer clic fuera cuando aplica.
+
+---
+
+### 20/02/2026 - Calendario: título "EVENTOS PRÓXIMOS" centrado
+
+#### Objetivo
+En la página Calendario, centrar solo el título "EVENTOS PRÓXIMOS" (igual que en Mis Pagos), manteniendo el badge "X pendiente(s)" a la derecha en desktop.
+
+#### Qué se hizo
+- **Móvil**: badge arriba (order-1), título centrado abajo (order-2).
+- **Desktop (sm+)**: título centrado con `absolute left-1/2 -translate-x-1/2`; badge a la derecha con `ml-auto`.
+
+#### Cómo se hizo (paso a paso)
+1. Se localizó el header de "Eventos Próximos" en `Calendar_Alumno_Comp.jsx` (dentro de la columna xl:order-1).
+2. Se cambió el contenedor de `grid grid-cols-1 sm:grid-cols-[1fr_auto]` a `flex flex-col sm:flex-row sm:items-center ... relative`.
+3. Se añadió al `h2` las clases para centrarlo: `w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex justify-center`.
+4. Se añadió al `span` (badge) `sm:ml-auto` para empujarlo a la derecha en desktop, y `justify-center sm:justify-end` para alineación.
+
+#### Código exacto: antes y después
+
+**ANTES:**
+```jsx
+<div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-end gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6 shrink-0">
+  <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight order-2 sm:order-1">
+    EVENTOS PRÓXIMOS
+  </h2>
+  <span className="inline-flex items-center justify-self-start sm:justify-self-end px-2.5 sm:px-3 py-1 sm:py-1.5 ... order-1 sm:order-2">
+    {importantEvents.length} pendiente{importantEvents.length !== 1 ? 's' : ''}
+  </span>
+</div>
+```
+
+**DESPUÉS:**
+```jsx
+<div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6 shrink-0 relative">
+  <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex justify-center order-2 sm:order-1">
+    EVENTOS PRÓXIMOS
+  </h2>
+  <span className="inline-flex items-center justify-center sm:justify-end px-2.5 sm:px-3 py-1 sm:py-1.5 ... order-1 sm:order-2 sm:ml-auto">
+    {importantEvents.length} pendiente{importantEvents.length !== 1 ? 's' : ''}
+  </span>
+</div>
+```
+
+#### Explicación de las clases clave
+| Elemento | Clase | Función |
+|----------|-------|---------|
+| Contenedor | `relative` | Permite posicionar el h2 con `absolute` respecto a este contenedor. |
+| h2 | `sm:absolute sm:left-1/2 sm:-translate-x-1/2` | Centra el título horizontalmente en desktop. |
+| h2 | `flex justify-center` | Centra el texto dentro del h2 en móvil (cuando ocupa `w-full`). |
+| span | `sm:ml-auto` | Empuja el badge a la derecha en el flex-row. |
+
+#### Archivos modificados (detalle)
+| Archivo | Ubicación | Cambio |
+|--------|-----------|--------|
+| `client/src/components/student/Calendar_Alumno_Comp.jsx` | Header "Eventos Próximos", ~líneas 834-841 | Sustitución del div contenedor, h2 y span con las nuevas clases. |
+
+---
+
+### 20/02/2026 - MisPagos: icono y título "MIS PAGOS" centrados
+
+#### Objetivo
+En la página Mis Pagos, el usuario solicitó que solo el icono y el título "MIS PAGOS" estén centrados, en lugar de tener el título a la izquierda y los tabs a la derecha con `justify-between`.
+
+#### Qué se hizo
+- **Móvil**: icono + título centrados en su fila; tabs debajo.
+- **Desktop (sm+)**: icono + título centrados con `absolute left-1/2 -translate-x-1/2`; tabs alineados a la derecha con `ml-auto`.
+
+#### Cómo se hizo (paso a paso)
+1. Se localizó el header con el icono CreditCard, el título "MIS PAGOS" y los tabs (Plan Actual, Historial).
+2. Se cambió el contenedor padre de `flex flex-col md:flex-row md:items-center md:justify-between` a `flex flex-col sm:flex-row sm:items-center ... relative`.
+3. Se envolvió el icono + título en un div con clases para centrarlo: `w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2` y se añadió comentario "Icono + título centrados".
+4. Se añadieron al contenedor de tabs las clases `sm:ml-auto sm:order-2` para posicionarlos a la derecha en desktop.
+
+#### Código exacto: antes y después
+
+**ANTES:**
+```jsx
+<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+  <div className="flex items-center justify-center gap-2 sm:gap-3">
+    <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 ...">
+      <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
+    </div>
+    <h1 className="text-xl xs:text-2xl ...">MIS PAGOS</h1>
+  </div>
+  <div className="flex bg-white rounded-xl ...">
+    {/* tabs */}
+  </div>
+</div>
+```
+
+**DESPUÉS:**
+```jsx
+<div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
+  <div className="flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2">
+    <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 ...">
+      <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
+    </div>
+    <h1 className="text-xl xs:text-2xl ...">MIS PAGOS</h1>
+  </div>
+  <div className="flex bg-white rounded-xl ... sm:ml-auto sm:order-2">
+    {/* tabs */}
+  </div>
+</div>
+```
+
+#### Archivos modificados (detalle)
+| Archivo | Ubicación | Cambio |
+|--------|-----------|--------|
+| `client/src/components/student/MisPagos_Alumno_Comp.jsx` | Header principal, ~líneas 1981-1994 | Contenedor con `relative`; div icono+título con `w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2`; div tabs con `sm:ml-auto sm:order-2`. |
+
+---
+
+### 20/02/2026 - PaymentModal (Calendario) más proporcional en escritorio
+
+#### Objetivo
+El modal PaymentModal en `Calendar_Alumno_Comp.jsx` (información de pago pendiente) tenía una escala responsiva que en escritorio se veía pequeña (`sm:max-w-sm` 384px, `lg:max-w-lg` 512px). Se actualizó para usar la misma escala que ReciboModal y Feedback, con mayor ancho en pantallas grandes.
+
+#### Qué se hizo
+- **Antes**: `max-w-[95vw] sm:max-w-sm lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl`
+- **Después**: `max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl`
+
+#### Cómo se hizo (paso a paso)
+1. Se localizó el componente `PaymentModal` en `Calendar_Alumno_Comp.jsx`.
+2. Se identificó el div con la clase `payment-modal-content` que contiene el contenido del modal (header "Pago pendiente", monto, botón Cerrar).
+3. Se reemplazó en el `className` la cadena de `max-w-*` por la nueva escala responsiva unificada.
+
+#### Código exacto: antes y después
+
+**ANTES:**
+```jsx
+<div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[95vw] sm:max-w-sm lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
+```
+
+**DESPUÉS:**
+```jsx
+<div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
+```
+
+#### Tabla comparativa de anchos
+| Breakpoint | Antes | Después |
+|------------|-------|---------|
+| Base | 95vw | min(28rem, 95vw) |
+| sm | 384px | 448px |
+| md | — | 512px |
+| lg | 512px | 576px |
+| xl | 576px | 672px |
+| 2xl | 672px | 768px |
+
+#### Archivos modificados (detalle)
+| Archivo | Ubicación | Cambio |
+|--------|-----------|--------|
+| `client/src/components/student/Calendar_Alumno_Comp.jsx` | PaymentModal, div con `payment-modal-content`, ~línea 31 | Sustitución de la cadena `max-w-[95vw] sm:max-w-sm lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl` por `max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl`. |
+
+---
+
+### 20/02/2026 - ReciboModal (Comprobante de Pago) más proporcional en escritorio
+
+#### Objetivo
+El modal ReciboModal (Comprobante de Pago) en `ComprobanteVirtual.jsx` tenía un ancho fijo `max-w-sm` (384px) que en pantallas de escritorio se veía pequeño. Se aplicó la misma escala responsiva que los modales de Feedback para consistencia visual y mejor legibilidad del comprobante.
+
+#### Qué se hizo
+- **Escala responsiva del ancho**: El contenedor del modal pasó de `max-w-sm w-full` a la misma progresión usada en Feedback_Alumno_Comp:
+  - **Base (móvil)**: `max-w-[min(28rem,95vw)]`.
+  - **sm (≥640px)**: `max-w-md` (448px).
+  - **md (≥768px)**: `max-w-lg` (512px).
+  - **lg (≥1024px)**: `max-w-xl` (576px).
+  - **xl (≥1280px)**: `max-w-2xl` (672px).
+  - **2xl (≥1536px)**: `max-w-3xl` (768px).
+
+#### Cómo se hizo (paso a paso)
+1. Se localizó la función `ReciboModal` en `ComprobanteVirtual.jsx`.
+2. Se identificó el div contenedor principal del modal (el que tiene `bg-white rounded-lg shadow-2xl` y envuelve el header "Comprobante de Pago" y el contenido).
+3. Se reemplazó `max-w-sm w-full` por la cadena responsiva completa.
+4. Se mantuvo intacto `max-h-[min(90vh,720px)]` y el resto de clases.
+
+#### Código exacto: antes y después
+
+**ANTES:**
+```jsx
+<div className="relative bg-white rounded-lg shadow-2xl max-w-sm w-full max-h-[min(90vh,720px)] overflow-hidden flex flex-col">
+```
+
+**DESPUÉS:**
+```jsx
+<div className="relative bg-white rounded-lg shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[min(90vh,720px)] overflow-hidden flex flex-col">
+```
+
+#### Clases añadidas/reemplazadas
+| Sustitución | Detalle |
+|-------------|---------|
+| `max-w-sm w-full` → | Eliminado |
+| `w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl` | Nueva cadena responsiva |
+
+#### Archivos modificados (detalle)
+| Archivo | Ubicación | Cambio |
+|--------|-----------|--------|
+| `client/src/components/shared/ComprobanteVirtual.jsx` | ReciboModal, div contenedor del contenido, ~línea 61 | Reemplazo de `max-w-sm w-full` por `w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl` en el `className`. |
+
+#### Resultado
+El comprobante de pago se ve más grande y legible en escritorio, alineado con el resto de modales del proyecto.
+
+---
+
+### 19/02/2026 - Verificación y corrección de cambios del historial (cursor_html_element_size_adjustment_for)
+- **Objetivo**: Verificar que todos los cambios documentados en el chat exportado estén correctamente aplicados en el código.
+- **Verificación realizada**: Se revisaron ProfileEditModal, ChartModal, SidebarBase, SidebarAlumno, AlumnoDashboardBundle, Layout, InicioAlumnoDashboard, Web.jsx, index.css, Online.jsx, PersonalDataCollapsible, FeedbackCard, Metrics_dash_alumnos_comp, Cursos.jsx, vite.config, package.json.
+- **Correcciones aplicadas**:
+  1. **ProfileEditModal** (`Profile_Alumno_Comp.jsx`): Se añadió `backdrop-blur-sm` al div del backdrop (faltaba según v2.3).
+  2. **ChartModal** (`ChartModal.jsx`): Se añadió `backdrop-blur-sm` al overlay y se actualizó el comentario a "Overlay con blur (estilo ReciboModal)".
+  3. **SidebarBase** (`SidebarBase.jsx`): Se corrigió `CLICK_FREEZE_MS` de 100 a **1200** ms en modo `expandOnHoverOnly` (v1.8: evita colapso por mouseleave espurio tras clic/navegación).
+  4. **Online.jsx**: Se añadió `relative z-10` al div del hero para que no quede por debajo del contenido.
+- **Archivos modificados**:
+  - `client/src/components/student/Profile_Alumno_Comp.jsx`
+  - `client/src/components/student/metricsAlumno/ChartModal.jsx`
+  - `client/src/components/layouts/SidebarBase.jsx`
+  - `client/src/components/mqerk/online/Online.jsx`
+- **Resultado**: Los cambios del historial quedan alineados con el código actual.
+
+### 19/02/2026 - Corrección scroll EEAU23 (contenido arriba, no hasta abajo) – Documentación detallada
+
+#### Objetivo
+Al hacer clic en la tarjeta "Testimonios: ACREDITA EL EXAMEN DE ADMISIÓN A LA UNIVERSIDAD 2023" en la página `/online`, la ruta `/mqerk/online/eeau23` cargaba correctamente pero la vista quedaba desplazada "hasta abajo" (sección "Testimonios Reales") en lugar de mostrar el inicio de la página (hero, video, objetivos). La corrección asegura que la vista siempre comience en la parte superior.
+
+#### Causa del problema
+1. **Restauración de scroll del navegador**: El navegador intentaba restaurar la posición de scroll al navegar.
+2. **Scroll anchoring**: Al cargar contenido asíncrono (p. ej. ReactPlayer/YouTube), el navegador ajustaba el scroll para mantener la "ancla" visual.
+3. **Timing**: El scroll se ejecutaba antes de que el layout final estuviera pintado.
+4. **Múltiples contenedores de scroll**: El scroll podía estar en `window`, `document.documentElement`, `document.body` o `#root`.
+
+---
+
+#### Qué se hizo (resumen por archivo)
+
+| Archivo | Cambio |
+|---------|--------|
+| `client/src/main.jsx` | Desactivar restauración automática de scroll del navegador |
+| `client/src/index.css` | Desactivar scroll anchoring en los contenedores principales |
+| `client/src/components/mqerk/online/EEAU23.jsx` | Scroll forzado al montar con múltiples refuerzos y `scrollIntoView` |
+| `client/src/components/common/ScrollToTop.jsx` | Scroll global en cada cambio de ruta con varios timeouts |
+| `client/src/components/mqerk/online/Online.jsx` | `replace: true` en el Link de la tarjeta EEAU23 |
+
+---
+
+#### Cómo se hizo (detalle por archivo)
+
+##### 1. `client/src/main.jsx`
+
+**Ubicación**: Justo después de los imports y antes de `createRoot(...)`.
+
+**Código añadido**:
+```javascript
+// Evitar que el navegador restaure scroll al navegar (p. ej. /online → /mqerk/online/eeau23)
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual'
+}
+```
+
+**Explicación**: `history.scrollRestoration = 'manual'` indica al navegador que no restaure la posición de scroll al navegar (avanzar/retroceder). Así evitamos que se recupere una posición antigua al cambiar de ruta.
+
+---
+
+##### 2. `client/src/index.css`
+
+**Ubicación**: Dentro del bloque de estilos de `html, body, #root` (aprox. líneas 21-31).
+
+**Código añadido** (una línea dentro del bloque existente):
+```css
+overflow-anchor: none; /* Evita que el navegador ajuste scroll al cargar contenido (ej. ReactPlayer en EEAU23) */
+```
+
+**Bloque completo resultante**:
+```css
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
+  overflow-anchor: none; /* Evita que el navegador ajuste scroll al cargar contenido (ej. ReactPlayer en EEAU23) */
+}
+```
+
+**Explicación**: `overflow-anchor: none` desactiva el scroll anchoring. Sin esto, al cargar contenido nuevo (p. ej. el iframe de ReactPlayer), el navegador puede ajustar el scroll para mantener una "ancla" visual, lo que hacía que la vista bajara.
+
+---
+
+##### 3. `client/src/components/mqerk/online/EEAU23.jsx`
+
+**Cambios realizados**:
+
+**a) Imports**: Se añadió `useLayoutEffect`:
+```javascript
+import React, { useState, useEffect, useLayoutEffect } from 'react'
+```
+
+**b) Ref y función de scroll** (dentro del componente `EEAU23`):
+```javascript
+const topRef = React.useRef(null)
+
+const scrollToTop = () => {
+  window.scrollTo(0, 0)
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+  const root = document.getElementById('root')
+  if (root) root.scrollTop = 0
+  const el = topRef.current || document.getElementById('eeau23-top')
+  el?.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'nearest' })
+}
+```
+
+**c) useLayoutEffect** (scroll antes del paint):
+```javascript
+useLayoutEffect(() => {
+  scrollToTop()
+}, [])
+```
+
+**d) useEffect** (refuerzos para contenido que se pinta más tarde):
+```javascript
+useEffect(() => {
+  scrollToTop()
+  const raf = requestAnimationFrame(scrollToTop)
+  const t50 = setTimeout(scrollToTop, 50)
+  const t150 = setTimeout(scrollToTop, 150)
+  const t400 = setTimeout(scrollToTop, 400)
+  const t800 = setTimeout(scrollToTop, 800)
+  const t1200 = setTimeout(scrollToTop, 1200)
+  return () => {
+    cancelAnimationFrame(raf)
+    clearTimeout(t50)
+    clearTimeout(t150)
+    clearTimeout(t400)
+    clearTimeout(t800)
+    clearTimeout(t1200)
+  }
+}, [])
+```
+
+**e) JSX**: Ref en el contenedor principal y ancla invisible:
+```javascript
+<div ref={topRef} className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
+  {/* Ancla para scroll al inicio (evita que quede "hasta abajo" al navegar desde /online) */}
+  <div id="eeau23-top" className="absolute -top-px left-0 w-px h-px pointer-events-none" aria-hidden="true" />
+  <Navbar />
+  {/* ... resto del contenido ... */}
+</div>
+```
+
+**Explicación**:
+- `topRef` apunta al contenedor principal para usar `scrollIntoView` de forma fiable.
+- `scrollToTop` aplica scroll en todos los posibles contenedores (`window`, `documentElement`, `body`, `#root`) y luego `scrollIntoView` en el elemento superior.
+- `useLayoutEffect` ejecuta el scroll antes del paint para evitar parpadeos.
+- `useEffect` repite el scroll en varios momentos (0, rAF, 50, 150, 400, 800, 1200 ms) para cubrir contenido que se pinta más tarde (p. ej. ReactPlayer).
+- La ancla `#eeau23-top` es un div de 1px en la parte superior que sirve como referencia para `scrollIntoView`.
+
+---
+
+##### 4. `client/src/components/common/ScrollToTop.jsx`
+
+**Código completo del archivo**:
+```javascript
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+
+const scrollToTop = () => {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const root = document.getElementById('root');
+  if (root) root.scrollTop = 0;
+  const topEl = document.getElementById('eeau23-top');
+  if (topEl) topEl.scrollIntoView({ behavior: 'instant', block: 'start' });
+};
+
+export default function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    scrollToTop();
+    const raf = requestAnimationFrame(scrollToTop);
+    const t1 = setTimeout(scrollToTop, 50);
+    const t2 = setTimeout(scrollToTop, 150);
+    const t3 = setTimeout(scrollToTop, 400);
+    const t4 = hash === '#top' ? setTimeout(scrollToTop, 600) : null;
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (t4) clearTimeout(t4);
+    };
+  }, [pathname, hash]);
+
+  return null;
+}
+```
+
+**Explicación**:
+- Se ejecuta en cada cambio de `pathname` (y `hash`).
+- Aplica scroll en `window`, `documentElement`, `body`, `#root` y, si existe, en `#eeau23-top` con `scrollIntoView`.
+- Refuerza el scroll en el siguiente frame (`requestAnimationFrame`) y en 50, 150 y 400 ms.
+- Si la URL tiene `#top`, añade un refuerzo extra a los 600 ms.
+
+---
+
+##### 5. `client/src/components/mqerk/online/Online.jsx`
+
+**Ubicación**: En el componente `OnlineCard`, en la definición de `cardProps`.
+
+**Antes**:
+```javascript
+const cardProps = to ? { to } : {};
+```
+
+**Después**:
+```javascript
+const cardProps = to ? { to, ...(to === '/mqerk/online/eeau23' ? { replace: true } : {}) } : {};
+```
+
+**Explicación**: Para la tarjeta que enlaza a `/mqerk/online/eeau23` se usa `replace: true` en el `Link`. Así la navegación reemplaza la entrada actual del historial en lugar de añadir una nueva, lo que puede evitar comportamientos de restauración de scroll asociados al historial.
+
+---
+
+#### Archivos modificados (listado)
+
+| Ruta | Qué se modificó |
+|------|------------------|
+| `client/src/main.jsx` | Bloque `if` con `history.scrollRestoration = 'manual'` antes de `createRoot` |
+| `client/src/index.css` | Propiedad `overflow-anchor: none` en el bloque `html, body, #root` |
+| `client/src/components/mqerk/online/EEAU23.jsx` | Imports, `topRef`, `scrollToTop`, `useLayoutEffect`, `useEffect`, ref y ancla en el JSX |
+| `client/src/components/common/ScrollToTop.jsx` | Función `scrollToTop` ampliada y `useEffect` con múltiples timeouts |
+| `client/src/components/mqerk/online/Online.jsx` | `cardProps` con `replace: true` condicional para la ruta EEAU23 |
+
+---
+
+#### Resultado esperado
+Al hacer clic en la tarjeta "Testimonios: ACREDITA EL EXAMEN DE ADMISIÓN A LA UNIVERSIDAD 2023" en `/online`, la página `/mqerk/online/eeau23` debe mostrarse con la vista al inicio (hero, título, video, objetivos), sin quedar desplazada hacia la sección "Testimonios Reales".
 
 ### 19/02/2026 - Scroll al inicio al entrar a EEAU23 (contenido arriba, no hasta abajo)
 - **Problema**: Al hacer clic en la tarjeta "Testimonios: ACREDITA EL EXAMEN DE ADMISIÓN A LA UNIVERSIDAD 2023" en `/online`, la página `/mqerk/online/eeau23` cargaba pero la vista quedaba con el contenido "hasta abajo" en lugar de mostrar el inicio (hero, video, objetivos).
@@ -456,5 +1065,20 @@ Este archivo es la **fuente de verdad** para el estilo de código y arquitectura
   - Lo que está correcto (mayúsculas, abreviaturas, acentos, puntuación).
 - **Documentación**: Este registro en ReglasdeUSUARIO.md.
 
+### 20/02/2026 - Creación de skill "diseño-responsivo-multidispositivo"
+- **Objetivo**: Crear un skill de Cursor que aplique principios de diseño ligero, responsivo y proporcional en todas las modificaciones, considerando pantallas grandes, mapeo de resoluciones y dispositivos (Mac, laptops, iPad, tablets, iPhone, Android, escritorio), sin dejar huecos ni espacios vacíos a los lados.
+- **Archivo creado**: `.cursor/skills/diseño-responsivo-multidispositivo/SKILL.md`
+- **Contenido del skill**:
+  - **Nombre**: `diseño-responsivo-multidispositivo`
+  - **Descripción**: Aplica principios de diseño ligero, responsivo y proporcional; considera pantallas grandes, mapeo de resoluciones y dispositivos; garantiza aprovechamiento del espacio sin huecos a los lados.
+  - **Principios fundamentales**: Diseño cuidado, ligereza, responsividad, proporcionalidad, aprovechamiento del espacio.
+  - **Mapeo de dispositivos y resoluciones**: Tabla con iPhone, Android, iPad, MacBook, iMac, monitores 4K y viewports típicos (lógicos).
+  - **Regla crítica**: Sin huecos ni espacios vacíos; contenedores con `w-full`, grids que se expandan, márgenes solo para legibilidad; patrón recomendado con `max-w-[1920px] mx-auto px-4`.
+  - **Breakpoints**: base, sm (480px), md (768px), lg (1024px), xl (1280px), 2xl (1536px), 4k (1920px).
+  - **Checklist**: Layout en móvil/tablet/escritorio, ausencia de huecos, aprovechamiento del ancho, ligereza, consideración de dispositivos.
+  - **Relación**: Complementa el skill `reglas-responsividad` para implementación técnica con Tailwind.
+- **Cuándo se aplica**: Al modificar layouts, componentes UI, páginas o cualquier elemento visual.
+- **Documentación**: Este registro en ReglasdeUSUARIO.md.
+
 ### Última actualización
-19/02/2026
+20/02/2026 (creación skill diseño-responsivo-multidispositivo)

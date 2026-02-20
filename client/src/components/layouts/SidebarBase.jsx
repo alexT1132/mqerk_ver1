@@ -5,43 +5,44 @@ import { Lock, Unlock } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext.jsx";
 import { logoutRequest } from "../../api/usuarios.js";
 
-// --- Tooltip Component (reusable) ---
+// --- Tooltip: ligero, sin scroll/resize listeners, solo rAF al mostrar ---
 function HoverTooltip({ anchorRef, text, show }) {
-  const [style, setStyle] = useState({ display: 'none' });
+  const [style, setStyle] = useState({ visibility: 'hidden' });
 
   useEffect(() => {
     if (!show || !anchorRef?.current) {
-      setStyle({ display: 'none' });
+      setStyle({ visibility: 'hidden' });
       return;
     }
-    const rect = anchorRef.current.getBoundingClientRect();
-    const top = rect.top + rect.height / 2;
-    const left = rect.right + 15;
-
-    setStyle({
-      position: 'fixed',
-      top: `${top}px`,
-      left: `${left}px`,
-      transform: 'translateY(-50%)',
-      zIndex: 9999,
-      pointerEvents: 'none',
-      whiteSpace: 'nowrap',
+    const rafId = requestAnimationFrame(() => {
+      if (!anchorRef?.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      setStyle({
+        position: 'fixed',
+        top: rect.top + rect.height / 2,
+        left: rect.right + 12,
+        transform: 'translateY(-50%)',
+        zIndex: 9999,
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap',
+        visibility: 'visible',
+      });
     });
+    return () => cancelAnimationFrame(rafId);
   }, [show, anchorRef]);
 
   if (!show) return null;
 
   return createPortal(
-    <div style={style} className="bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xl animate-in fade-in zoom-in-95 duration-100 border border-gray-700">
+    <div style={style} className="bg-gray-900 text-white text-xs font-semibold px-2.5 py-1 rounded shadow border border-gray-700">
       {text}
-      <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
     </div>,
     document.body
   );
 }
 
-// --- Sidebar Item Component ---
-function SidebarItem({
+// --- Sidebar Item Component (memoizado para evitar re-renders en Chrome) ---
+const SidebarItem = React.memo(function SidebarItem({
   icon,
   label,
   to,
@@ -51,8 +52,7 @@ function SidebarItem({
   sectionKey,
   badge,
   onSectionChange,
-  logoutPath = "/login",
-  userRole
+  logoutPath = "/login"
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -119,15 +119,16 @@ function SidebarItem({
 
   // --- Styling Logic ---
   let containerClasses = "";
-  let linkClasses = "flex items-center transition-all duration-300 ease-out relative select-none ";
+  // outline-none focus:outline-none focus:ring-0 evita el contorno negro al expandir/contratar
+  let linkClasses = "flex items-center transition-colors duration-150 ease-out relative select-none outline-none focus:outline-none focus:ring-0 ";
 
   if (isMobileItem) {
     // Mobile styles
     containerClasses = "w-full mb-1 px-3";
-    linkClasses += "justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none ";
+    linkClasses += "justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none ring-0 ";
 
     if (active) {
-      linkClasses += "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg ring-0 outline-none ";
+      linkClasses += "bg-indigo-600 text-white shadow ";
     } else {
       if (isLogout) {
         linkClasses += "text-red-500 bg-transparent active:bg-red-50 ";
@@ -137,31 +138,26 @@ function SidebarItem({
     }
   } else {
     // Desktop
-    const isAdmin = userRole === 'admin';
-    containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " +
-      (isSidebarOpen
-        ? (isAdmin ? "min-h-[44px] xl:min-h-[54px] 2xl:min-h-[62px]" : "min-h-[42px]")
-        : (isAdmin ? "min-h-[48px] xl:min-h-[58px] 2xl:min-h-[66px]" : "min-h-[46px]"));
-
+    containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " + (isSidebarOpen ? "min-h-[48px] lg:min-h-[52px] xl:min-h-[56px]" : "min-h-[60px] lg:min-h-[64px] xl:min-h-[72px]");
     if (isSidebarOpen) {
-      // Desplegado: estilo listado limpio, sin cajas ni scale
-      linkClasses += "justify-start pl-3 pr-3 gap-3 rounded-xl w-full py-2.5 ";
+      // Desplegado: estilo listado limpio, iconos y texto proporcionales en pantallas grandes
+      linkClasses += "justify-start pl-3 pr-3 gap-3 lg:gap-4 xl:gap-4 lg:pl-4 lg:pr-4 xl:pl-4 xl:pr-4 rounded-xl w-full py-2.5 lg:py-3 xl:py-3 ring-0 border-0 ";
       if (active) {
-        linkClasses += "bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-sm ";
+        linkClasses += "bg-indigo-600 text-white font-semibold shadow-sm ";
       } else if (isLogout) {
         linkClasses += "bg-transparent text-red-500 hover:bg-red-50/80 ";
       } else {
         linkClasses += "bg-transparent text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 ";
       }
     } else {
-      // Colapsado: iconos en caja
-      linkClasses += "justify-center p-0 rounded-xl w-10 h-10 aspect-square ";
+      // Colapsado: iconos proporcionales al sidebar en pantallas grandes
+      linkClasses += "justify-center p-0 rounded-xl w-12 h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 aspect-square ring-0 border-0 ";
       if (active) {
-        linkClasses += "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/40 z-20 font-bold border-none ";
+        linkClasses += "bg-indigo-600 text-white shadow z-20 font-bold ";
       } else if (isLogout) {
-        linkClasses += "bg-white text-red-500 border border-gray-200 shadow-sm hover:bg-red-50 hover:border-red-200 hover:text-red-600 ";
+        linkClasses += "bg-gray-50 text-red-500 hover:bg-red-50 hover:text-red-600 ";
       } else {
-        linkClasses += "bg-white text-gray-500 border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 hover:scale-105 ";
+        linkClasses += "bg-gray-50 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 ";
       }
     }
   }
@@ -189,12 +185,25 @@ function SidebarItem({
         onFocus={() => !isMobileItem && setHovered(true)}
         onBlur={() => !isMobileItem && setHovered(false)}
       >
+        {!isMobileItem && isSidebarOpen && (
+          <span
+            className={`absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full ${
+              active ? 'bg-indigo-300 opacity-100' : 'bg-indigo-200/70 opacity-0 group-hover:opacity-80'
+            }`}
+          />
+        )}
+
         <div className="flex-shrink-0 relative flex items-center justify-center">
           {React.cloneElement(icon, {
             stroke: currentIconColor,
             color: currentIconColor,
             fill: "none",
-            className: `transition-all duration-300 ${isMobileItem ? "w-6 h-6" : (active ? "w-5 h-5" : "w-[18px] h-[18px]")}`,
+            className: `${
+              isMobileItem ? "w-6 h-6" :
+              isSidebarOpen
+                ? (active ? "w-6 h-6 lg:w-6 lg:h-6 xl:w-7 xl:h-7" : "w-5 h-5 lg:w-6 lg:h-6 xl:w-6 xl:h-6")
+                : (active ? "w-6 h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8" : "w-5 h-5 lg:w-6 lg:h-6 xl:w-7 xl:h-7")
+            }`,
             strokeWidth: active ? 2.5 : 2,
             width: undefined,
             height: undefined,
@@ -208,9 +217,9 @@ function SidebarItem({
           )}
         </div>
 
-        {/* Text for mobile or expanded sidebar */}
+        {/* Text for mobile or expanded sidebar - escala en pantallas grandes */}
         {(isMobileItem || isSidebarOpen) && (
-          <span className={`text-sm font-medium ml-1 truncate ${active ? 'text-white' : (isMobileItem ? 'text-gray-700' : '')}`}>
+          <span className={`text-sm lg:text-base xl:text-base font-medium ml-1 truncate ${active ? 'text-white' : (isMobileItem ? 'text-gray-700' : '')}`}>
             {label}
           </span>
         )}
@@ -222,7 +231,7 @@ function SidebarItem({
       </Link>
     </li>
   );
-}
+});
 
 // --- Desktop Sidebar Component ---
 export function DesktopSidebarBase({
@@ -232,6 +241,8 @@ export function DesktopSidebarBase({
   showAutoCollapse = true,
   forceOpen = false,
   forceClosed = false,
+  expandOnHoverOnly = false,
+  setDesktopSidebarOpen,
   onSectionChange = null,
   activeSection = null,
   logoutPath = "/login",
@@ -244,6 +255,9 @@ export function DesktopSidebarBase({
   // Inicializar isPinnedCollapsed desde localStorage al montar
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(() => {
     if (forceOpen || forceClosed) return false;
+    // En modo hover, iniciar desbloqueado para que responda al mouse desde el inicio.
+    // El usuario puede volver a fijar colapsado manualmente con el candado.
+    if (expandOnHoverOnly) return false;
     try {
       return localStorage.getItem('sidebarPinnedCollapsed') === 'true';
     } catch {
@@ -257,14 +271,25 @@ export function DesktopSidebarBase({
   });
   const [badges, setBadges] = useState({});
 
+  useEffect(() => {
+    if (!expandOnHoverOnly) return;
+    // Si venía persistido como colapsado, liberarlo al entrar al modo hover.
+    setIsPinnedCollapsed(false);
+  }, [expandOnHoverOnly]);
+
   const timeoutRef = useRef(null);
   const freezeUntilRef = useRef(0);
   const sidebarRef = useRef(null);
   const scrollableRef = useRef(null);
   const pinnedGraceUntilRef = useRef(0);
 
-  const HOVER_CLOSE_DELAY = 100; // Reducido para respuesta más rápida
-  const CLICK_FREEZE_MS = 200; // Reducido para respuesta más rápida
+  const HOVER_CLOSE_DELAY = expandOnHoverOnly ? 50 : 50; // expandOnHoverOnly: delay mayor para evitar retracción accidental
+  const CLICK_FREEZE_MS = expandOnHoverOnly ? 1200 : 50; // expandOnHoverOnly: 1.2s freeze - evita colapso por mouseleave espurio tras clic/navegación
+
+  // --- expandOnHoverOnly: Sidebar colapsado por defecto, expande solo al hover, retrae solo al mouse leave ---
+  // El usuario puede mantener el toggle de candado activo para fijar colapsado.
+  const effectivePinnedCollapsed = isPinnedCollapsed;
+  const effectiveShowPinnedToggle = showPinnedToggle;
 
   // --- SOLUCIÓN CLAVE: Variable maestra ---
   // Si forceClosed es true, effectiveOpen SIEMPRE es false.
@@ -320,7 +345,7 @@ export function DesktopSidebarBase({
     let resizeTimeout;
     const debouncedHandleResize = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(handleResize, 200);
+      resizeTimeout = setTimeout(handleResize, 300);
     };
 
     window.addEventListener('resize', debouncedHandleResize);
@@ -333,9 +358,9 @@ export function DesktopSidebarBase({
     };
   }, []);
 
-  // Auto-collapse logic - solo aplicar si no hay preferencia guardada
+  // Auto-collapse logic - solo aplicar si no hay preferencia guardada (no en expandOnHoverOnly)
   useEffect(() => {
-    if (!showAutoCollapse || forceOpen || forceClosed) return; // Si está forzado abierto o cerrado, no auto-colapsar
+    if (expandOnHoverOnly || !showAutoCollapse || forceOpen || forceClosed) return; // expandOnHoverOnly: siempre inicia colapsado, sin pin
 
     try {
       const pc = localStorage.getItem('sidebarPinnedCollapsed') === 'true';
@@ -356,7 +381,7 @@ export function DesktopSidebarBase({
       }
     } catch (_) { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport.width, viewport.portrait, showAutoCollapse, forceOpen, forceClosed]);
+  }, [viewport.width, viewport.portrait, showAutoCollapse, forceOpen, forceClosed, expandOnHoverOnly]);
 
   // Sidebar open/close logic
   const setSidebarOpenSafe = (open) => {
@@ -366,13 +391,13 @@ export function DesktopSidebarBase({
     if (forceClosed) return;
 
     setIsSidebarOpen(prev => {
-      if (isPinnedCollapsed && open) return false;
+      if (effectivePinnedCollapsed && open) return false;
       return open;
     });
   };
 
   const handleMouseEnter = () => {
-    if (forceOpen || forceClosed || isPinnedCollapsed || Date.now() < pinnedGraceUntilRef.current) return;
+    if (forceOpen || forceClosed || effectivePinnedCollapsed || Date.now() < pinnedGraceUntilRef.current) return;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -382,6 +407,8 @@ export function DesktopSidebarBase({
 
   const handleMouseLeave = (e) => {
     if (forceOpen || forceClosed) return; // Salida rápida si está forzado
+    // Si relatedTarget está dentro del sidebar (ej. movimiento entre hijos o clic), no colapsar
+    if (e.relatedTarget && sidebarRef.current?.contains(e.relatedTarget)) return;
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     const scheduleCloseCheck = (delay = HOVER_CLOSE_DELAY) => {
@@ -392,6 +419,7 @@ export function DesktopSidebarBase({
           return;
         }
         const now = Date.now();
+        // Usar freeze: al hacer clic (Link/navegación) el DOM puede actualizarse y disparar mouseleave; el freeze evita colapso prematuro
         const remaining = freezeUntilRef.current - now;
         if (remaining > 0) {
           scheduleCloseCheck(remaining + HOVER_CLOSE_DELAY);
@@ -421,18 +449,12 @@ export function DesktopSidebarBase({
   };
 
   const isTablet = viewport.width >= 640 && viewport.width < 1024;
-  const isSmallScreen = viewport.height < 600;
-  const isLargeScreen = viewport.height > 900;
+  const hoverEnabled = !forceOpen && !forceClosed && (!isTablet || expandOnHoverOnly);
 
-  // Altura y anchos consistentes con Layout.jsx
+  // Usamos effectiveOpen en lugar de isSidebarOpen para calcular el ancho
   const sidebarWidth = effectiveOpen
-    ? (isTablet ? 'w-60' : 'w-64 2xl:w-72')
-    : (isTablet ? 'w-20' : 'w-20');
-
-  // Altura dinámica para pantallas pequeñas
-  const sidebarHeight = isSmallScreen
-    ? `${viewport.height - parseInt(heightOffset.replace('px', ''))}px`
-    : `calc(100vh - ${heightOffset})`;
+    ? (isTablet ? 'w-60' : 'w-56 md:w-60 lg:w-64')
+    : (isTablet ? 'w-20' : 'w-16 md:w-20');
 
   // Solo Cerrar Sesión (path === logoutPath) fijo abajo; Configuración y el resto hacen scroll
   const mainItems = menuItems.filter(item => item.path !== logoutPath);
@@ -448,58 +470,55 @@ export function DesktopSidebarBase({
     }
   }, [location.pathname]);
 
+  // Informar al Layout el estado del sidebar para ajustar el margen del contenido
+  useEffect(() => {
+    if (setDesktopSidebarOpen) setDesktopSidebarOpen(effectiveOpen);
+  }, [effectiveOpen, setDesktopSidebarOpen]);
+
   return (
     <aside
       ref={sidebarRef}
-      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-lg'} z-[2000] bg-white/95 ${isTablet ? 'backdrop-blur-[2px]' : 'backdrop-blur-sm'} border-r border-gray-200/80 ${isTablet ? (effectiveOpen ? 'translate-x-0' : '-translate-x-0') : ''} transition-all duration-150 ease-out transform-gpu will-change-transform overflow-hidden`}
+      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-md'} z-[2000] bg-white border-r border-gray-200/50 overflow-hidden transition-[width] duration-150 ease-out`}
       style={{
         top: topOffset,
-        height: sidebarHeight,
-        transform: 'translateX(0)',
-        opacity: 1,
-        backdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)',
-        WebkitBackdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)',
-        // Mejoras para pantallas pequeñas
-        ...(isSmallScreen && {
-          maxHeight: '100vh',
-          overflowY: 'auto'
-        }),
-        // Mejoras para tablets
-        ...(isTablet && {
-          borderRadius: effectiveOpen ? '0 12px 12px 0' : '0'
-        })
+        height: `calc(100vh - ${heightOffset})`,
+        contain: 'layout style',
+        willChange: 'auto',
       }}
       aria-label={`Sidebar de ${userRole}`}
-      // Si está forceOpen o forceClosed, desactivamos los listeners del mouse pasando undefined
-      onMouseEnter={isTablet || forceOpen || forceClosed ? undefined : handleMouseEnter}
-      onMouseLeave={isTablet || forceOpen || forceClosed ? undefined : handleMouseLeave}
+      // En modo hover también habilitamos hover en tablet (sm/md) para comportamiento consistente
+      onMouseEnter={hoverEnabled ? handleMouseEnter : undefined}
+      onMouseLeave={hoverEnabled ? handleMouseLeave : undefined}
       onClickCapture={() => { freezeUntilRef.current = Date.now() + CLICK_FREEZE_MS; }}
       onClick={() => {
         if (forceOpen || forceClosed) return; // Click no hace nada si está forzado
-        if (isTablet) {
-          if (isPinnedCollapsed) return;
+        if (isTablet && !expandOnHoverOnly) {
+          if (effectivePinnedCollapsed) return;
           setIsSidebarOpen(prev => !prev);
           return;
         }
-        if (!isPinnedCollapsed && !isSidebarOpen) setSidebarOpenSafe(true);
+        // expandOnHoverOnly: el clic NO retrae; si estaba colapsado y hacemos clic (caso raro), expandir
+        if (!effectivePinnedCollapsed && !isSidebarOpen) setSidebarOpenSafe(true);
       }}
       onFocus={() => {
-        if (!forceOpen && !forceClosed && !isTablet && !isPinnedCollapsed) {
+        if (hoverEnabled && !effectivePinnedCollapsed) {
           setSidebarOpenSafe(true);
         }
       }}
       onBlur={(e) => {
-        if (forceOpen || forceClosed || isPinnedCollapsed) return;
+        // expandOnHoverOnly: NUNCA retraer por blur - solo por mouse leave (evita que el clic en un Link cause retraer)
+        if (expandOnHoverOnly) return;
+        if (forceOpen || forceClosed || effectivePinnedCollapsed) return;
         if (sidebarRef.current && !sidebarRef.current.contains(e.relatedTarget)) {
           setSidebarOpenSafe(false);
         }
       }}
     >
-      {showPinnedToggle && !forceOpen && !forceClosed && (
+      {effectiveShowPinnedToggle && !forceOpen && !forceClosed && (
         <div className="px-3 py-2.5 flex items-center justify-end gap-2 border-b border-slate-200/50 bg-slate-50/60">
           <button
             onClick={togglePinned}
-            className={`inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-medium transition-all
+            className={`inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-medium transition-colors duration-150
               ${isPinnedCollapsed ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
             title={isPinnedCollapsed ? 'Liberar sidebar (permitir expandir)' : 'Fijar colapsado (no expandir)'}
             aria-pressed={isPinnedCollapsed}
@@ -510,13 +529,13 @@ export function DesktopSidebarBase({
       )}
 
       <nav className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Opciones principales + Configuración hacen scroll; solo Cerrar Sesión fijo abajo */}
+        {/* Opciones principales + Configuración: ocupa todo el espacio disponible y distribuye los ítems */}
         <div
           ref={scrollableRef}
           data-sidebar-scroll
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar"
+          className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-visible no-scrollbar"
         >
-          <ul className={`px-3 pt-4 pb-2 list-none ${userRole === 'admin' ? 'space-y-1.5 xl:space-y-3 2xl:space-y-5' : 'space-y-0.5'}`}>
+          <ul className="flex-1 flex flex-col justify-between px-3 lg:px-4 xl:px-4 pt-4 pb-2 lg:pt-5 lg:pb-3 gap-1 min-h-full list-none">
             {mainItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}
@@ -529,13 +548,12 @@ export function DesktopSidebarBase({
                 onSectionChange={onSectionChange}
                 isActive={item.sectionKey ? activeSection === item.sectionKey : undefined}
                 logoutPath={logoutPath}
-                userRole={userRole}
               />
             ))}
           </ul>
         </div>
-        <div className="flex-shrink-0 px-4 pt-2 pb-4 border-t border-gray-200/60 bg-white/50">
-          <ul className={`space-y-1 list-none ${userRole === 'admin' ? 'xl:space-y-2' : ''}`}>
+        <div className="flex-shrink-0 px-4 lg:px-5 xl:px-5 pt-2 pb-4 lg:pt-3 lg:pb-5 border-t border-gray-200/60 bg-white/50">
+          <ul className="space-y-1 list-none">
             {bottomItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}
@@ -548,7 +566,6 @@ export function DesktopSidebarBase({
                 onSectionChange={onSectionChange}
                 isActive={item.sectionKey ? activeSection === item.sectionKey : undefined}
                 logoutPath={logoutPath}
-                userRole={userRole}
               />
             ))}
           </ul>

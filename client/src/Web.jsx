@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom"; // Link eliminado (no se usaba)
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Footer from "./components/layout/footer";
 import Navbar from "./components/mqerk/Navbar";
 import HeroVideo from "./components/mqerk/HeroVideo";
@@ -46,14 +47,32 @@ function Web() {
   ], []);
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const intervalRef = useRef(null);
 
-  // Lógica simplificada para carrusel circular (infinito)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % studentImages.length);
+  // Carrusel circular con avance automático; se reinicia al usar los botones
+  const startAutoAdvance = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % studentImages.length);
     }, 4000);
-    return () => clearInterval(interval);
+  };
+
+  useEffect(() => {
+    startAutoAdvance();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [studentImages.length]);
+
+  const goToPrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + studentImages.length) % studentImages.length);
+    startAutoAdvance();
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % studentImages.length);
+    startAutoAdvance();
+  };
 
   // Manejo de scroll usando Refs
   useEffect(() => {
@@ -122,28 +141,48 @@ function Web() {
           Nuestros estudiantes
         </h2>
         <br />
-        <div className="pasarela-3d-container mb-10">
-          <div className="pasarela-3d">
-            {/* Imágenes con carga perezosa */}
-            <img
-              src={studentImages[getPrevIndex()]}
-              alt="Estudiante anterior"
-              className="pasarela-img left"
-              loading="lazy"
-            />
-            <img
-              src={studentImages[currentIndex]}
-              alt="Estudiante destacado"
-              className="pasarela-img center"
-              loading="lazy"
-            />
-            <img
-              src={studentImages[getNextIndex()]}
-              alt="Estudiante siguiente"
-              className="pasarela-img right"
-              loading="lazy"
-            />
+        <div className="pasarela-3d-wrapper">
+          <button
+            type="button"
+            onClick={goToPrev}
+            className="pasarela-btn pasarela-btn-prev"
+            aria-label="Foto anterior"
+          >
+            <ChevronLeft className="pasarela-btn-icon" strokeWidth={2.5} />
+          </button>
+          <div className="pasarela-3d-container mb-10">
+            <div className="pasarela-3d">
+              <img
+                key={`prev-${getPrevIndex()}`}
+                src={studentImages[getPrevIndex()]}
+                alt="Estudiante anterior"
+                className="pasarela-img left pasarela-img-transition"
+                loading="lazy"
+              />
+              <img
+                key={`center-${currentIndex}`}
+                src={studentImages[currentIndex]}
+                alt="Estudiante destacado"
+                className="pasarela-img center pasarela-img-center-enter"
+                loading="lazy"
+              />
+              <img
+                key={`next-${getNextIndex()}`}
+                src={studentImages[getNextIndex()]}
+                alt="Estudiante siguiente"
+                className="pasarela-img right pasarela-img-transition"
+                loading="lazy"
+              />
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={goToNext}
+            className="pasarela-btn pasarela-btn-next"
+            aria-label="Foto siguiente"
+          >
+            <ChevronRight className="pasarela-btn-icon" strokeWidth={2.5} />
+          </button>
         </div>
       </div>
 

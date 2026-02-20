@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useStudent } from '../../context/StudentContext.jsx';
 import mqerkLogo from '../../assets/mqerk/mqerk.png';
 
@@ -22,32 +23,79 @@ const Printer = ({ className }) => (
   </svg>
 );
 
-// Componente Modal para el recibo
+// Componente Modal para el recibo (con animaciones entrada/salida)
 function ReciboModal({ isOpen, onClose, children }) {
-  if (!isOpen) return null;
+  const [isExiting, setIsExiting] = useState(false);
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pt-16 sm:pt-20">
-      <div className="relative bg-white rounded-lg shadow-2xl max-w-sm w-full max-h-[80vh] overflow-y-auto mt-4 sm:mt-8">
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const prev = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      touchAction: body.style.touchAction,
+    };
+
+    // Bloquea scroll del fondo (incluye iOS Safari)
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.touchAction = 'none';
+
+    return () => {
+      body.style.overflow = prev.overflow;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.touchAction = prev.touchAction;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
+  const handleClose = () => {
+    if (isExiting) return;
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+      setIsExiting(false);
+    }, 200);
+  };
+
+  if (!isOpen && !isExiting) return null;
+
+  const exiting = isExiting;
+  const overlayClasses = `fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-hidden overscroll-none ${exiting ? 'animate-fade-out-overlay' : 'animate-fade-in-overlay'}`;
+  const contentClasses = `relative bg-white rounded-lg shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[min(90vh,720px)] overflow-hidden flex flex-col ${exiting ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`;
+
+  return createPortal(
+    <div className={overlayClasses} onClick={handleClose} role="dialog" aria-modal="true">
+      <div className={contentClasses} onClick={(e) => e.stopPropagation()}>
         {/* Header del modal */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-3 rounded-t-lg">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-800 text-center flex-1">📄 Comprobante de Pago</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1 hover:bg-gray-100 rounded transition-colors ml-2"
+              aria-label="Cerrar"
             >
               <X className="w-4 h-4 text-gray-500" />
             </button>
           </div>
         </div>
 
-        {/* Contenido del modal */}
-        <div className="p-3">
+        {/* Contenido del modal (scroll interno, fondo fijo) */}
+        <div className="p-3 overflow-y-auto overscroll-contain">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -323,7 +371,7 @@ export default function ComprobanteVirtual({
       
       // Fecha y folio
       const fechaActual = new Date().toLocaleDateString('es-ES');
-      const horaActual = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const horaActual = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
       
       addCenteredText(`${fechaActual} ${horaActual} a. m.`, 10, true);
       addCenteredText('Horas', 8);
@@ -435,7 +483,7 @@ export default function ComprobanteVirtual({
       yPosition += 1;
       addCenteredText('Procesado por: Sistema MQerK', 8);
       addCenteredText(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 8);
-      addCenteredText(`Hora: ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })}`, 8);
+      addCenteredText(`Hora: ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}`, 8);
       
       const statusText = safePaymentData.status === 'paid' ? 'PAGADO' : 
                         safePaymentData.status === 'pending' ? 'PENDIENTE' : 'FALLIDO';
@@ -879,7 +927,7 @@ export default function ComprobanteVirtual({
       
       // Fecha y folio
       const fechaActual = new Date().toLocaleDateString('es-ES');
-      const horaActual = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const horaActual = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
       const folio = generateFolio(paymentData.id, paymentData.date);
       
       addText(`${fechaActual} ${horaActual} a. m.`, 18, 'center', true);
@@ -957,7 +1005,7 @@ export default function ComprobanteVirtual({
       addText('📋 Información del Sistema', 16, 'center', true);
       addText('Procesado por: Sistema MQerK', 12, 'center');
       addText(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 12, 'center');
-      addText(`Hora: ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })}`, 12, 'center');
+      addText(`Hora: ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}`, 12, 'center');
       
       const statusText = safePaymentData.status === 'paid' ? '✅ PAGADO' : 
                         safePaymentData.status === 'pending' ? '⏳ PENDIENTE' : '❌ FALLIDO';
@@ -1100,7 +1148,7 @@ export default function ComprobanteVirtual({
   const horaActual = new Date().toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false
+    hour12: true
   });
 
   // Valores por defecto para datos opcionales del backend

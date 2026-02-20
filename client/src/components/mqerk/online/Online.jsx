@@ -17,8 +17,8 @@ function Talleres() {
     <div className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
       <Navbar />
       
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white py-16 px-4 sm:px-6 lg:px-8">
+      {/* Hero Section - relative z-10 para que no quede por debajo del contenido */}
+      <div className="relative z-10 bg-[#3c26cc] text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">
             ONLINE
@@ -73,7 +73,7 @@ function Talleres() {
         <div className="flex justify-center mb-20">
           <div className="w-full max-w-md">
             <OnlineCard
-              to='/mqerk/online/eeau23'
+              to='/mqerk/online/eeau23#top'
               image={Cuatro}
               title="Testimonios: ACREDITA EL EXAMEN DE ADMISIÓN A LA UNIVERSIDAD 2023"
               description="Pregunta detonante: ¿Cómo fue tu experiencia en la primera simulación del examen de admisión a la universidad?"
@@ -167,7 +167,7 @@ function YearSection({ year }) {
 // Componente de tarjeta online con animaciones
 function OnlineCard({ to, image, title, description, date, delay = "0" }) {
   const CardWrapper = to ? Link : 'div';
-  const cardProps = to ? { to } : {};
+  const cardProps = to ? { to, ...(to === '/mqerk/online/eeau23' ? { replace: true } : {}) } : {};
 
   return (
     <CardWrapper 

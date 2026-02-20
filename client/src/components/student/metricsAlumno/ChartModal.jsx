@@ -7,7 +7,7 @@ export const ChartModal = ({
   onClose, 
   title, 
   children, 
-  maxWidth = 'max-w-5xl',
+  maxWidth = '',
   headerClassName = "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
 }) => {
   const [isBrowser, setIsBrowser] = useState(false);
@@ -40,22 +40,25 @@ export const ChartModal = ({
 
   const modalContent = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      {/* Fondo oscuro (Overlay) */}
+      {/* Overlay con blur (estilo ReciboModal) */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200" 
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Contenedor del Modal */}
+      {/* Contenedor del Modal - proporcional al viewport, más ancho en escritorio */}
       <div className={`
-        relative flex flex-col w-full h-full sm:h-auto sm:max-h-[calc(100vh-2rem)] 
-        bg-white rounded-none sm:rounded-2xl shadow-2xl overflow-hidden 
+        relative z-10 flex flex-col w-full h-full sm:h-auto sm:min-h-[75vh] sm:max-h-[94vh]
+        sm:w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[min(92vw,1400px)]
+        sm:mx-auto sm:my-auto
+        bg-white rounded-none sm:rounded-2xl shadow-2xl overflow-hidden
+        transition-opacity duration-200
         ${maxWidth}
       `}>
         
@@ -63,7 +66,7 @@ export const ChartModal = ({
         <div className={`p-4 sm:p-6 relative shrink-0 ${headerClassName}`}>
           <h2 
             id="modal-title" 
-            className="text-lg sm:text-2xl font-bold text-white text-center pr-8 leading-tight truncate"
+            className="text-lg sm:text-2xl font-semibold text-white text-center pr-8 leading-tight truncate"
           >
             {title}
           </h2>
@@ -81,7 +84,7 @@ export const ChartModal = ({
         </div>
 
         {/* Área de contenido */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 text-gray-800">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 xl:p-10 bg-gray-50 text-gray-800">
           {children}
         </div>
       </div>

@@ -17,7 +17,7 @@ function Online() {
       <Navbar />
 
       {/* Hero Section - SIN BADGES */}
-      <div className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-[#3c26cc] text-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <Link 
             to="/online" 
@@ -34,17 +34,18 @@ function Online() {
         </div>
       </div>
 
-      {/* Video Player - MÁS GRANDE */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-center items-center animate-fade-in">
-          <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
+      {/* Video Player - Responsive: encuadra según pantalla y dispositivo */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+        <div className="relative w-full animate-fade-in" style={{ paddingBottom: '56.25%' }}>
+          <div className="absolute inset-0 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
             <ReactPlayer
               url="https://www.youtube.com/watch?v=sGMTVHWB6do"
               playing
               muted
-              width="700px"
+              width="100%"
               height="100%"
               controls
+              style={{ position: 'absolute', top: 0, left: 0 }}
             />
           </div>
         </div>

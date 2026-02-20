@@ -22,6 +22,8 @@ import { SideBarDesktop_Alumno_comp, SideBarSm_Alumno_comp } from './SidebarAlum
 export function AlumnoLayout({ children, HeaderComponent, SideBarDesktopComponent, SideBarSmComponent }) {
   const { logout } = useAuth();
   const timerRef = useRef(null);
+  // Dashboard con métricas: fondo blanco. La bienvenida aplica su propio gradiente morado internamente.
+  const backgroundClassName = 'bg-white';
 
   // Efecto para manejar el cierre de sesión por inactividad
   useEffect(() => {
@@ -62,6 +64,8 @@ export function AlumnoLayout({ children, HeaderComponent, SideBarDesktopComponen
       HeaderComponent={HeaderComponent !== undefined ? HeaderComponent : Header_Alumno_comp} // Permite null explícito
       SideBarDesktopComponent={SideBarDesktopComponent !== undefined ? SideBarDesktopComponent : SideBarDesktop_Alumno_comp} // Usa la prop o el default
       SideBarSmComponent={SideBarSmComponent !== undefined ? SideBarSmComponent : SideBarSm_Alumno_comp}    // Usa la prop o el default
+      backgroundClassName={backgroundClassName}
+      contentClassName="px-0"
     >
       {children} {/* El contenido específico del dashboard de alumno */}
     </Layout>

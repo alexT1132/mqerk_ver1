@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useStudent } from '../../context/StudentContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getAsistenciasEstudiante, getResumenAsistenciaEstudiante } from '../../api/asistencias.js';
-import { toDisplayTitle } from '../../utils/text.js';
 
 // Iconos SVG
 const IconoAsistencia = () => (
@@ -118,7 +117,7 @@ function transformApiDataToAttendanceData(apiData) {
       id: item.id,
       type: item.tipo, // clase, tarea, simulacion
       title: item.tipo === 'clase' ? 'Clase' : item.tipo === 'tarea' ? 'Tarea' : 'Simulación',
-      time: item.created_at ? new Date(item.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '',
+      time: item.created_at ? new Date(item.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) : '',
       attended: item.asistio === 1 || item.asistio === true,
       status: item.asistio ? 'asistio' : 'falto',
       observaciones: item.observaciones || null
@@ -343,16 +342,16 @@ function AttendanceCalendar({ attendanceData, selectedFilter }) {
               <div
                 key={day}
                 className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded-lg sm:rounded-xl border-2 transition-all duration-200 touch-manipulation ${isToday
-                    ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300'
-                    : hasFilteredActivities
-                      ? allAttended
-                        ? 'border-green-300 bg-green-50 hover:bg-green-100 shadow-md'
-                        : someAttended
-                          ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100 shadow-md'
-                          : 'border-red-300 bg-red-50 hover:bg-red-100 shadow-md'
-                      : isFutureDay
-                        ? 'border-gray-200 bg-gray-50 text-gray-400'
-                        : 'border-gray-200 bg-gray-50'
+                  ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300'
+                  : hasFilteredActivities
+                    ? allAttended
+                      ? 'border-green-300 bg-green-50 hover:bg-green-100 shadow-md'
+                      : someAttended
+                        ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100 shadow-md'
+                        : 'border-red-300 bg-red-50 hover:bg-red-100 shadow-md'
+                    : isFutureDay
+                      ? 'border-gray-200 bg-gray-50 text-gray-400'
+                      : 'border-gray-200 bg-gray-50'
                   }`}
               >
                 <span className={`font-extrabold ${isToday ? 'text-blue-700' : ''}`}>{day}</span>
@@ -500,16 +499,21 @@ export function Asistencia_Alumno_comp() {
 
   return (
     <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8 font-inter text-gray-800">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="w-full max-w-full mx-auto space-y-4 sm:space-y-6 md:space-y-8">
 
         {/* Header - Mejorado */}
-        <div className="text-center lg:text-left mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 mb-2 sm:mb-3 tracking-tight">
-            CONTROL DE ASISTENCIA
-          </h1>
+        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0 text-white">
+              <IconoAsistencia />
+            </div>
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
+              CONTROL DE ASISTENCIA
+            </h1>
+          </div>
           {currentCourse && (
             <p className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">
-              {toDisplayTitle(currentCourse?.title)}
+              {currentCourse.title}
             </p>
           )}
         </div>
@@ -529,8 +533,8 @@ export function Asistencia_Alumno_comp() {
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
               className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm md:text-base transition-all duration-200 active:scale-95 touch-manipulation border-2 shadow-md hover:shadow-lg ${selectedFilter === filter.key
-                  ? `bg-gradient-to-r ${filter.gradient} text-white border-transparent shadow-lg`
-                  : `bg-white text-${filter.color}-600 border-${filter.color}-300 hover:bg-${filter.color}-50 hover:border-${filter.color}-400`
+                ? `bg-gradient-to-r ${filter.gradient} text-white border-transparent shadow-lg`
+                : `bg-white text-${filter.color}-600 border-${filter.color}-300 hover:bg-${filter.color}-50 hover:border-${filter.color}-400`
                 }`}
             >
               {filter.label}
@@ -572,14 +576,14 @@ export function Asistencia_Alumno_comp() {
                       <div
                         key={activity.id}
                         className={`flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 hover:shadow-md ${activity.attended
-                            ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50'
-                            : 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
+                          ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50'
+                          : 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
                           }`}
                       >
                         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                           <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/50 flex-shrink-0 ${activity.type === 'clase' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
-                              activity.type === 'tarea' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
-                                'bg-gradient-to-br from-orange-500 to-amber-600'
+                            activity.type === 'tarea' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
+                              'bg-gradient-to-br from-orange-500 to-amber-600'
                             }`}>
                             {activity.type === 'clase' && <IconoClase className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
                             {activity.type === 'tarea' && <IconoTarea className="text-white w-5 h-5 sm:w-6 sm:h-6" />}
@@ -606,8 +610,8 @@ export function Asistencia_Alumno_comp() {
                             </div>
                           )}
                           <span className={`text-[10px] sm:text-xs md:text-sm font-extrabold px-2 sm:px-2.5 py-1 rounded-lg border ${activity.attended
-                              ? 'text-green-700 bg-green-50 border-green-200'
-                              : 'text-red-700 bg-red-50 border-red-200'
+                            ? 'text-green-700 bg-green-50 border-green-200'
+                            : 'text-red-700 bg-red-50 border-red-200'
                             }`}>
                             {activity.attended ? 'Asistió' : 'Faltó'}
                           </span>

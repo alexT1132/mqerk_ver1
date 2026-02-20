@@ -1,6 +1,5 @@
 // BACKEND: Página separada para responder quizzes (runner/review)
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { crearSesionQuiz, listPreguntasQuiz, enviarRespuestasSesion, finalizarSesionQuiz } from '../../api/simulaciones';
@@ -9,7 +8,6 @@ import { createAreaRequest } from '../../api/areaAccess';
 import { getQuiz } from '../../api/quizzes';
 import MathEquationEditor, { isMathSubject, isMathQuestion } from '../shared/MathEquationEditor.jsx';
 import InlineMath from '../Asesor/simGen/InlineMath.jsx';
-import { buildStaticUrl } from '../../utils/url.js';
 
 // --- Ícono de Check para opciones seleccionadas ---
 const CheckIcon = () => (
@@ -844,11 +842,11 @@ export default function Quizz_Review() {
                         <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
                       </p>
 
-                      {/* ✅ Imagen de la pregunta si existe (buildStaticUrl para rutas /uploads/...) */}
+                      {/* ✅ Imagen de la pregunta si existe */}
                       {(p.imagen || p.image) && (
                         <div className="mb-3 sm:mb-4">
                           <img
-                            src={buildStaticUrl(p.imagen || p.image) || (p.imagen || p.image)}
+                            src={p.imagen || p.image}
                             alt="Imagen de la pregunta"
                             className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-64 sm:max-h-80"
                             onError={(e) => {
@@ -899,7 +897,7 @@ export default function Quizz_Review() {
                                     {(op.imagen || op.image) && (
                                       <div className="mb-2">
                                         <img
-                                          src={buildStaticUrl(op.imagen || op.image) || (op.imagen || op.image)}
+                                          src={op.imagen || op.image}
                                           alt="Imagen de la opción"
                                           className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-32 sm:max-h-40"
                                           onError={(e) => {
@@ -1011,8 +1009,8 @@ export default function Quizz_Review() {
       )}
 
       {/* MODAL: Cambio de Pestaña */}
-      {showWarningModal && createPortal(
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {showWarningModal && (
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all animate-fade-in-up relative">
             <AlertTriangle className="w-14 h-14 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Has Salido de la Pestaña del Quiz</h2>
@@ -1030,13 +1028,12 @@ export default function Quizz_Review() {
               Entendido, continuar
             </button>
           </div>
-        </div>,
-        document.getElementById('modal-root')
+        </div>
       )}
 
       {/* MODAL: Bloqueo por tamaño de ventana */}
-      {isWindowTooSmall && createPortal(
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {isWindowTooSmall && (
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all animate-fade-in-up relative">
             <Maximize2 className="w-14 h-14 text-indigo-600 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Maximiza la Ventana para Continuar</h2>
@@ -1044,13 +1041,12 @@ export default function Quizz_Review() {
               Para asegurar una experiencia de examen justa, el quiz se pausará hasta que la ventana ocupe la pantalla completa.
             </p>
           </div>
-        </div>,
-        document.getElementById('modal-root')
+        </div>
       )}
 
       {/* MODAL: Bloqueo final por advertencias */}
-      {showFinalWarning && createPortal(
-        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {showFinalWarning && (
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all animate-fade-in-up">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Límite de Advertencias Excedido</h2>
@@ -1064,8 +1060,7 @@ export default function Quizz_Review() {
               <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mx-auto" />
             </div>
           </div>
-        </div>,
-        document.getElementById('modal-root')
+        </div>
       )}
     </div>
   );

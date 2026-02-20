@@ -10,59 +10,41 @@ import { useStudent } from '../../context/StudentContext.jsx';
  * CORRECCIÓN: Se ajustó la recepción de props para detectar correctamente el modo móvil.
  */
 
-// Tooltip flotante (Solo PC)
+// Tooltip ligero: sin scroll/resize listeners (evita jank al desplegar sidebar)
 function HoverTooltip({ anchorRef, text, show }) {
-  const [style, setStyle] = useState({ display: 'none' });
+  const [style, setStyle] = useState({ visibility: 'hidden' });
   useEffect(() => {
-    let rafId = null;
-    const updateNow = () => {
-      if (!show || !anchorRef?.current) {
-        setStyle({ display: 'none' });
-        return;
-      }
+    if (!show || !anchorRef?.current) {
+      setStyle({ visibility: 'hidden' });
+      return;
+    }
+    const rafId = requestAnimationFrame(() => {
+      if (!anchorRef?.current) return;
       const rect = anchorRef.current.getBoundingClientRect();
-      const top = rect.top + rect.height / 2;
-      const left = rect.right + 10; 
       setStyle({
         position: 'fixed',
-        top: `${top}px`,
-        left: `${left}px`,
+        top: rect.top + rect.height / 2,
+        left: rect.right + 12,
         transform: 'translateY(-50%)',
-        zIndex: 10000, 
+        zIndex: 10000,
         pointerEvents: 'none',
-        whiteSpace: 'nowrap', 
+        whiteSpace: 'nowrap',
+        visibility: 'visible',
       });
-    };
-    const scheduleUpdate = () => {
-      if (rafId != null) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        updateNow();
-      });
-    };
-    scheduleUpdate();
-    if (!show) return;
-    window.addEventListener('scroll', scheduleUpdate, true);
-    window.addEventListener('resize', scheduleUpdate);
-    return () => {
-      if (rafId != null) cancelAnimationFrame(rafId);
-      window.removeEventListener('scroll', scheduleUpdate, true);
-      window.removeEventListener('resize', scheduleUpdate);
-    };
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [show, anchorRef]);
 
   if (!show) return null;
   return createPortal(
-    <div style={style} role="tooltip" aria-hidden="true" className="bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow-xl shadow-slate-900/20 backdrop-blur-sm border border-slate-700/50 text-xs font-semibold tracking-wide animate-in fade-in zoom-in-95 duration-100">
+    <div style={style} role="tooltip" aria-hidden="true" className="bg-slate-900 text-white px-2.5 py-1 rounded shadow border border-slate-700 text-xs font-semibold">
       {text}
-      <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 border-4 border-transparent border-r-slate-900"></div>
     </div>,
     document.body
   );
 }
 
-// CORRECCIÓN AQUÍ: cambié "onClick: mobileOnClick" por "mobileOnClick" directamente
-function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobileOnClick, activo, sectionKey }) {
+const ElementoSideBarAlumno = React.memo(function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobileOnClick, activo, sectionKey }) {
   const { activeSection, setActiveSectionHandler } = useStudent();
   const location = useLocation();
   const navigate = useNavigate();
@@ -95,7 +77,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobil
   // =====================================================================
   
   let containerClasses = "";
-  let linkClasses = "flex items-center transition-all duration-300 ease-out relative select-none ";
+  let linkClasses = "flex items-center transition-colors duration-150 ease-out relative select-none ";
 
   if (isMobileItem) {
     // -----------------------------------------------------
@@ -107,8 +89,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobil
     linkClasses += "justify-start pl-4 pr-4 gap-4 py-3 rounded-2xl w-full border-0 ";
 
     if (isActive) {
-      // ACTIVO MÓVIL: Fondo degradado, texto blanco, CERO bordes/sombras
-      linkClasses += "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-none ring-0 outline-none ";
+      linkClasses += "bg-indigo-600 text-white shadow-none ring-0 outline-none ";
     } else {
       // INACTIVO MÓVIL: Transparente Total
       if (isLogout) {
@@ -130,13 +111,13 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobil
 
     if (isActive) {
       // ACTIVO PC: Bloque grande, sombra, efecto 3D
-      linkClasses += "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 transform scale-110 z-20 font-bold border-none ";
+      linkClasses += "bg-indigo-600 text-white shadow-sm z-20 font-bold border-none ";
     } else {
       // INACTIVO PC: Borde gris, fondo blanco (Relieve)
       if (isLogout) {
         linkClasses += "text-gray-500 hover:bg-red-50 hover:text-red-600 border border-transparent hover:border-red-100 ";
       } else {
-        linkClasses += "bg-white text-slate-500 border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 hover:text-indigo-600 hover:scale-105 ";
+        linkClasses += "bg-white text-slate-500 border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 hover:text-indigo-600 ";
       }
     }
   }
@@ -165,7 +146,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobil
               {React.cloneElement(Icono, {
                 stroke: isLogout ? svgColorLogout : (isActive ? svgColorActive : svgColor),
                 fill: "none",
-                className: `transition-all duration-300 ${isMobileItem ? "w-[22px] h-[22px]" : (isActive ? "w-6 h-6" : "w-5 h-5")}`,
+                className: `${isMobileItem ? "w-[22px] h-[22px]" : (isActive ? "w-6 h-6" : "w-5 h-5")}`,
                 strokeWidth: isActive ? 2.5 : 2
               })}
             </div>
@@ -182,7 +163,7 @@ function ElementoSideBarAlumno({ Icono, NombreElemento, to, isSidebarOpen, mobil
       </Link>
     </li>
   );
-}
+});
 
 // --- ICONOS (Sin cambios) ---
 const svgColor = "#4F46E5"; 
@@ -230,8 +211,8 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   const sidebarRef = useRef(null);
   const pinnedGraceUntilRef = useRef(0);
   const transientUntilRef = useRef(0);
-  const HOVER_CLOSE_DELAY = 200;
-  const CLICK_FREEZE_MS = 500;
+  const HOVER_CLOSE_DELAY = 50;
+  const CLICK_FREEZE_MS = 50;
 
   const setSidebarOpenSafe = (open) => {
     setIsSidebarOpen(prev => {
@@ -315,7 +296,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
     let resizeTimeout;
     const debouncedHandleResize = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(handleResize, 200);
+      resizeTimeout = setTimeout(handleResize, 300);
     };
     window.addEventListener('resize', debouncedHandleResize);
     window.addEventListener('orientationchange', debouncedHandleResize);
@@ -358,13 +339,8 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
   return (
     <aside
       ref={sidebarRef}
-      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-lg'} z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white/95 ${isTablet ? 'backdrop-blur-[2px]' : 'backdrop-blur-sm'} border-r border-gray-200/80 ${isTablet ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-0') : ''} transition-all duration-200 ease-out transform-gpu will-change-transform overflow-y-auto overflow-x-visible no-scrollbar`}
-      style={{
-        transform: 'translateX(0)',
-        opacity: 1,
-        backdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)',
-        WebkitBackdropFilter: isTablet ? 'blur(2px)' : 'blur(10px)'
-      }}
+      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-md'} z-[2000] top-[80px] h-[calc(100vh-80px)] bg-white border-r border-gray-200/80 overflow-y-auto overflow-x-visible no-scrollbar transition-[width] duration-150 ease-out`}
+      style={{ contain: 'layout style' }}
       aria-label="Sidebar de escritorio de alumno"
       onMouseEnter={isTablet ? undefined : handleMouseEnter}
       onMouseLeave={isTablet ? undefined : handleMouseLeave}
@@ -392,7 +368,7 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
       <div className="px-3 py-2 flex items-center justify-end gap-2 border-b border-gray-200/60 bg-white/70">
         <button
           onClick={togglePinned}
-          className={`inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-medium transition-all
+          className={`inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-medium transition-colors duration-150
             ${isPinnedCollapsed ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
           title={isPinnedCollapsed ? 'Liberar sidebar (permitir expandir)' : 'Fijar colapsado (no expandir)'}
           aria-pressed={isPinnedCollapsed}
@@ -444,12 +420,8 @@ export function SideBarDesktop_Alumno_comp({ setDesktopSidebarOpen, activo }) {
 export function SideBarSm_Alumno_comp({ isMenuOpen, closeMenu, activo }) {
   return (
     <>
-      <aside className={`sm:hidden fixed top-[80px] left-0 w-56 h-[calc(100vh-80px)] bg-white/95 backdrop-blur-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out overflow-hidden
-          ${isMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-90'}`}
-        style={{
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)'
-        }}>
+      <aside className={`sm:hidden fixed top-[80px] left-0 w-56 h-[calc(100vh-80px)] bg-white shadow-md z-50 overflow-hidden transition-transform duration-200 ease-out
+          ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <nav className="h-full overflow-visible">
           <ul className="px-0 py-3 space-y-0 h-full flex flex-col justify-between overflow-y-auto overflow-x-visible no-scrollbar list-none relative">
             <div>

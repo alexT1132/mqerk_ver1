@@ -166,24 +166,22 @@ export default function Recursos_Alumno_comp() {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-10 lg:py-12">
+      <div className="w-full max-w-full mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-10 lg:py-12">
         {/* Header - Optimizado para móviles */}
-        <div className="mb-4 sm:mb-6">
-          <div className="flex items-center gap-3 sm:gap-4 mb-3">
-            <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg sm:shadow-xl ring-2 ring-violet-200 shrink-0">
-              <GraduationCap className="size-6 sm:size-8 md:size-10 text-white" />
+        <div className="mb-4 sm:mb-6 text-center">
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 mb-2">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+              <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-1 sm:mb-2 tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
-                  Recursos del Asesor
-                </span>
-              </h1>
-              <p className="text-slate-600 text-xs sm:text-sm md:text-base font-medium hidden sm:block">
-                Materiales educativos compartidos por tu asesor — visualiza y descarga los recursos disponibles.
-              </p>
-            </div>
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+              <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent inline-block" style={{ lineHeight: '1.1', paddingBottom: '2px' }}>
+                Recursos del Asesor
+              </span>
+            </h1>
           </div>
+          <p className="text-sm sm:text-base text-slate-600 font-medium">
+            Materiales educativos compartidos por tu asesor — visualiza y descarga los recursos disponibles.
+          </p>
         </div>
 
         {/* Mensajes */}

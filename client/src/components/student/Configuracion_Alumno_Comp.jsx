@@ -518,7 +518,7 @@ export function Configuracion_Alumno_comp() {
     // Render del componente
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 sm:py-10 lg:py-12 text-gray-900">
-            <div className="max-w-[90rem] mx-auto">
+            <div className="w-full max-w-full mx-auto">
                 <ConfirmModal
                     isOpen={showDeleteModal}
                     variant="danger"

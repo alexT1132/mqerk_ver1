@@ -5,7 +5,6 @@ import MQerkLogo from "../../assets/MQerK_logo.png";
 import { Logos } from "../common/IndexComp";
 import { useStudent } from "../../context/StudentContext";
 import { buildStaticUrl, getApiOrigin } from "../../utils/url";
-import { toDisplayTitle } from "../../utils/text.js";
 import { useStudentNotifications } from "../../context/StudentNotificationContext";
 import { useAuth } from "../../context/AuthContext";
 
@@ -434,14 +433,14 @@ export function Header_Alumno_comp({
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
                                     <p className={`truncate text-xs sm:text-sm ${unread ? 'font-semibold text-gray-900' : 'font-medium'} ${getPriorityColor(notification.priority)}`}>
-                                      {toDisplayTitle(notification.title)}
+                                      {notification.title}
                                     </p>
                                     {notification.priority === 'urgent' && (
                                       <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0"></span>
                                     )}
                                   </div>
                                   <p className={`text-[11px] sm:text-xs leading-relaxed ${unread ? 'text-gray-700' : 'text-gray-600'}`}>
-                                    {toDisplayTitle(notification.message)}
+                                    {notification.message}
                                   </p>
                                   <div className="flex items-center justify-between mt-2">
                                     <span className={`text-[10px] uppercase tracking-wide ${unread ? 'text-purple-500 font-semibold' : 'text-gray-400'}`}>

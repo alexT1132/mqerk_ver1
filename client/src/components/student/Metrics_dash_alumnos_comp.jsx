@@ -672,7 +672,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
   // Si solo queremos mostrar foto + nombre + datos personales, salimos temprano
   if (!showMetrics) {
     return (
-      <div className="w-full font-inter text-gray-800">
+      <div className="w-full font-inter text-gray-800 px-2 sm:px-3 md:px-4">
 
         {/* Sección de Encabezado del Dashboard */}
         <DashboardHeader displayFolio={displayFolio} />
@@ -801,7 +801,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
 
   // Eliminar contenedor principal para mejor integración - solo contenido directo
   return (
-    <div className="w-full font-inter text-gray-800 pt-4 sm:pt-6">
+    <div className="w-full font-inter text-gray-800 pt-8 sm:pt-10 md:pt-11 px-2 sm:px-3 md:px-4">
 
       {/* Sección de Encabezado del Dashboard */}
       <DashboardHeader displayFolio={displayFolio} />
@@ -899,7 +899,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </div>
           </div>
           {/* Título con gradiente */}
-          <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h3 className="font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Asistencia
           </h3>
           <p className="text-sm text-gray-600 text-center font-semibold">
@@ -969,7 +969,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </div>
           </div>
           {/* Título con gradiente */}
-          <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+          <h3 className="font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
             Actividades
           </h3>
           <p className="text-sm text-gray-600 text-center font-semibold">
@@ -1028,7 +1028,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
             </div>
           </div>
           {/* Título con gradiente */}
-          <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+          <h3 className="font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
             Quiz
           </h3>
           <p className="text-sm text-gray-600 text-center font-semibold">
@@ -1102,7 +1102,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 </div>
               </div>
               {/* Título con gradiente */}
-              <h3 className="text-gray-800 font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <h3 className="w-full text-center font-black text-base sm:text-lg lg:text-xl mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
                 Promedio mensual
               </h3>
               <p className="text-sm text-gray-600 text-center font-semibold">
@@ -1112,18 +1112,18 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
           );
         })()}
 
-        {/* Métrica de Estado Académico - Diseño original con colores corregidos */}
-        <div className="flex flex-col items-center group cursor-pointer transform hover:scale-105 transition-all duration-200">
-          <div className="relative mb-10">
-            {/* Contenedor principal rediseñado MÁS GRANDE */}
-            <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-gray-50 via-slate-100 to-gray-200 rounded-3xl shadow-2xl group-hover:shadow-3xl group-hover:scale-105 transition-all duration-200 border-2 border-gray-300 p-6 sm:p-8 backdrop-blur-sm bg-white/25 border border-white/20 hover:scale-105 hover:-translate-y-1">
+        {/* Métrica de Estado Académico - Ajustado para evitar descuadres responsive */}
+        <div className="relative flex flex-col items-center group cursor-pointer transition-all duration-300 min-h-[300px] sm:min-h-[320px]">
+          <div className="relative mb-3 group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
+            {/* Contenedor principal consistente con otras tarjetas */}
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 bg-gradient-to-br from-gray-50 via-slate-100 to-gray-200 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] group-hover:shadow-[0_20px_60px_rgba(107,114,128,0.35)] border border-white/30 p-4 sm:p-5 flex flex-col items-center justify-center backdrop-blur-sm">
 
               {/* Estado actual destacado MÁS GRANDE */}
               <div className="text-center mb-4 sm:mb-6">
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto rounded-full flex items-center justify-center shadow-xl ring-4 sm:ring-6 lg:ring-8 mb-3 sm:mb-4 transition-all duration-200 animate-pulse drop-shadow-lg ${finalMetricsData.academicStatus.level === 'R' ? 'bg-gradient-to-br from-red-600 to-red-700 ring-red-200 group-hover:ring-red-300' :
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto rounded-full flex items-center justify-center shadow-xl ring-4 sm:ring-6 mb-3 sm:mb-4 transition-all duration-200 animate-pulse drop-shadow-lg ${finalMetricsData.academicStatus.level === 'R' ? 'bg-gradient-to-br from-red-600 to-red-700 ring-red-200 group-hover:ring-red-300' :
                   finalMetricsData.academicStatus.level === 'A' ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 ring-yellow-200 group-hover:ring-yellow-300' :
                     'bg-gradient-to-br from-green-600 to-green-700 ring-green-200 group-hover:ring-green-300'
-                  } group-hover:ring-8 sm:group-hover:ring-10 lg:group-hover:ring-12 group-hover:shadow-2xl`}>
+                  } group-hover:ring-8 sm:group-hover:ring-10 group-hover:shadow-2xl`}>
                   <span className="text-white font-black text-xl sm:text-2xl lg:text-3xl drop-shadow-sm">
                     {finalMetricsData.academicStatus.level}
                   </span>
@@ -1139,35 +1139,37 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 </div>
               </div>
 
-              {/* Indicadores pequeños de otros estados con tooltip - COLORES MÁS FUERTES */}
-              <div className="flex justify-center space-x-3">
-                {[
-                  { level: 'R', name: 'Riesgo', desc: 'Necesita apoyo adicional' },
-                  { level: 'A', name: 'Activo', desc: 'Progreso satisfactorio' },
-                  { level: 'D', name: 'Destacado', desc: 'Rendimiento excepcional' }
-                ].map((status) => (
-                  <div
-                    key={status.level}
-                    className={`w-6 h-6 rounded-full cursor-help transition-all duration-150 ${finalMetricsData.academicStatus.level === status.level ? 'opacity-100 scale-110' : 'opacity-40 hover:opacity-70'
-                      } ${status.level === 'R' ? 'bg-red-600' :
-                        status.level === 'A' ? 'bg-yellow-400' :
-                          'bg-green-600'
-                      }`}
-                    title={`${status.name}: ${status.desc}`}
-                  ></div>
-                ))}
-              </div>
             </div>
           </div>
+
+          {/* Indicadores pequeños de estados (siempre debajo del card) */}
+          <div className="flex justify-center space-x-3 mb-2">
+            {[
+              { level: 'R', name: 'Riesgo', desc: 'Necesita apoyo adicional' },
+              { level: 'A', name: 'Activo', desc: 'Progreso satisfactorio' },
+              { level: 'D', name: 'Destacado', desc: 'Rendimiento excepcional' }
+            ].map((status) => (
+              <div
+                key={status.level}
+                className={`w-6 h-6 rounded-full cursor-help transition-all duration-150 ${finalMetricsData.academicStatus.level === status.level ? 'opacity-100 scale-110' : 'opacity-40 hover:opacity-70'
+                  } ${status.level === 'R' ? 'bg-red-600' :
+                    status.level === 'A' ? 'bg-yellow-400' :
+                      'bg-green-600'
+                  }`}
+                title={`${status.name}: ${status.desc}`}
+              ></div>
+            ))}
+          </div>
+
           {/* Título */}
-          <h3 className="text-gray-700 font-bold text-base sm:text-lg lg:text-xl mb-2 sm:mb-3 group-hover:text-gray-800 transition-colors duration-200">
+          <h3 className="w-full text-center text-gray-700 font-bold text-base sm:text-lg lg:text-xl mb-2 sm:mb-3 group-hover:text-gray-800 transition-colors duration-200 leading-tight">
             Estado académico
           </h3>
           <p className="text-base text-gray-500 text-center leading-relaxed">
             Evaluación actual
           </p>
-          {/* Tooltip informativo completo */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute z-10 -mt-2 bg-gray-800 text-white text-xs rounded-lg p-3 pointer-events-none max-w-xs">
+          {/* Tooltip informativo completo (solo escritorio para evitar descuadres en pantallas pequeñas) */}
+          <div className="hidden lg:block opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute z-10 top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-3 pointer-events-none max-w-xs w-max">
             <div className="font-bold mb-1">{finalMetricsData.academicStatus.description}</div>
             <div>Puntaje: {Math.round(finalMetricsData.academicStatus.score)}%</div>
             <div className="mt-1 text-gray-300">
@@ -1204,10 +1206,8 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         isOpen={isActivitiesChartModalOpen}
         onClose={() => setIsActivitiesChartModalOpen(false)}
         title="Avance Mensual de Actividades y Quizts"
-        maxWidth="max-w-3xl"
       >
-        <div className="bg-white rounded-xl p-4 shadow-lg">
-          <div className="mb-2">
+        <div className="mb-4">
             <div className="grid grid-cols-2 gap-3 mb-2">
               <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                 <div className="text-sm text-blue-600 font-semibold mb-0">Total Actividades</div>
@@ -1233,7 +1233,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               </div>
             </div>
           </div>
-          <div style={{ width: '100%', height: '250px' }}>
+          <div className="w-full h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={currentMetricsData.activityProgress}
@@ -1266,7 +1266,6 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
       </ChartModal>
 
       {/* Modal para el Gráfico de Promedio Mensual con Material UI */}
@@ -1274,31 +1273,24 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
         isOpen={isMonthlyAverageModalOpen}
         onClose={() => setIsMonthlyAverageModalOpen(false)}
         title="Evolución del Promedio Mensual - Últimos 12 Meses"
-        maxWidth="max-w-3xl"
       >
-        <div className="bg-white rounded-xl p-4 shadow-lg">
-          <div className="mb-2">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between">
+        <div className="mb-4">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200 flex items-center justify-between">
               <div>
-                <div className="text-sm text-blue-600 font-semibold mb-0">Promedio General</div>
+                <div className="text-sm sm:text-base text-blue-600 font-medium mb-0">Promedio General</div>
                 <div className="text-xs text-blue-500 mt-0">
                   Basado en {finalMetricsData.monthlyAverageData?.length || 0} meses de datos
                 </div>
               </div>
-              <div className="text-3xl font-bold text-blue-700">
+              <div className="text-3xl sm:text-4xl font-semibold text-blue-700">
                 {finalMetricsData.monthlyAverage}%
               </div>
             </div>
           </div>
-          <div className="w-full flex items-center justify-center bg-white rounded-lg p-1 overflow-hidden" ref={(el) => {
-            if (el) {
-              // Simple hack to force redraw if needed, but mainly relying on new width logic below
-            }
-          }}>
+          <div className="w-full flex items-center justify-center bg-white rounded-lg p-1 overflow-hidden">
             <MUIBarChart
-              // Ajuste dinámico de ancho para móviles: restar padding del modal (aprox 32-48px)
-              width={typeof window !== 'undefined' ? Math.min(600, window.innerWidth - 48) : 300}
-              height={250}
+              width={typeof window !== 'undefined' ? Math.min(1200, Math.max(300, window.innerWidth - 100)) : 500}
+              height={typeof window !== 'undefined' ? Math.min(480, Math.max(260, window.innerHeight * 0.45)) : 360}
               dataset={finalMetricsData.monthlyAverageData || []}
               xAxis={[{
                 scaleType: 'band',
@@ -1326,20 +1318,21 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               sx={{
                 '& .MuiChartsAxis-line': {
                   stroke: '#6b7280',
-                  strokeWidth: 2,
+                  strokeWidth: 1,
                 },
                 '& .MuiChartsAxis-tick': {
                   stroke: '#6b7280',
+                  strokeWidth: 1,
                 },
                 '& .MuiChartsAxis-tickLabel': {
                   fill: '#374151',
                   fontSize: '10px',
-                  fontWeight: 500,
+                  fontWeight: 400,
                 },
                 '& .MuiChartsLegend-label': {
                   fill: '#374151',
                   fontSize: '12px',
-                  fontWeight: 600,
+                  fontWeight: 500,
                 },
                 '& .MuiChartsBar-root': {
                   rx: 6,
@@ -1347,7 +1340,6 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
               }}
             />
           </div>
-        </div>
       </ChartModal>
 
       {/* Modal para el Gráfico de Resultados por Materia */}
@@ -1455,7 +1447,7 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
 
       {/* Sección de Recomendaciones Personalizadas basadas en Estado Académico */}
       <div className="mt-16 mb-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-2 sm:px-4">
           {/* Header de la sección */}
           <div className="text-center mb-8">
             <div className="inline-block bg-white rounded-full px-6 xs:px-8 py-3 xs:py-4 shadow-xl border border-gray-200">
@@ -1503,95 +1495,67 @@ export function AlumnoDashboardMetrics({ userData, metricsData, isLoading = fals
                 : 'bg-gradient-to-r from-green-400 to-emerald-600';
 
             return (
-              <div className={`relative p-8 rounded-3xl shadow-2xl border-2 transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 ${cardBgClass}`}>
+              <div className={`relative p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl shadow-lg border transition-colors duration-150 ${cardBgClass}`}>
 
-                {/* Icono de bandera en la esquina superior izquierda */}
-                <div className="absolute top-4 left-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${iconBgClass}`}>
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {/* Header: Icono + Badge de estado */}
+                <div className="flex items-start justify-between gap-4 mb-6">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-md shrink-0 ${iconBgClass}`}>
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M4 4v18l6-3 6 3 6-3V4l-6 3-6-3-6 3z" />
                     </svg>
                   </div>
-                </div>
-
-                {/* Estado académico en la esquina superior derecha */}
-                <div className="absolute top-4 right-4">
-                  <div className={`px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg ${badgeBgClass}`}>
+                  <div className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold text-white shadow-sm ${badgeBgClass}`}>
                     Estado: {finalAcademicStatus.description}
                   </div>
                 </div>
 
-                {/* Contenido principal */}
-                <div className="pt-8 pb-4">
-                  {/* Recomendación dinámica según estado académico */}
-                  <div className="text-center mb-6">
-                    <p className={`text-xl sm:text-2xl lg:text-3xl font-black leading-relaxed ${textClass} drop-shadow-sm`}>
-                      {(() => {
-                        if (finalAcademicStatus.level === 'R') {
-                          return "Dedica más tiempo al estudio diario y busca apoyo adicional";
-                        } else if (finalAcademicStatus.level === 'A') {
-                          return "¡Vas por buen camino! Mantén ese ritmo de estudio constante";
-                        } else {
-                          return "¡Excelente desempeño! Sigue así y ayuda a tus compañeros";
-                        }
-                      })()}
+                {/* Mensaje principal */}
+                <p className={`text-lg sm:text-xl lg:text-2xl font-bold leading-snug ${textClass} mb-4`}>
+                  {(() => {
+                    if (finalAcademicStatus.level === 'R') {
+                      return "Dedica más tiempo al estudio diario y busca apoyo adicional";
+                    } else if (finalAcademicStatus.level === 'A') {
+                      return "¡Vas por buen camino! Mantén ese ritmo de estudio constante";
+                    } else {
+                      return "¡Excelente desempeño! Sigue así y ayuda a tus compañeros";
+                    }
+                  })()}
+                </p>
+
+                {/* Separador */}
+                <div className={`h-0.5 w-16 rounded-full ${separatorClass} mb-5`} />
+
+                {/* Consejo de estudio */}
+                <p className="text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                  {(() => {
+                    if (finalAcademicStatus.level === 'R') {
+                      return "Estudia 2-3 horas diarias en sesiones de 25 minutos";
+                    } else if (finalAcademicStatus.level === 'A') {
+                      return "Estudia todos los días un poco, no todo en un solo día";
+                    } else {
+                      return "Mantén tu rutina de estudio y comparte tus técnicas";
+                    }
+                  })()}
+                </p>
+
+                {/* Detalle de recomendación (integrado en misma tarjeta cuando hay riesgo) */}
+                {finalAcademicStatus.level === 'R' && (
+                  <div className="mt-5 pt-5 border-t border-gray-200/60">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Considera establecer un horario de estudio diario, buscar apoyo de tu asesor académico,
+                      y utilizar técnicas de estudio que se adapten mejor a tu estilo de aprendizaje.
+                      <span className="block mt-2 font-medium text-gray-700">¡Cada pequeño paso cuenta hacia tu éxito!</span>
                     </p>
                   </div>
+                )}
 
-                  {/* Separador decorativo */}
-                  <div className="flex items-center justify-center mb-6">
-                    <div className={`h-1 w-20 rounded-full ${separatorClass} shadow-sm`}></div>
-                  </div>
-
-                  {/* Recomendación específica de estudio */}
-                  <div className="text-center">
-                    <p className="text-base font-bold text-gray-700 mb-3 tracking-wide">
-                      {(() => {
-                        if (finalAcademicStatus.level === 'R') {
-                          return "Estudia 2-3 horas diarias en sesiones de 25 minutos";
-                        } else if (finalAcademicStatus.level === 'A') {
-                          return "Estudia todos los días un poco, no todo en un solo día";
-                        } else {
-                          return "Mantén tu rutina de estudio y comparte tus técnicas";
-                        }
-                      })()}
-                    </p>
-                    <p className="text-sm font-semibold text-gray-500 tracking-wider uppercase">
-                      La constancia vence al cansancio • Pequeños pasos llevan a grandes logros
-                    </p>
-                  </div>
-                </div>
-
-                {/* Patrón decorativo de fondo */}
-                <div className="absolute inset-0 opacity-5 pointer-events-none">
-                  <div className="w-full h-full bg-repeat" style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                  }}></div>
-                </div>
+                {/* Lema */}
+                <p className="text-xs sm:text-sm font-medium text-gray-500 mt-5 tracking-wide">
+                  La constancia vence al cansancio • Pequeños pasos llevan a grandes logros
+                </p>
               </div>
             );
           })()}
-
-          {/* Mensaje de recomendación académica si es necesario */}
-          {finalAcademicStatus.level === 'R' && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-blue-700 mb-2">Recomendación:</h4>
-                  <p className="text-sm text-blue-600 leading-relaxed">
-                    Considera establecer un horario de estudio diario, buscar apoyo de tu asesor académico,
-                    y utilizar técnicas de estudio que se adapten mejor a tu estilo de aprendizaje.
-                    ¡Cada pequeño paso cuenta hacia tu éxito!
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

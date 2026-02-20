@@ -1,6 +1,5 @@
 // BACKEND: Página separada para responder simulaciones (runner/review)
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import {
@@ -13,7 +12,6 @@ import {
 import { CheckCircle2, AlertTriangle, Timer, Send, Loader2, Maximize2 } from 'lucide-react';
 import MathEquationEditor, { isMathSubject, isMathQuestion } from '../shared/MathEquationEditor.jsx';
 import InlineMath from '../Asesor/simGen/InlineMath.jsx';
-import { buildStaticUrl } from '../../utils/url.js';
 
 // --- Ícono de Check para opciones seleccionadas ---
 const CheckIcon = () => (
@@ -57,17 +55,17 @@ function MathText({ text = "" }) {
 
   // ✅ Normalizar saltos de línea y espacios primero
   let processedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
+  
   // ✅ Reemplazar símbolos Unicode de multiplicación y división por comandos LaTeX
   // Esto debe hacerse ANTES de proteger las fórmulas
   processedText = processedText.replace(/×/g, '\\times').replace(/÷/g, '\\div');
-
+  
   // ✅ Procesar Markdown primero (convertir **texto** a <strong>texto</strong>)
   // Pero proteger las fórmulas LaTeX para no procesarlas
   const latexPlaceholder = '___LATEX_PLACEHOLDER___';
   const latexMatches = [];
   let placeholderIndex = 0;
-
+  
   // Reemplazar fórmulas LaTeX con placeholders antes de procesar Markdown
   processedText = processedText.replace(/\$([^$]+?)\$/g, (match) => {
     const placeholder = `${latexPlaceholder}${placeholderIndex}___`;
@@ -75,10 +73,10 @@ function MathText({ text = "" }) {
     placeholderIndex++;
     return placeholder;
   });
-
+  
   // Procesar Markdown: **texto** -> <strong>texto</strong>
   processedText = processedText.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-
+  
   // Restaurar fórmulas LaTeX
   latexMatches.forEach((match, idx) => {
     processedText = processedText.replace(`${latexPlaceholder}${idx}___`, match);
@@ -102,14 +100,14 @@ function MathText({ text = "" }) {
     // Limpiar espacios en blanco al inicio y final de la fórmula
     const formula = m[1].trim();
     if (formula) {
-      parts.push({
-        type: 'math',
+      parts.push({ 
+        type: 'math', 
         content: formula
       });
     }
     lastIndex = m.index + m[0].length;
   }
-
+  
   if (lastIndex < processedText.length) {
     parts.push({ type: 'text', content: processedText.slice(lastIndex) });
   }
@@ -117,7 +115,7 @@ function MathText({ text = "" }) {
   // Si no se encontraron fórmulas, devolver el texto con HTML procesado (ya con Markdown convertido)
   if (!matchFound || parts.length === 0) {
     return (
-      <span
+      <span 
         className="whitespace-pre-wrap"
         dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(processedText) }}
       />
@@ -133,7 +131,7 @@ function MathText({ text = "" }) {
             <InlineMath math={part.content} />
           </span>
         ) : (
-          <span
+          <span 
             key={`text-${idx}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtmlLite(part.content) }}
           />
@@ -282,7 +280,7 @@ export default function Simulacion_Review() {
   const [startedAt, setStartedAt] = useState(null);
   // Métricas de tiempo por pregunta
   const timingRef = useRef({ lastTs: null, byQuestion: {} });
-
+  
   // Estados para la lógica de seguridad
   const [tabAwayCount, setTabAwayCount] = useState(0);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -304,7 +302,7 @@ export default function Simulacion_Review() {
     const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; return ''; };
     const onPopState = () => { window.history.pushState(null, '', window.location.href); };
     const onVisibility = () => { if (document.visibilityState === 'hidden') { setTabAwayCount((c) => c + 1); } };
-
+    
     const onResize = () => {
       // En móviles/tablets (dispositivos táctiles) NO bloquear por tamaño de ventana
       const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
@@ -321,19 +319,20 @@ export default function Simulacion_Review() {
     // Bloqueo de más atajos de teclado
     const onKeyDown = (e) => {
       // Bloqueo de Recarga
-      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
-        e.preventDefault();
+      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) { 
+        e.preventDefault(); 
       }
       // Bloqueo de Navegación y Backspace
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); }
       if (e.key === 'Backspace' && !['input', 'textarea', 'select'].includes(e.target.tagName.toLowerCase()) && !e.target.isContentEditable) { e.preventDefault(); }
 
       // Bloqueo de atajos para DevTools y ver código fuente
-      if (e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
-        (e.ctrlKey && e.shiftKey && e.key === 'J') ||
-        (e.ctrlKey && e.shiftKey && e.key === 'C') ||
-        (e.ctrlKey && e.key === 'u')) {
+      if (e.key === 'F12' || 
+         (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+         (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+         (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+         (e.ctrlKey && e.key === 'u'))
+      {
         e.preventDefault();
       }
     };
@@ -341,13 +340,13 @@ export default function Simulacion_Review() {
     const onContextMenu = (e) => { e.preventDefault(); };
 
     window.history.pushState(null, '', window.location.href);
-    window.addEventListener('beforeunload', onBeforeUnload);
+  window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('popstate', onPopState);
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('contextmenu', onContextMenu, true);
-
+    
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload);
       window.removeEventListener('popstate', onPopState);
@@ -371,17 +370,17 @@ export default function Simulacion_Review() {
           const sent = lastSentRef.current.answers[id_pregunta] || {};
           const rec = timingRef.current.byQuestion[id_pregunta] || { totalMs: 0 };
           const advanced = (rec.totalMs || 0) - (sent.totalMs || 0);
-
+          
           // Determinar si es respuesta de texto o opción
           const esTexto = typeof respuesta === 'object' && respuesta !== null && respuesta.texto_libre !== undefined;
           const id_opcion = esTexto ? null : Number(respuesta);
           const texto_libre = esTexto ? respuesta.texto_libre : null;
-
+          
           // Verificar si cambió (opción o texto)
-          const changed = esTexto
+          const changed = esTexto 
             ? (texto_libre !== sent.texto_libre)
             : (Number(id_opcion) !== Number(sent.id_opcion));
-
+          
           if (changed || advanced >= thresholdMs) {
             delta.push({
               id_pregunta: Number(id_pregunta),
@@ -422,30 +421,30 @@ export default function Simulacion_Review() {
   // Lógica de advertencia/bloqueo por cambio de pestaña
   useEffect(() => {
     if (showFinalWarning) return;
-
+    
     if (tabAwayCount >= 5 && tabAwayCount <= 6) {
       setShowWarningModal(true);
     }
     else if (tabAwayCount > 6 && !submitOnceRef.current) {
       submitOnceRef.current = true;
-      setShowWarningModal(false);
+      setShowWarningModal(false); 
       setShowFinalWarning(true);
       setForcedSubmitMessage('La simulación se finalizó por exceder el límite de cambios de pestaña.');
 
       setTimeout(async () => {
-        try { await handleEnviar(); }
-        catch (err) { console.error("Fallo el envío automático por cambio de pestaña:", err); }
+        try { await handleEnviar(); } 
+        catch (err) { console.error("Fallo el envío automático por cambio de pestaña:", err); } 
         finally { setTimeout(() => { navigate('/alumno/simulaciones'); }, 3000); }
-      }, 5000);
+      }, 5000); 
     }
   }, [tabAwayCount, navigate, showFinalWarning]);
-
+  
   useEffect(() => {
     let mounted = true;
     const bootstrap = async () => {
       setLoading(true); setError('');
       try {
-        const [preg, meta] = await Promise.all([listPreguntasSimulacion(simId), getSimulacion(simId)]);
+        const [preg, meta] = await Promise.all([ listPreguntasSimulacion(simId), getSimulacion(simId) ]);
         if (!mounted) return;
         setPreguntas(preg?.data?.data || preg?.data || []);
         const q = meta?.data?.data || meta?.data || {};
@@ -467,9 +466,9 @@ export default function Simulacion_Review() {
         setStartedAt(now);
         // Inicializar reloj de timing
         timingRef.current.lastTs = now;
-      } catch (e) {
-        console.error(e);
-        setError('No se pudieron cargar las preguntas de la simulación.');
+      } catch (e) { 
+          console.error(e);
+          setError('No se pudieron cargar las preguntas de la simulación.'); 
       }
       finally { if (mounted) setLoading(false); }
     };
@@ -483,12 +482,12 @@ export default function Simulacion_Review() {
     const key = `sim_open_${simId}`;
     const pid = Math.random().toString(36).slice(2);
     const beat = () => {
-      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), pid })); } catch { }
+      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), pid })); } catch {}
     };
     beat();
     const iv = setInterval(beat, 5000);
     const onVis = () => beat();
-    const onUnload = () => { try { localStorage.removeItem(key); } catch { } };
+    const onUnload = () => { try { localStorage.removeItem(key); } catch {} };
     window.addEventListener('visibilitychange', onVis);
     window.addEventListener('beforeunload', onUnload);
     window.addEventListener('pagehide', onUnload);
@@ -497,10 +496,10 @@ export default function Simulacion_Review() {
       window.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('beforeunload', onUnload);
       window.removeEventListener('pagehide', onUnload);
-      try { localStorage.removeItem(key); } catch { }
+      try { localStorage.removeItem(key); } catch {}
     };
   }, [simId]);
-
+  
   const [timeLimitSec, setTimeLimitSec] = useState(null);
   const [remainingSec, setRemainingSec] = useState(null);
 
@@ -546,7 +545,7 @@ export default function Simulacion_Review() {
       q.totalMs = (q.totalMs || 0) + delta;
       timingRef.current.byQuestion[idPregunta] = q;
       timingRef.current.lastTs = now;
-    } catch { }
+    } catch {}
     setRespuestas(prev => ({ ...prev, [idPregunta]: idOpcion }));
   };
 
@@ -576,7 +575,7 @@ export default function Simulacion_Review() {
 
   const handleEnviar = async () => {
     if (enviando) return;
-    setEnviando(true);
+    setEnviando(true); 
     setError('');
     try {
       // Intento de autosave final antes de enviar
@@ -596,7 +595,7 @@ export default function Simulacion_Review() {
         if (sesionId && entries.length) {
           await enviarRespuestasSesionSimulacion(sesionId, entries);
         }
-      } catch { }
+      } catch {}
       const payload = Object.entries(respuestas).map(([id_pregunta, respuesta]) => {
         const esTexto = typeof respuesta === 'object' && respuesta !== null && respuesta.texto_libre !== undefined;
         return {
@@ -640,12 +639,12 @@ export default function Simulacion_Review() {
       // Fallback: usar localStorage para notificar si no hay window.opener
       try {
         localStorage.setItem('sim_finished_refresh', JSON.stringify({ simId, sesionId, timestamp: Date.now() }));
-      } catch { }
+      } catch {}
     } catch (e) {
       console.error(e);
       setError('No se pudo enviar la simulación. Intenta de nuevo.');
       setEnviando(false);
-      throw e;
+      throw e; 
     }
   };
 
@@ -653,7 +652,7 @@ export default function Simulacion_Review() {
     if (sec == null) return '--:--';
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   };
 
   const answeredCount = Object.keys(respuestas).length;
@@ -665,26 +664,26 @@ export default function Simulacion_Review() {
 
   // Cerrar pestaña con fallback: intenta cerrar y, si el navegador lo bloquea, vuelve a Simulaciones
   const handleCloseTab = () => {
-    try { localStorage.removeItem(`sim_open_${simId}`); } catch { }
+    try { localStorage.removeItem(`sim_open_${simId}`); } catch {}
     try {
       if (window.opener && !window.opener.closed) {
-        try { window.opener.focus(); } catch { }
-        try { window.opener.postMessage({ type: 'SIM_CLOSED', simId, sesionId }, window.location.origin); } catch { }
+        try { window.opener.focus(); } catch {}
+        try { window.opener.postMessage({ type: 'SIM_CLOSED', simId, sesionId }, window.location.origin); } catch {}
       }
-    } catch { }
-    try { window.close(); } catch { }
+    } catch {}
+    try { window.close(); } catch {}
     // Si window.close() no cierra (pestaña no abierta por script), redirigir como fallback
     setTimeout(() => {
       try { navigate('/alumno/simulaciones', { replace: true }); }
-      catch { try { window.location.href = '/alumno/simulaciones'; } catch { } }
+      catch { try { window.location.href = '/alumno/simulaciones'; } catch {} }
     }, 150);
   };
 
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm mb-6 pt-8 sm:pt-12">
-        <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
+    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm mb-6 pt-8 sm:pt-12">
+      <div className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
@@ -698,7 +697,7 @@ export default function Simulacion_Review() {
               <div className="hidden sm:flex items-center text-sm text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full font-medium">
                 {answeredCount}/{totalQuestions}
               </div>
-              <div className={`flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-full border ${timeLimitSec ? (remainingSec != null && remainingSec <= 60 ? 'border-red-300 bg-red-50 text-red-700 animate-pulse' : 'border-gray-200 bg-white text-gray-800') : 'border-gray-200 bg-gray-100 text-gray-600'}`}>
+              <div className={`flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-full border ${timeLimitSec ? (remainingSec!=null && remainingSec<=60 ? 'border-red-300 bg-red-50 text-red-700 animate-pulse' : 'border-gray-200 bg-white text-gray-800') : 'border-gray-200 bg-gray-100 text-gray-600'}`}>
                 <Timer className="w-4 h-4" />
                 <span>{timeLimitSec ? formatTime(remainingSec) : 'Sin límite'}</span>
               </div>
@@ -712,7 +711,7 @@ export default function Simulacion_Review() {
         )}
       </div>
 
-      <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-10 pt-16 sm:pt-24 pb-4 sm:pb-8">
+  <div className="w-full px-3 sm:px-6 lg:px-10 pt-16 sm:pt-24 pb-4 sm:pb-8">
         {loading && (
           <div className="py-24 text-center text-gray-500 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
@@ -741,14 +740,14 @@ export default function Simulacion_Review() {
                     <div className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[12px] sm:text-sm font-bold ring-3 sm:ring-4 ring-indigo-100">{idx + 1}</div>
                     <div className="w-full">
                       <p className="font-semibold text-gray-900 mb-3 sm:mb-4 text-[15px] sm:text-lg">
-                        <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx + 1}`} />
+                        <MathText text={p.enunciado || p.pregunta || `Pregunta ${idx+1}`} />
                       </p>
-
-                      {/* ✅ Imagen de la pregunta si existe (buildStaticUrl para rutas /uploads/...) */}
+                      
+                      {/* ✅ Imagen de la pregunta si existe */}
                       {(p.imagen || p.image) && (
                         <div className="mb-3 sm:mb-4">
                           <img
-                            src={buildStaticUrl(p.imagen || p.image) || (p.imagen || p.image)}
+                            src={p.imagen || p.image}
                             alt="Imagen de la pregunta"
                             className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-64 sm:max-h-80"
                             onError={(e) => {
@@ -757,7 +756,7 @@ export default function Simulacion_Review() {
                           />
                         </div>
                       )}
-
+                      
                       {/* Pregunta de respuesta corta */}
                       {p.tipo === 'respuesta_corta' && (
                         <div>
@@ -779,18 +778,18 @@ export default function Simulacion_Review() {
                                 rows={4}
                               />
                             ) : (
-                              <>
-                                <textarea
-                                  value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.texto_libre !== undefined
-                                    ? respuestas[p.id].texto_libre
-                                    : (respuestas[p.id] || '')}
-                                  onChange={(e) => handleTextAnswer(p.id, e.target.value)}
-                                  placeholder="Escribe tu respuesta aquí..."
-                                  rows={4}
-                                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
-                                />
-                                <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
-                              </>
+                            <>
+                              <textarea
+                                value={typeof respuestas[p.id] === 'object' && respuestas[p.id]?.texto_libre !== undefined
+                                  ? respuestas[p.id].texto_libre
+                                  : (respuestas[p.id] || '')}
+                                onChange={(e) => handleTextAnswer(p.id, e.target.value)}
+                                placeholder="Escribe tu respuesta aquí..."
+                                rows={4}
+                                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors resize-y"
+                              />
+                              <p className="mt-2 text-xs text-gray-500">Escribe tu respuesta en el cuadro de texto arriba.</p>
+                            </>
                             );
                           })()}
                         </div>
@@ -814,7 +813,7 @@ export default function Simulacion_Review() {
                                     {(op.imagen || op.image) && (
                                       <div className="mb-2">
                                         <img
-                                          src={buildStaticUrl(op.imagen || op.image) || (op.imagen || op.image)}
+                                          src={op.imagen || op.image}
                                           alt="Imagen de la opción"
                                           className="max-w-full h-auto rounded-lg border border-gray-200 object-contain max-h-32 sm:max-h-40"
                                           onError={(e) => {
@@ -865,8 +864,8 @@ export default function Simulacion_Review() {
       </div>
 
       {!loading && !error && !finalizado && totalQuestions > 0 && (
-        <div className="sticky bottom-0 z-40 bg-white/90 backdrop-blur-lg shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
-          <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3 flex items-center justify-center sm:justify-end">
+         <div className="sticky bottom-0 z-40 bg-white/90 backdrop-blur-lg shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
+          <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-3 flex items-center justify-center sm:justify-end">
             <button
               disabled={enviando || answeredCount === 0 || showFinalWarning || showWarningModal || isWindowTooSmall}
               onClick={handleEnviar}
@@ -880,46 +879,44 @@ export default function Simulacion_Review() {
       )}
 
       {/* MODAL: Cambio de Pestaña */}
-      {showWarningModal && createPortal(
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {showWarningModal && (
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all animate-fade-in-up relative">
             <AlertTriangle className="w-14 h-14 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Has Salido de la Pestaña de la Simulación</h2>
             <p className="text-gray-600 mt-3">
-              El verdadero reto es contigo mismo. ¡Confiamos en tu honestidad!<br />
+              El verdadero reto es contigo mismo. ¡Confiamos en tu honestidad!<br/>
               Respira profundo y concéntrate en tus respuestas.
             </p>
             <p className="text-sm text-gray-500 mt-4">
               (Advertencia {tabAwayCount} de 7)
             </p>
-            <button
+            <button 
               onClick={() => setShowWarningModal(false)}
               className="mt-6 w-full px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Entendido, continuar
             </button>
           </div>
-        </div>,
-        document.getElementById('modal-root')
+        </div>
       )}
 
       {/* MODAL: Bloqueo por tamaño de ventana */}
-      {isWindowTooSmall && createPortal(
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {isWindowTooSmall && (
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all animate-fade-in-up relative">
             <Maximize2 className="w-14 h-14 text-indigo-600 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900">Maximiza la Ventana para Continuar</h2>
             <p className="text-gray-600 mt-2">
-              Para asegurar una experiencia de examen justa, la simulación se pausará hasta que la ventana ocupe la pantalla completa.
+             Para asegurar una experiencia de examen justa, la simulación se pausará hasta que la ventana ocupe la pantalla completa.
             </p>
           </div>
-        </div>,
-        document.getElementById('modal-root')
+        </div>
       )}
 
       {/* MODAL: Bloqueo final por advertencias */}
-      {showFinalWarning && createPortal(
-        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+      {showFinalWarning && (
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all animate-fade-in-up">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Límite de Advertencias Excedido</h2>
@@ -933,8 +930,7 @@ export default function Simulacion_Review() {
               <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mx-auto" />
             </div>
           </div>
-        </div>,
-        document.getElementById('modal-root')
+        </div>
       )}
     </div>
   );

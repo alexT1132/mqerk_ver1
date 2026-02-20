@@ -215,8 +215,8 @@ function StudentAwareLayout() {
     <div className={`min-h-screen transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}>
       <AlumnoLayout
         HeaderComponent={CustomHeader}
-        SideBarDesktopComponent={shouldShowSidebar ? (props => <SideBarDesktop_Alumno_comp {...props} onLogout={handleLogout} />) : null}
-        SideBarSmComponent={shouldShowSidebar ? (props => <SideBarSm_Alumno_comp {...props} onLogout={handleLogout} />) : null}
+        SideBarDesktopComponent={shouldShowSidebar ? SideBarDesktop_Alumno_comp : null}
+        SideBarSmComponent={shouldShowSidebar ? SideBarSm_Alumno_comp : null}
       >
         {/* BACKEND: Rutas del dashboard del alumno */}
         <Routes>

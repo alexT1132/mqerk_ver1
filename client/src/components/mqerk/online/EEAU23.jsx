@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect } from 'react'
 import Navbar from '../../../components/mqerk/Navbar'
 import Primero from "../../../assets/mqerk/veranotx/01.webp";
 import Segundo from "../../../assets/mqerk/veranotx/02.webp";
@@ -11,13 +11,51 @@ import ReactPlayer from 'react-player/youtube';
 import { Link } from 'react-router-dom';
 import Footer from "../../../components/layout/footer";
 
-function Online() {
+function EEAU23() {
+  const topRef = React.useRef(null)
+
+  const scrollToTop = () => {
+    window.scrollTo(0, 0)
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+    const root = document.getElementById('root')
+    if (root) root.scrollTop = 0
+    const el = topRef.current || document.getElementById('eeau23-top')
+    el?.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'nearest' })
+  }
+
+  // useLayoutEffect: scroll ANTES del paint (evita parpadeo)
+  useLayoutEffect(() => {
+    scrollToTop()
+  }, [])
+
+  // useEffect: refuerzos para contenido que se pinta más tarde (ReactPlayer, etc.)
+  useEffect(() => {
+    scrollToTop()
+    const raf = requestAnimationFrame(scrollToTop)
+    const t50 = setTimeout(scrollToTop, 50)
+    const t150 = setTimeout(scrollToTop, 150)
+    const t400 = setTimeout(scrollToTop, 400)
+    const t800 = setTimeout(scrollToTop, 800)
+    const t1200 = setTimeout(scrollToTop, 1200)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(t50)
+      clearTimeout(t150)
+      clearTimeout(t400)
+      clearTimeout(t800)
+      clearTimeout(t1200)
+    }
+  }, [])
+
   return (
-    <div className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
+    <div ref={topRef} className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
+      {/* Ancla para scroll al inicio (evita que quede "hasta abajo" al navegar desde /online) */}
+      <div id="eeau23-top" className="absolute -top-px left-0 w-px h-px pointer-events-none" aria-hidden="true" />
       <Navbar />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-[#3c26cc] text-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <Link 
             to="/online" 
@@ -34,17 +72,18 @@ function Online() {
         </div>
       </div>
 
-      {/* Video Player */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-center items-center animate-fade-in">
-          <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
+      {/* Video Player - Responsive: encuadra según pantalla y dispositivo */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+        <div className="relative w-full animate-fade-in" style={{ paddingBottom: '56.25%' }}>
+          <div className="absolute inset-0 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
             <ReactPlayer
               url="https://youtu.be/v-iXIcu6LUI"
               playing
               muted
-              width="700px"
+              width="100%"
               height="100%"
               controls
+              style={{ position: 'absolute', top: 0, left: 0 }}
             />
           </div>
         </div>
@@ -175,4 +214,4 @@ function InfoItem({ icon, text, special = false, short = false }) {
   );
 }
 
-export default Online;
+export default EEAU23;

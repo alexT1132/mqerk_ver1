@@ -54,6 +54,8 @@ const Feedback_Alumno_Comp = () => {
   const [notesBySubmission, setNotesBySubmission] = useState({}); // { subId: 'texto' }
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteView, setNoteView] = useState({ text: '', taskName: '' });
+  // Estado para animación de salida de modales
+  const [modalExiting, setModalExiting] = useState(null); // 'upload' | 'note' | 'create'
 
   // Conteo global de tareas creadas por el alumno (informativo)
   const studentOwnedCount = tasks.filter(t => t._isStudentOwned).length;
@@ -359,6 +361,23 @@ const Feedback_Alumno_Comp = () => {
   };
   const closeNoteModal = () => { setShowNoteModal(false); setNoteView({ text: '', taskName: '' }); };
 
+  // Cierre con animación de salida (200ms)
+  const closeModalWithAnimation = () => {
+    if (modalExiting) return;
+    setModalExiting('upload');
+    setTimeout(() => { closeModal(); setModalExiting(null); }, 200);
+  };
+  const closeNoteModalWithAnimation = () => {
+    if (modalExiting) return;
+    setModalExiting('note');
+    setTimeout(() => { closeNoteModal(); setModalExiting(null); }, 200);
+  };
+  const closeCreateTaskWithAnimation = () => {
+    if (modalExiting) return;
+    setModalExiting('create');
+    setTimeout(() => { closeCreateTask(); setModalExiting(null); }, 200);
+  };
+
   const closeViewTaskModal = () => {
     setShowViewTaskModal(false);
     setViewingTaskName('');
@@ -635,14 +654,19 @@ const Feedback_Alumno_Comp = () => {
 
     <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 pt-9 pb-4 lg:py-8 font-sans text-gray-800 flex flex-col items-center relative overflow-hidden">
       {/* Título responsivo - Mejorado */}
-      <div className="w-full max-w-7xl mx-auto mb-6 sm:mb-10 text-center lg:text-left">
-        <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold mb-2 sm:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl tracking-tight">
-          FEEDBACK
-        </h1>
+      <div className="w-full max-w-full mx-auto mb-6 sm:mb-8">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+            <MessageSquareText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </div>
+          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl tracking-tight">
+            FEEDBACK
+          </h1>
+        </div>
       </div>
 
       {/* Puntos + Progreso - Mejorado */}
-      <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-7xl ring-2 ring-violet-100/50">
+      <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-full ring-2 ring-violet-100/50">
         <div className="flex items-center gap-4">
           <div className="relative">
             <Star className="w-12 h-12 sm:w-14 sm:h-14 text-amber-400 drop-shadow-xl" fill="currentColor" />
@@ -771,7 +795,7 @@ const Feedback_Alumno_Comp = () => {
       )}
 
       {/* Filtros: Mes + Búsqueda - Mejorado */}
-      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-7xl lg:static sticky top-0 z-30 bg-white/95 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80 px-3 sm:px-4 pt-3 pb-2 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg">
+      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-full lg:static sticky top-0 z-30 bg-white/95 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80 px-3 sm:px-4 pt-3 pb-2 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg">
         <label className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700 flex items-center gap-2 text-center sm:text-left">
           <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Feedback del mes:</span>
@@ -838,7 +862,7 @@ const Feedback_Alumno_Comp = () => {
       </div>
 
       {/* Vista de escritorio - Tabla - Mejorada */}
-      <div className="hidden lg:block w-full max-w-7xl 2xl:max-w-[1600px]">
+      <div className="hidden lg:block w-full max-w-full">
         <div className="bg-white border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl overflow-x-auto ring-2 ring-violet-100/50">
           <table className="min-w-[1200px] 2xl:min-w-[1200px] table-fixed text-[13px] 2xl:text-[12px]">
             <colgroup>
@@ -1136,10 +1160,18 @@ const Feedback_Alumno_Comp = () => {
         )}
       </div>
 
-      {/* Modal para Subir/Cancelar - Mejorado */}
+      {/* Modal para Subir/Cancelar - Mejorado (proporcional, responsivo, animaciones) */}
       {showModal && selectedTask && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+        <div
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 ${modalExiting === 'upload' ? 'animate-fade-out-overlay' : 'animate-fade-in-overlay'}`}
+          onClick={closeModalWithAnimation}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={`bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl border-2 border-violet-200/50 ring-2 ring-violet-100/50 ${modalExiting === 'upload' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
               <h2 className="text-xl sm:text-2xl font-extrabold text-white">
                 {selectedTask.isSubmitted ? 'Gestionar Entrega' : 'Subir Tarea'}
@@ -1224,7 +1256,7 @@ const Feedback_Alumno_Comp = () => {
                 </div>
                 <div className="flex justify-end">
                   <button
-                    onClick={closeModal}
+                    onClick={closeModalWithAnimation}
                     className="px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm font-extrabold border-2 border-gray-600 touch-manipulation"
                   >
                     Cerrar
@@ -1315,16 +1347,24 @@ const Feedback_Alumno_Comp = () => {
       )}
 
 
-      {/* Modal: Ver nota del asesor - Mejorado */}
+      {/* Modal: Ver nota del asesor - Mejorado (proporcional, responsivo, animaciones) */}
       {showNoteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNoteModal}>
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-violet-200/50 ring-2 ring-violet-100/50" onClick={(e) => e.stopPropagation()}>
+        <div
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 ${modalExiting === 'note' ? 'animate-fade-out-overlay' : 'animate-fade-in-overlay'}`}
+          onClick={closeNoteModalWithAnimation}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={`bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl overflow-hidden border-2 border-violet-200/50 ring-2 ring-violet-100/50 ${modalExiting === 'note' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-lg">
               <div className="font-extrabold text-sm sm:text-base truncate flex items-center gap-2">
                 <MessageSquareText className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Nota del asesor · {noteView.taskName}</span>
               </div>
-              <button onClick={closeNoteModal} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-extrabold transition-all active:scale-95 border border-white/30">
+              <button onClick={closeNoteModalWithAnimation} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-extrabold transition-all active:scale-95 border border-white/30">
                 <X className="w-3.5 h-3.5" /> Cerrar
               </button>
             </div>
@@ -1347,15 +1387,23 @@ const Feedback_Alumno_Comp = () => {
         ></div>
       )}
 
-      {/* Modal: Crear nueva actividad - Mejorado */}
+      {/* Modal: Crear nueva actividad - Mejorado (proporcional, responsivo, animaciones) */}
       {showCreateTaskModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+        <div
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 ${modalExiting === 'create' ? 'animate-fade-out-overlay' : 'animate-fade-in-overlay'}`}
+          onClick={closeCreateTaskWithAnimation}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={`bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl border-2 border-violet-200/50 ring-2 ring-violet-100/50 ${modalExiting === 'create' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
               <h2 className="text-xl sm:text-2xl font-extrabold text-white">Nueva actividad</h2>
             </div>
             <p className="text-sm text-gray-700 mb-4 font-medium">Crea una actividad con el nombre que prefieras. La fecha de entrega se generará cuando subas tu PDF.</p>
-            <label className="block text-sm font-extrabold text-violet-700 mb-2 flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm font-extrabold text-violet-700 mb-2">
               <FileText className="w-4 h-4" />
               <span>Nombre de la actividad</span>
             </label>
@@ -1369,7 +1417,7 @@ const Feedback_Alumno_Comp = () => {
             />
             {newTaskError && <div className="mt-3 text-xs text-red-600 bg-red-50 border-2 border-red-200 rounded-xl p-3 font-extrabold">{newTaskError}</div>}
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={closeCreateTask} className="px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-gray-600 touch-manipulation">Cancelar</button>
+              <button onClick={closeCreateTaskWithAnimation} className="px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-gray-600 touch-manipulation">Cancelar</button>
               <button onClick={confirmCreateTask} className="px-4 py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-violet-700 touch-manipulation">Crear</button>
             </div>
           </div>

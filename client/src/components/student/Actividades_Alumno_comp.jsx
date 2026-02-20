@@ -3054,7 +3054,7 @@ export function Actividades_Alumno_comp() {
     // Función para renderizar las áreas principales
     const renderAreas = () => (
         <div className="min-h-screen bg-transparent dark:bg-transparent px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
-            <div className="max-w-7xl mx-auto">
+            <div className="w-full max-w-full mx-auto">
                 {error && !loading && (
                     <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 flex flex-col sm:flex-row sm:items-center gap-3">
                         <div className="flex-1 text-sm text-red-700">
@@ -3075,10 +3075,15 @@ export function Actividades_Alumno_comp() {
                 <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
                     <div className="px-4 sm:px-6 py-6 sm:py-8">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                            <div>
-                                <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 tracking-tight">
-                                    ACTIVIDADES Y EVALUACIONES
-                                </h1>
+                            <div className="text-center w-full">
+                                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
+                                    <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+                                        <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                                    </div>
+                                    <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+                                        ACTIVIDADES Y EVALUACIONES
+                                    </h1>
+                                </div>
                                 <p className="text-sm sm:text-base text-gray-600 font-medium">
                                     Selecciona el área de estudio que deseas explorar
                                 </p>
@@ -3151,7 +3156,7 @@ export function Actividades_Alumno_comp() {
 
         return (
             <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full max-w-full mx-auto">
                     {/* Header con navegación - Mejorado para móviles */}
                     <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
                         <div className="px-4 sm:px-6 py-5 sm:py-8">
@@ -3292,7 +3297,7 @@ export function Actividades_Alumno_comp() {
     // Función para renderizar botones de actividades y quiz
     const renderButtons = () => (
         <div className="min-h-screen bg-white px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 2xl:px-8 py-8 sm:py-10 lg:py-12">
-            <div className="max-w-7xl mx-auto">
+            <div className="w-full max-w-full mx-auto">
                 {/* Header con navegación - Mejorado para móviles */}
                 <div className="bg-white border-2 border-gray-200/50 rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
                     <div className="px-4 sm:px-6 py-5 sm:py-8">

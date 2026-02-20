@@ -25,6 +25,12 @@ const Calendar = ({ className }) => (
   </svg>
 );
 
+const CreditCard = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M3.75 5.25h16.5A1.5 1.5 0 0121.75 6.75v10.5a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6.75a1.5 1.5 0 011.5-1.5zM6.75 15.75h3" />
+  </svg>
+);
+
 const CheckCircle = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1970,15 +1976,21 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
   return (
     <div className="min-h-screen bg-white px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 lg:py-8">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-6">
+      <div className="w-full mx-auto space-y-4 sm:space-y-5 md:space-y-6">
         {/* Título principal y navegación por tabs */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
-          <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
-            MIS PAGOS
-          </h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
+          {/* Icono + título centrados */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0 text-white">
+              <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
+              MIS PAGOS
+            </h1>
+          </div>
 
           {/* Tabs de navegación mejorados */}
-          <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+          <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50 sm:ml-auto sm:order-2">
             <button
               onClick={() => setActiveTab('current')}
               className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'current'

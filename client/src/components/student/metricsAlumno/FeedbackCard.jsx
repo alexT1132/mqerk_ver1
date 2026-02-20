@@ -93,6 +93,15 @@ export const FeedbackCard = ({ score: scoreProp = 0 }) => {
 
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden font-sans p-6 pb-8">
+      <style>{`
+        @keyframes emoji-float {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-3px) scale(1.08); }
+        }
+        .feedback-emoji-animate {
+          animation: emoji-float 2.5s ease-in-out infinite;
+        }
+      `}</style>
       
       {/* Título */}
       <div className="text-center mb-6">
@@ -122,7 +131,7 @@ export const FeedbackCard = ({ score: scoreProp = 0 }) => {
             />
           ))}
 
-          {/* Emojis */}
+          {/* Emojis con animación propia (float suave) */}
           {levels.map((lvl, i) => {
             const midAngle = (lvl.start + lvl.end) / 2;
             const midRadius = (CONFIG.radius + CONFIG.innerRadius) / 2;
@@ -136,8 +145,12 @@ export const FeedbackCard = ({ score: scoreProp = 0 }) => {
                 dy="0.35em"
                 textAnchor="middle"
                 fontSize="28"
-                className="pointer-events-none select-none filter drop-shadow-sm"
-                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+                className="pointer-events-none select-none filter drop-shadow-sm feedback-emoji-animate"
+                style={{
+                  transformBox: 'fill-box',
+                  transformOrigin: 'center',
+                  animationDelay: `${i * 0.15}s`,
+                }}
               >
                 {lvl.emoji}
               </text>
@@ -153,7 +166,7 @@ export const FeedbackCard = ({ score: scoreProp = 0 }) => {
 
         {/* Score numérico y Texto "Puntaje Total" (Bajado de posición) */}
         <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center translate-y-4">
-             <span className="text-5xl font-black text-slate-00 tabular-nums leading-none">
+             <span className="text-5xl font-black text-slate-800 tabular-nums leading-none">
               {Math.round(animatedScore)}%
             </span>
              <span className="text-sm font-semibold text-slate-400 mt-2">Puntaje Total</span>
