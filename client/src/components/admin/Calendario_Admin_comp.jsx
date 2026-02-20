@@ -19,6 +19,8 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { driver } from 'driver.js'; //libreia paar el recorrido 
+import 'driver.js/dist/driver.css';
 import api from '../../api/axios';
 import LoadingOverlay from '../shared/LoadingOverlay.jsx';
 
@@ -28,6 +30,10 @@ export function Calendario_Admin_comp() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState(null);
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [dayModalReminders, setDayModalReminders] = useState([]);
+  const [dayModalDate, setDayModalDate] = useState(null);
+  const [showPendientesModal, setShowPendientesModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -348,12 +354,37 @@ export function Calendario_Admin_comp() {
   const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   const getTipoColor = (tipo) => {
-    switch (tipo) {
-      case 'trabajo': return 'bg-blue-50 text-blue-800 border-blue-300';
-      case 'personal': return 'bg-green-50 text-green-800 border-green-300';
-      case 'academico': return 'bg-slate-100 text-slate-800 border-slate-300';
-      default: return 'bg-gray-50 text-gray-800 border-gray-300';
+    const t = (tipo || '').toLowerCase();
+    if (t === 'trabajo') return 'bg-blue-50 text-blue-800 border-blue-300';
+    if (t === 'personal') return 'bg-green-50 text-green-800 border-green-300';
+    if (t === 'academico') return 'bg-slate-100 text-slate-800 border-slate-300';
+    if (t === 'finanzas') return 'bg-amber-50 text-amber-800 border-amber-300';
+    return 'bg-gray-50 text-gray-800 border-gray-300';
+  };
+
+  /** Color del punto por tipo (para celdas del calendario: indicar tipo sin mostrar hora) */
+  const getTipoDotColor = (tipo) => {
+    const t = (tipo || '').toLowerCase();
+    if (t === 'trabajo') return 'bg-blue-500';
+    if (t === 'personal') return 'bg-green-500';
+    if (t === 'academico') return 'bg-purple-500';
+    return 'bg-amber-500';
+  };
+
+  /** Etiqueta corta del tipo para celdas y listas (ej. G. variable, Fijos, P. asesor, Trab.) */
+  const getTipoShortLabel = (tipo, titulo = '') => {
+    const t = (tipo || '').toLowerCase();
+    const tit = (titulo || '').toLowerCase();
+    if (t === 'trabajo') return 'Trab.';
+    if (t === 'personal') return 'Pers.';
+    if (t === 'academico') return 'Acad.';
+    if (t === 'finanzas') {
+      if (tit.includes('gasto variable')) return 'G. variable';
+      if (tit.includes('gasto fijo')) return 'Fijos';
+      if (tit.includes('pago') && tit.includes('asesor')) return 'P. asesor';
+      return 'Finanz.';
     }
+    return (tipo || 'Otro').slice(0, 8);
   };
 
   const getPrioridadColor = (prioridad) => {
@@ -364,11 +395,80 @@ export function Calendario_Admin_comp() {
       default: return 'bg-gray-500';
     }
   };
-  return (
-    <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6 lg:pb-8">
-      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
 
-        <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 shadow-xl p-5 sm:p-6 mb-6">
+  /** Tour guiado con Driver.js: crear recordatorios, tipos, prioridades, pendientes, finanzas */
+  const startTour = () => {
+    const driverObj = driver({
+      showProgress: true,
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Anterior',
+      doneBtnText: 'Listo',
+      progressText: '{{current}} de {{total}}',
+      steps: [
+        {
+          element: '#tour-nuevo-recordatorio',
+          popover: {
+            title: 'Crear recordatorio',
+            description: 'Desde aquí creas recordatorios de tipo trabajo, personal o académico (título, descripción, fecha, hora, prioridad). Los de tipo finanzas solo se crean en la sección Finanzas.',
+            side: 'bottom',
+            align: 'end',
+          },
+        },
+        {
+          element: '#tour-calendario-mes',
+          popover: {
+            title: 'Calendario y meses',
+            description: 'Usa las flechas para cambiar de mes. En cada día verás los recordatorios (en PC: tipo y título; en móvil: un número). Toca un día o el número para ver la lista y abrir los detalles.',
+            side: 'bottom',
+            align: 'center',
+          },
+        },
+        {
+          element: '#tour-tipos-prioridades',
+          popover: {
+            title: 'Tipos y prioridades',
+            description: 'Tipos que verás aquí: Trabajo (azul), Personal (verde), Académico (morado) y Finanzas (ámbar), que solo se crean en la sección Finanzas (gastos variables, fijos, pago asesores). Prioridades: Alta (rojo), Media (amarillo), Baja (verde).',
+            side: 'left',
+            align: 'start',
+          },
+        },
+        {
+          element: '#tour-resumen-pendientes',
+          popover: {
+            title: 'Pendientes',
+            description: 'Haz clic aquí para ver todos los recordatorios no completados. Al tocar uno se abre el modal de detalles (ver, completar o eliminar).',
+            side: 'left',
+            align: 'start',
+          },
+        },
+        {
+          element: '#tour-header',
+          popover: {
+            title: 'Recordatorios de Finanzas',
+            description: 'Los recordatorios de tipo finanzas solo se crean en la sección Finanzas. Si aparecen aquí es porque se vincularon desde allí. No se pueden eliminar desde el calendario: hay que borrarlos o desvincularlos desde Finanzas.',
+            side: 'bottom',
+            align: 'center',
+          },
+        },
+        {
+          element: '#tour-proximos',
+          popover: {
+            title: 'Próximos recordatorios',
+            description: 'Aquí ves los siguientes recordatorios pendientes. Toca uno para abrir sus detalles.',
+            side: 'left',
+            align: 'start',
+          },
+        },
+      ],
+    });
+    driverObj.drive();
+  };
+
+  return (
+    <div className="min-h-screen bg-white w-full px-2 xs:px-3 sm:px-6 lg:px-8 pt-4 xs:pt-6 sm:pt-8 md:pt-10 pb-4 sm:pb-6 lg:pb-8">
+      <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
+
+        <div id="tour-header" className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 shadow-xl p-3 xs:p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-purple-900 mb-2">Mi Agenda Personal</h1>
@@ -376,8 +476,18 @@ export function Calendario_Admin_comp() {
                 Gestiona tus recordatorios y tareas personales
               </p>
             </div>
-            <div className="mt-4 sm:mt-0 flex space-x-2">
+            <div className="mt-4 sm:mt-0 flex items-center gap-2">
               <button
+                type="button"
+                onClick={startTour}
+                className="p-2 rounded-full border-2 border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400 transition-colors touch-manipulation"
+                title="Tour guiado por la agenda"
+                aria-label="Iniciar tour guiado"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </button>
+              <button
+                id="tour-nuevo-recordatorio"
                 onClick={() => setShowNewModal(true)}
                 disabled={isLoading}
                 className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-md shadow-purple-500/30 border border-purple-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -448,10 +558,10 @@ export function Calendario_Admin_comp() {
         )}
 
 
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 p-5 sm:p-6 mb-6">
+        <div id="tour-calendario-mes" className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 p-3 xs:p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 <button
                   onClick={() => cambiarMes(-1)}
                   className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200"
@@ -460,7 +570,7 @@ export function Calendario_Admin_comp() {
                     <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </button>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-purple-900">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-purple-900">
                   {meses[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </h2>
                 <button
@@ -474,7 +584,7 @@ export function Calendario_Admin_comp() {
               </div>
               <button
                 onClick={() => setCurrentDate(new Date())}
-                className="px-4 py-2 text-sm font-semibold bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 border border-purple-300 transition-all duration-200"
+                className="px-3 py-2 text-sm font-semibold bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 border border-purple-300 transition-all duration-200"
               >
                 Hoy
               </button>
@@ -482,21 +592,21 @@ export function Calendario_Admin_comp() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
 
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 overflow-hidden">
+          <div className="lg:col-span-3 w-full min-w-0">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-purple-200 overflow-hidden w-full">
 
               <div className="grid grid-cols-7 bg-gradient-to-r from-purple-100 via-indigo-100 to-purple-100 border-b-2 border-purple-300">
                 {diasSemana.map((dia) => (
-                  <div key={dia} className="px-3 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-extrabold text-purple-900">
+                  <div key={dia} className="px-1 sm:px-2 md:px-4 py-2 sm:py-3 text-center text-[10px] xs:text-xs sm:text-sm font-extrabold text-purple-900">
                     {dia}
                   </div>
                 ))}
               </div>
 
 
-              <div className="grid grid-cols-7">
+              <div className="grid grid-cols-7 auto-rows-fr">
                 {getDaysOfMonth().map((dia, index) => {
                   const recordatoriosDelDia = obtenerRecordatoriosPorFecha(dia.fechaCompleta);
                   const esHoy = dia.fechaCompleta.toDateString() === new Date().toDateString();
@@ -504,15 +614,34 @@ export function Calendario_Admin_comp() {
                   return (
                     <div
                       key={index}
-                      className={`min-h-28 sm:min-h-32 p-2 border-r border-b border-slate-200 ${!dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
+                      className={`aspect-square min-h-0 p-1 sm:p-1.5 md:p-2 border-r border-b border-slate-200 flex flex-col overflow-hidden ${!dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
                         } ${esHoy ? 'bg-gradient-to-br from-slate-100 to-slate-50 border-slate-300 ring-2 ring-slate-300' : ''} hover:bg-slate-50 transition-colors`}
                     >
-                      <div className={`text-xs sm:text-sm font-extrabold mb-2 ${esHoy ? 'text-slate-900' : 'text-slate-700'
-                        }`}>
+                      <div className={`text-[10px] xs:text-xs sm:text-sm font-extrabold shrink-0 ${esHoy ? 'text-slate-900' : 'text-slate-700'}`}>
                         {dia.fecha}
                       </div>
-                      <div className="space-y-1">
-                        {recordatoriosDelDia.slice(0, 3).map((recordatorio) => (
+                      {/* Móvil e iPad (lg: mismo que móvil): indicador numérico (1, 2, 3…); al tocar abre modal del día */}
+                      <div className="lg:hidden flex-1 min-h-0 flex items-center justify-center">
+                        {recordatoriosDelDia.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDayModalReminders([...recordatoriosDelDia]);
+                              setDayModalDate(dia.fechaCompleta);
+                              setShowDayModal(true);
+                            }}
+                            className="flex items-center justify-center min-w-0 touch-manipulation w-full h-full"
+                            aria-label={`${recordatoriosDelDia.length} recordatorio(s)`}
+                          >
+                            <span className="text-xs xs:text-sm font-bold bg-purple-100 text-purple-800 border border-purple-300 rounded-full min-w-[20px] h-5 xs:h-6 px-1.5 flex items-center justify-center shadow-sm">
+                              {recordatoriosDelDia.length > 9 ? '9+' : recordatoriosDelDia.length}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                      {/* lg y mayor: lista por tipo + título (sin hora; la hora se ve en el modal de detalles) */}
+                      <div className="hidden lg:flex space-y-0.5 sm:space-y-1 flex-1 min-h-0 overflow-hidden flex-col">
+                        {recordatoriosDelDia.slice(0, 5).map((recordatorio) => (
                           <div
                             key={recordatorio.id}
                             onClick={() => {
@@ -521,16 +650,16 @@ export function Calendario_Admin_comp() {
                             }}
                             className={`text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-lg border-2 cursor-pointer hover:shadow-md transition-all duration-200 ${getTipoColor(recordatorio.tipo)} ${recordatorio.completado ? 'opacity-50 line-through' : ''}`}
                           >
-                            <div className="flex items-center space-x-1">
-                              <div className={`w-2 h-2 rounded-full ${getPrioridadColor(recordatorio.prioridad)}`}></div>
-                              <span className="font-semibold truncate">{recordatorio.hora}</span>
+                            <div className="flex items-center gap-1 min-w-0">
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${getTipoDotColor(recordatorio.tipo)}`} />
+                              <span className="font-semibold truncate">{getTipoShortLabel(recordatorio.tipo, recordatorio.titulo)}</span>
                             </div>
                             <div className="truncate mt-0.5 font-medium">{recordatorio.titulo}</div>
                           </div>
                         ))}
-                        {recordatoriosDelDia.length > 3 && (
-                          <div className="text-[10px] sm:text-xs text-slate-500 font-semibold">
-                            +{recordatoriosDelDia.length - 3} más
+                        {recordatoriosDelDia.length > 5 && (
+                          <div className="text-[9px] xs:text-[10px] sm:text-xs text-slate-500 font-semibold shrink-0">
+                            +{recordatoriosDelDia.length - 5} más
                           </div>
                         )}
                       </div>
@@ -542,10 +671,10 @@ export function Calendario_Admin_comp() {
           </div>
 
 
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6">
 
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4 flex items-center">
+            <div id="tour-proximos" className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-3 xs:p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-3 sm:mb-4 flex items-center">
                 <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 border-2 border-slate-300">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -596,8 +725,8 @@ export function Calendario_Admin_comp() {
             </div>
 
 
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4">Tipos de Recordatorios</h3>
+            <div id="tour-tipos-prioridades" className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-3 xs:p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-3 sm:mb-4">Tipos de Recordatorios</h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -631,15 +760,22 @@ export function Calendario_Admin_comp() {
             </div>
 
 
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-5 sm:p-6">
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4">Resumen</h3>
+            <div id="tour-resumen-pendientes" className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 p-3 xs:p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-3 sm:mb-4">Resumen</h3>
               <div className="space-y-2.5">
-                <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const pendientes = reminders.filter(r => !r.completado);
+                    if (pendientes.length > 0) setShowPendientesModal(true);
+                  }}
+                  className="w-full flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-colors text-left cursor-pointer touch-manipulation"
+                >
                   <span className="text-xs sm:text-sm text-slate-600 font-medium">Pendientes</span>
                   <span className="text-sm sm:text-base font-extrabold text-slate-900">
                     {reminders.filter(r => !r.completado).length}
                   </span>
-                </div>
+                </button>
                 <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-200">
                   <span className="text-xs sm:text-sm text-slate-600 font-medium">Completados</span>
                   <span className="text-sm sm:text-base font-extrabold text-slate-900">
@@ -818,10 +954,10 @@ export function Calendario_Admin_comp() {
           document.getElementById('modal-root')
         )}
 
-        {/* Modal para editar recordatorio */}
+        {/* Modal para editar recordatorio (mismo en PC; optimizado para móvil/iPad) */}
         {showEditModal && selectedReminder && createPortal(
           <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowEditModal(false);
@@ -829,10 +965,10 @@ export function Calendario_Admin_comp() {
               }
             }}
           >
-            <div className="relative mx-auto border-2 border-slate-300 w-full max-w-md shadow-2xl rounded-xl sm:rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
-              <div className="p-5 sm:p-6">
+            <div className="relative mx-auto border-2 border-slate-300 w-full max-w-md shadow-2xl rounded-t-2xl sm:rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4 sm:mb-5">
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                  <h3 className="text-base sm:text-xl font-extrabold text-slate-900">
                     Detalles del Recordatorio
                   </h3>
                   <button
@@ -840,7 +976,7 @@ export function Calendario_Admin_comp() {
                       setShowEditModal(false);
                       setSelectedReminder(null);
                     }}
-                    className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
@@ -892,7 +1028,7 @@ export function Calendario_Admin_comp() {
                   <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
                     <button
                       onClick={() => eliminarRecordatorio(selectedReminder.id)}
-                      className="order-2 sm:order-1 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 border border-rose-200 transition-all duration-200 font-bold flex items-center justify-center gap-2 text-sm"
+                      className="order-2 sm:order-1 px-4 py-3 sm:py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 border border-rose-200 transition-all duration-200 font-bold flex items-center justify-center gap-2 text-sm touch-manipulation min-h-[44px]"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -902,7 +1038,7 @@ export function Calendario_Admin_comp() {
                     <div className="order-1 sm:order-2 flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={() => marcarCompletado(selectedReminder.id)}
-                        className={`px-3 py-1.5 rounded-lg transition-all duration-200 font-bold shadow-md border transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 text-sm ${selectedReminder.completado
+                        className={`px-4 py-3 sm:py-1.5 rounded-lg transition-all duration-200 font-bold shadow-md border transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 text-sm touch-manipulation min-h-[44px] ${selectedReminder.completado
                           ? 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200'
                           : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 hover:from-emerald-700 hover:to-teal-700'
                           }`}
@@ -923,7 +1059,7 @@ export function Calendario_Admin_comp() {
                           setShowEditModal(false);
                           setSelectedReminder(null);
                         }}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 border border-slate-200 transition-all duration-200 font-bold text-sm"
+                        className="px-4 py-3 sm:py-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 border border-slate-200 transition-all duration-200 font-bold text-sm touch-manipulation min-h-[44px]"
                       >
                         Cerrar
                       </button>
@@ -935,6 +1071,135 @@ export function Calendario_Admin_comp() {
           </div>,
           document.getElementById('modal-root')
         )}
+
+        {/* Modal del día (móvil/iPad): cuántos recordatorios, de qué tipo; al tocar uno se abre "Detalles del Recordatorio" */}
+        {showDayModal && dayModalReminders.length > 0 && dayModalDate && createPortal(
+          <div
+            className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowDayModal(false);
+                setDayModalReminders([]);
+                setDayModalDate(null);
+              }
+            }}
+          >
+            <div
+              className="relative w-full max-h-[85vh] sm:max-h-[80vh] sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-indigo-50 shrink-0">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                  {dayModalReminders.length === 1 ? '1 recordatorio' : `${dayModalReminders.length} recordatorios`} — {dayModalDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => { setShowDayModal(false); setDayModalReminders([]); setDayModalDate(null); }}
+                  className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg touch-manipulation"
+                  aria-label="Cerrar"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              {/* Resumen por tipo (abreviado): "2 Trab., 1 G. variable" */}
+              {(() => {
+                const byShort = dayModalReminders.reduce((acc, r) => {
+                  const key = getTipoShortLabel(r.tipo, r.titulo);
+                  acc[key] = (acc[key] || 0) + 1;
+                  return acc;
+                }, {});
+                const summary = Object.entries(byShort).map(([label, n]) => `${n} ${label}`).join(', ');
+                return summary ? (
+                  <p className="px-4 py-2 text-xs sm:text-sm text-slate-600 font-medium border-b border-slate-100">
+                    {summary}
+                  </p>
+                ) : null;
+              })()}
+              <p className="px-4 pt-2 text-xs text-slate-500">Toca uno para ver detalles</p>
+              <div className="overflow-y-auto flex-1 min-h-0 p-3 space-y-2">
+                {dayModalReminders.map((r) => (
+                  <button
+                    type="button"
+                    key={r.id}
+                    onClick={() => {
+                      setSelectedReminder(r);
+                      setShowDayModal(false);
+                      setDayModalReminders([]);
+                      setDayModalDate(null);
+                      setShowEditModal(true);
+                    }}
+                    className={`w-full text-left p-3 rounded-xl border-2 ${getTipoColor(r.tipo)} ${r.completado ? 'opacity-75' : ''} hover:shadow-md active:scale-[0.99] transition-all touch-manipulation min-h-[44px] flex items-center gap-2`}
+                  >
+                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getPrioridadColor(r.prioridad)}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold text-slate-900 text-sm truncate ${r.completado ? 'line-through' : ''}`}>{r.titulo}</p>
+                      <p className="text-xs text-slate-600">{r.hora} · {getTipoShortLabel(r.tipo, r.titulo)}</p>
+                    </div>
+                    <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.getElementById('modal-root')
+        )}
+
+        {/* Modal Pendientes: lista de recordatorios no completados; al clic en uno se abre Detalles */}
+        {showPendientesModal && (() => {
+          const pendientes = reminders
+            .filter(r => !r.completado)
+            .sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
+          return pendientes.length > 0 && createPortal(
+            <div
+              className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setShowPendientesModal(false);
+              }}
+            >
+              <div
+                className="relative w-full max-h-[85vh] sm:max-h-[80vh] sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 shrink-0">
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                    Recordatorios pendientes ({pendientes.length})
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowPendientesModal(false)}
+                    className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg touch-manipulation"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <p className="px-4 pt-2 text-xs text-slate-500">Toca uno para ver detalles</p>
+                <div className="overflow-y-auto flex-1 min-h-0 p-3 space-y-2">
+                  {pendientes.map((r) => (
+                    <button
+                      type="button"
+                      key={r.id}
+                      onClick={() => {
+                        setSelectedReminder(r);
+                        setShowPendientesModal(false);
+                        setShowEditModal(true);
+                      }}
+                      className={`w-full text-left p-3 rounded-xl border-2 ${getTipoColor(r.tipo)} hover:shadow-md active:scale-[0.99] transition-all touch-manipulation min-h-[44px] flex items-center gap-2`}
+                    >
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getPrioridadColor(r.prioridad)}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">{r.titulo}</p>
+                        <p className="text-xs text-slate-600">{r.fecha} {r.hora} · {getTipoShortLabel(r.tipo, r.titulo)}</p>
+                      </div>
+                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>,
+            document.getElementById('modal-root')
+          );
+        })()}
 
         {/* Modal de notificaciones */}
         {showNotification && notifications.length > 0 && createPortal(

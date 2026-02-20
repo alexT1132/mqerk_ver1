@@ -572,53 +572,46 @@ export default function FinanzasEgresosVariables() {
         </div>
       </header>
 
-      {/* Tarjetas rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 2xl:gap-5 min-[1920px]:gap-6 min-[2560px]:gap-8 mb-6 2xl:mb-8 min-[1920px]:mb-10">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
-          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Hoy</p>
-          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
-            {formatCurrency(totals.today)}
-          </p>
+      {/* Tarjetas rápidas: móvil 2 cols bien asentadas; sm+ sin cambios */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 2xl:gap-5 min-[1920px]:gap-6 min-[2560px]:gap-8 mb-6 2xl:mb-8 min-[1920px]:mb-10">
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Hoy</p>
+          <p className="text-lg xs:text-xl sm:text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 truncate mt-0.5" title={formatCurrency(totals.today)}>{formatCurrency(totals.today)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
-          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Últimos 7 días</p>
-          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
-            {formatCurrency(totals.week)}
-          </p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Últimos 7 días</p>
+          <p className="text-lg xs:text-xl sm:text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 truncate mt-0.5" title={formatCurrency(totals.week)}>{formatCurrency(totals.week)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
-          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Mes</p>
-          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
-            {formatCurrency(totals.month)}
-          </p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Mes</p>
+          <p className="text-lg xs:text-xl sm:text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 truncate mt-0.5" title={formatCurrency(totals.month)}>{formatCurrency(totals.month)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8">
-          <p className="text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Año</p>
-          <p className="text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 mt-0.5">
-            {formatCurrency(totals.year)}
-          </p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 2xl:p-6 min-[1920px]:p-7 min-[2560px]:p-8 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs 2xl:text-sm min-[1920px]:text-base text-gray-500">Año</p>
+          <p className="text-lg xs:text-xl sm:text-2xl 2xl:text-3xl min-[1920px]:text-4xl min-[2560px]:text-5xl font-semibold text-rose-600 truncate mt-0.5" title={formatCurrency(totals.year)}>{formatCurrency(totals.year)}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl 2xl:rounded-2xl shadow-md border border-gray-200 overflow-hidden w-full">
-        <div className="p-3 xs:p-4 sm:p-6 2xl:p-8 min-[1920px]:p-10 min-[2560px]:p-12 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+        <div className="p-3 xs:p-4 sm:p-6 2xl:p-8 min-[1920px]:p-10 min-[2560px]:p-12 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base sm:text-lg 2xl:text-xl min-[1920px]:text-2xl min-[2560px]:text-3xl font-semibold text-gray-900">
               Registro de gastos variables
             </h2>
           </div>
-          <div className="flex items-center gap-2 2xl:gap-3 min-[1920px]:gap-4">
-            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 text-sm 2xl:text-base rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
+          <div className="flex flex-wrap items-center gap-2 md:gap-2 2xl:gap-3 min-[1920px]:gap-4">
+            <button onClick={() => setShowFilters(s => !s)} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm 2xl:text-base rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{showFilters ? 'Ocultar filtros' : 'Filtros'}</button>
             <button
               onClick={handleExportExcel}
               disabled={exportExcelLoading}
-              className="px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 text-sm 2xl:text-base rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm 2xl:text-base rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-3 py-1.5 2xl:px-4 2xl:py-2 min-[1920px]:px-5 min-[1920px]:py-2.5 text-sm 2xl:text-base rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+              className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm 2xl:text-base rounded-xl md:rounded-lg bg-rose-600 text-white hover:bg-rose-700 w-full md:w-auto"
             >
-              Nuevo gasto variable
+              <span className="sm:hidden">Nuevo</span>
+              <span className="hidden sm:inline">Nuevo gasto variable</span>
             </button>
           </div>
         </div>
@@ -662,39 +655,21 @@ export default function FinanzasEgresosVariables() {
           <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
         )}
 
-        {/* Tabla desktop: hasta 1920px usa table-fixed para llenar todo el ancho (monitores chicos tipo 13.6" 2160x1440); desde 1920px table-auto */}
-        <div className="hidden sm:block w-full">
-          <div className="overflow-x-auto max-h-[60vh] 2xl:max-h-[65vh] w-full">
-            <table className="w-full min-w-0 min-[1920px]:min-w-[1260px] text-sm 2xl:text-base min-[1920px]:text-lg table-fixed min-[1920px]:table-auto">
+        {/* Tabla: móvil y tablet (< lg) ancho fijo y scroll horizontal; lg (1024+) ocupa el ancho */}
+        <div className="w-full min-w-0">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh] 2xl:max-h-[65vh] w-full -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0">
+            <table className="w-full min-w-[1020px] lg:min-w-0 lg:w-full min-[1920px]:min-w-[1260px] text-xs sm:text-sm 2xl:text-base min-[1920px]:text-lg table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[5%] min-[1920px]:w-auto">
-                    #
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[8%] min-[1920px]:w-auto">
-                    Unidades
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">
-                    Producto/Servicio
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[7%] min-[1920px]:w-auto whitespace-nowrap">
-                    Desc.
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[14%] min-[1920px]:w-auto">
-                    Entidad
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">
-                    Valor unitario
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">
-                    Método de pago
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">
-                    Importe
-                  </th>
-                  <th className="text-center font-semibold px-4 py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 w-[12%] min-[1920px]:w-auto">
-                    Estatus
-                  </th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[5%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">#</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[8%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Unidades</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[18%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Producto/Servicio</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[7%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Desc.</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[14%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Entidad</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Valor unit.</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Método</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Importe</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 2xl:px-5 2xl:py-4 min-[1920px]:px-6 min-[1920px]:py-4 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Estatus</th>
                 </tr>
               </thead>
               <tbody>
@@ -813,105 +788,6 @@ export default function FinanzasEgresosVariables() {
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Móvil - cards */}
-        <div className="sm:hidden p-4 space-y-3">
-          {rows.length === 0 ? (
-            <div className="text-sm text-gray-500">
-              No hay gastos variables.
-            </div>
-          ) : (
-            rows.map((r, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 cursor-pointer"
-                onClick={() => {
-                  setEditIndex(idx);
-                  setEditData({ ...r });
-                  setEditOpen(true);
-                }}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="text-sm font-semibold text-gray-900 truncate pr-2">
-                    {idx + 1}. {r.producto}
-                  </div>
-                  <select
-                    className={`rounded-md text-[11px] px-2 py-1 ${r.estatus === "Pagado"
-                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
-                    value={r.estatus}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={async (e) => {
-                      const next = e.target.value;
-                      const item = rows[idx];
-                      const prevStatus = item.estatus;
-                      if (next === "Pagado") {
-                        const month = dayjs(item.fecha).format("YYYY-MM");
-                        let snap = null;
-                        try {
-                          const r = await getResumenMensual(month);
-                          snap = { budget: Number(r.budget || 0), spent: Number(r.spent || 0), leftover: Number(r.leftover || 0) };
-                        } catch {
-                          snap = getBudgetSnapshot(month);
-                        }
-                        const exceed = Math.max(0, Number(item.importe || 0) - snap.leftover);
-                        if (exceed > 0 || snap.budget === 0) {
-                          setBudgetWarn({ open: true, context: "status", info: { idx, month, snap, amount: Number(item.importe || 0), exceed } });
-                          return;
-                        }
-                      }
-                      setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: next } : x)));
-                      try {
-                        if (item?.id) await updateGastoVariable(item.id, { estatus: next });
-                      } catch (err) {
-                        setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, estatus: prevStatus } : x)));
-                      }
-                    }}
-                  >
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Pagado">Pagado</option>
-                  </select>
-                </div>
-                <div className="text-[11px] text-gray-600 mb-2 truncate">
-                  {r.descripcion || "-"}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-600 mb-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Unidades:</span>
-                    <span className="font-medium text-gray-800">
-                      {r.unidades}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Entidad:</span>
-                    <span className="font-medium text-gray-800">
-                      {r.entidad || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">V. unitario:</span>
-                    <span className="font-medium text-gray-800">
-                      {formatCurrency(r.valorUnitario)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Método:</span>
-                    <span className="font-medium text-gray-800">
-                      {String(r.metodo || "").toLowerCase()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-end gap-1 col-span-2">
-                    <span className="text-gray-500">Importe</span>
-                    <span className="text-sm font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
-                      {formatCurrency(r.importe)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
         </div>
       </div>
 

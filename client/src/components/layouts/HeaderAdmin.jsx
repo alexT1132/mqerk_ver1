@@ -155,27 +155,28 @@ export function HeaderAdmin() {
         </Link>
       </div>
 
-      <div className="absolute left-1/2 transform -translate-x-1/2 flex flex-col justify-center items-center px-8 md:px-12 lg:px-16 w-auto max-w-4xl">
+      {/* Bloque central: con poco espacio (móvil/tablet/iPad) solo nombre de la academia; en escritorio (lg+) título largo */}
+      <div className="absolute left-1/2 transform -translate-x-1/2 flex flex-col justify-center items-center px-4 sm:px-6 md:px-8 lg:px-12 w-auto max-w-[calc(100vw-14rem)] lg:max-w-3xl xl:max-w-4xl">
 
-        {/* Títulos para PC */}
-        <div className="hidden sm:flex flex-col items-center">
-          <h1 className="text-center text-lg md:text-xl lg:text-2xl text-white font-extrabold mb-1 whitespace-nowrap tracking-wide">
-            Asesores Especializados en Educación de Ciencia y Tecnología
+        {/* Solo nombre de la academia cuando hay poco espacio (hasta lg) */}
+        <div className="flex lg:hidden flex-col items-center">
+          <h1 className="text-center text-base sm:text-lg md:text-xl text-white font-extrabold mb-1 whitespace-nowrap tracking-wide">
+            MQerK Academy
           </h1>
           {currentSectionTitle && (
-            <p className="text-center text-sm md:text-base text-white font-medium opacity-80 mt-1 whitespace-nowrap uppercase tracking-wider">
+            <p className="text-center text-xs sm:text-sm text-white font-medium opacity-80 mt-1 whitespace-nowrap uppercase tracking-wider">
               {currentSectionTitle}
             </p>
           )}
         </div>
 
-        {/* Títulos para Móvil */}
-        <div className="sm:hidden flex flex-col items-center">
-          <h1 className="text-center text-base text-white font-extrabold mb-1 whitespace-nowrap tracking-wide">
-            MQerK Academy
+        {/* Título largo solo en escritorio (lg+) */}
+        <div className="hidden lg:flex flex-col items-center">
+          <h1 className="text-center text-lg xl:text-2xl text-white font-extrabold mb-1 tracking-wide whitespace-nowrap">
+            Asesores Especializados en Educación de Ciencia y Tecnología
           </h1>
           {currentSectionTitle && (
-            <p className="text-center text-xs text-white font-medium opacity-70 mt-1 whitespace-nowrap uppercase tracking-wider">
+            <p className="text-center text-sm xl:text-base text-white font-medium opacity-80 mt-1 whitespace-nowrap uppercase tracking-wider">
               {currentSectionTitle}
             </p>
           )}
@@ -216,7 +217,7 @@ export function HeaderAdmin() {
           {/* Contenedor de Menú Desplegable de Notificaciones (se muestra condicionalmente) */}
           {isNotificationsOpen && (
             <div className="absolute top-full mt-2 w-80 bg-white/50 border border-gray-200/50 rounded-lg shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200 backdrop-blur-xl
-                              max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)] sm:right-0 sm:max-w-xs">
+                              max-sm:right-0 max-sm:left-auto max-sm:w-56 max-sm:min-w-0 sm:right-0 sm:max-w-xs">
               {/* Dropdown header */}
               <div className="bg-gradient-to-r from-purple-600/50 to-purple-800/50 text-white px-4 py-3">
                 <div className="flex items-center justify-between">
@@ -347,10 +348,10 @@ export function HeaderAdmin() {
           {/* Online status indicator */}
           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
 
-          {/* Profile Dropdown Menu */}
+          {/* Profile Dropdown Menu: en móvil más compacto (ancho contenido) */}
           {isProfileOpen && (
             <div className="absolute top-full mt-2 w-64 bg-white/95 border border-gray-200/50 rounded-lg shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200 backdrop-blur-xl
-                            max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)] sm:right-0">
+                            max-sm:right-0 max-sm:left-auto max-sm:w-56 max-sm:min-w-0 sm:right-0">
 
               {/* Profile Header */}
               <div className="bg-gradient-to-r from-blue-600/50 to-blue-800/50 text-white px-4 py-3">

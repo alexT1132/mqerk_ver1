@@ -140,12 +140,12 @@ function SidebarItem({
     const isAdmin = userRole === 'admin';
     containerClasses = "group flex justify-center items-center relative z-10 w-full px-2 " +
       (isSidebarOpen
-        ? (isAdmin ? "min-h-[44px] xl:min-h-[54px] 2xl:min-h-[62px]" : "min-h-[42px]")
-        : (isAdmin ? "min-h-[48px] xl:min-h-[58px] 2xl:min-h-[66px]" : "min-h-[46px]"));
+        ? (isAdmin ? "min-h-[40px] lg:min-h-[42px] xl:min-h-[42px] 2xl:min-h-[50px]" : "min-h-[42px]")
+        : (isAdmin ? "min-h-[42px] lg:min-h-[44px] xl:min-h-[44px] 2xl:min-h-[54px]" : "min-h-[46px]"));
 
     if (isSidebarOpen) {
       // Desplegado: estilo listado limpio, sin cajas ni scale
-      linkClasses += "justify-start pl-3 pr-3 gap-3 rounded-xl w-full py-2.5 ";
+      linkClasses += "justify-start pl-3 pr-3 gap-3 rounded-xl w-full py-2 2xl:py-3 ";
       if (active) {
         linkClasses += "bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-sm ";
       } else if (isLogout) {
@@ -516,7 +516,7 @@ export function DesktopSidebarBase({
           data-sidebar-scroll
           className="flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar"
         >
-          <ul className={`px-3 pt-4 pb-2 list-none ${userRole === 'admin' ? 'space-y-1.5 xl:space-y-3 2xl:space-y-5' : 'space-y-0.5'}`}>
+          <ul className={`px-3 pt-3 pb-2 list-none ${userRole === 'admin' ? 'space-y-1 lg:space-y-1.5 xl:space-y-1.5 2xl:space-y-3' : 'space-y-0.5'}`}>
             {mainItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}
@@ -535,7 +535,7 @@ export function DesktopSidebarBase({
           </ul>
         </div>
         <div className="flex-shrink-0 px-4 pt-2 pb-4 border-t border-gray-200/60 bg-white/50">
-          <ul className={`space-y-1 list-none ${userRole === 'admin' ? 'xl:space-y-2' : ''}`}>
+          <ul className={`space-y-0.5 list-none ${userRole === 'admin' ? 'lg:space-y-1 xl:space-y-1 2xl:space-y-2.5' : ''}`}>
             {bottomItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}

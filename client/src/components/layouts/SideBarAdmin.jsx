@@ -112,8 +112,8 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
     // Usamos px-3 y w-full para asegurar que llene el contenedor ampliado.
     containerClasses = "w-full mb-1 px-3";
 
-    // Ajuste: gap-3 en vez de gap-4 para ganar espacio, padding equilibrado.
-    linkClasses += "justify-start pl-4 pr-3 gap-3 py-3 rounded-2xl w-full border-none ";
+    // Padding y línea con espacio para descendentes (g, j, p, y); gap-3.
+    linkClasses += "justify-start pl-4 pr-3 gap-3 py-3.5 rounded-2xl w-full border-none min-h-[2.75rem] ";
 
     if (isActive) {
       // Activo Móvil: Gradiente bonito y texto blanco
@@ -177,9 +177,9 @@ function ElementoSideBar({ Icono, NombreElemento, to, onClick: mobileOnClick, ba
           )}
         </div>
 
-        {/* Texto en Móvil - Ajustado tamaño de fuente */}
+        {/* Texto en Móvil: leading-relaxed para que se vean completas g, j, p, y; sin truncate para no cortar */}
         {isMobileItem && (
-          <span className={`text-[15px] leading-none font-medium ml-1 truncate ${isActive ? 'text-white' : 'text-gray-700'}`}>
+          <span className={`text-[15px] leading-relaxed font-medium ml-1 break-words ${isActive ? 'text-white' : 'text-gray-700'}`}>
             {NombreElemento}
           </span>
         )}
@@ -326,7 +326,7 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
       {isMenuOpen && (
         <>
           <div
-            className="sm:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+            className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
             onClick={closeMenu}
             aria-hidden="true"
             style={{
@@ -334,11 +334,12 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
               WebkitBackdropFilter: 'blur(8px)'
             }}
           ></div>
-          {/* CORRECCIÓN: w-72 en lugar de w-64 para dar espacio al texto */}
-          <aside className="sm:hidden fixed top-[64px] left-0 w-72 h-[calc(100vh-64px)] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col overflow-hidden">
+          {/* Drawer: alineado al header (top-16 móvil, top-20 tablet/iPad); altura y borde inferiores suaves */}
+          <aside className="lg:hidden fixed left-0 w-72 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col overflow-hidden rounded-br-2xl
+            top-16 h-[calc(100vh-4rem)] sm:top-20 sm:h-[calc(100vh-5rem)]">
             <nav className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-                <ul className="py-4 px-2 space-y-1 list-none">
+                <ul className="py-4 px-3 pb-6 space-y-3 list-none">
                   <ElementoSideBar to="/administrativo/bienvenida" Icono={LogoInicio} NombreElemento="Bienvenida" onClick={closeMenu} />
                   <ElementoSideBar to="/administrativo/dashboard-metricas" Icono={LogoDashboard} NombreElemento="Dashboard" onClick={closeMenu} />
                   <ElementoSideBar to="/administrativo/comprobantes-recibo" Icono={LogoComprobantes} NombreElemento="Comprobantes Recibidos" onClick={closeMenu} />
@@ -353,8 +354,8 @@ export function SideBarsm({ isMenuOpen, closeMenu }) {
                   <ElementoSideBar to="/administrativo/configuracion" Icono={LogoConfig} NombreElemento="Configuración" onClick={closeMenu} />
                 </ul>
               </div>
-              <div className="flex-shrink-0 pb-4 pt-2 px-2 border-t border-gray-200/60 bg-white/50">
-                <ul className="space-y-1 list-none">
+              <div className="flex-shrink-0 pb-5 pt-4 px-3 border-t border-gray-200/60 bg-white/50">
+                <ul className="space-y-3 list-none">
                   <ElementoSideBar to="/login" Icono={LogoLogOut} NombreElemento="Cerrar Sesión" onClick={closeMenu} />
                 </ul>
               </div>

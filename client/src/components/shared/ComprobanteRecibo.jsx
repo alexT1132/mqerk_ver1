@@ -155,8 +155,7 @@ export function ComprobanteRecibo() {
     // ==================== ESTADOS DE LA APLICACIÓN ====================
 
     // Estados de navegación y UI
-    const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
     const [showContent, setShowContent] = useState(false);
     const [activeCategory, setActiveCategory] = useState('');
     const [activeVespertino, setActiveVespertino] = useState('');
@@ -695,14 +694,19 @@ export function ComprobanteRecibo() {
         }
     };
 
-    const handleVespertinoSelect = (vespertino) => {
+    const handleVespertinoSelect = async (vespertino) => {
         if (activeVespertino === vespertino) {
             setActiveVespertino('');
             setShowContent(false);
         } else {
             setActiveVespertino(vespertino);
             setShowContent(true);
-            getComprobantes(vespertino, activeCategory);
+            setIsFetching(true);
+            try {
+                await getComprobantes(vespertino, activeCategory);
+            } finally {
+                setIsFetching(false);
+            }
         }
     };
 
@@ -718,10 +722,15 @@ export function ComprobanteRecibo() {
                 getGrupo(cursoParam, 'todos');
                 if (grupoParam) {
                     // Pequeño delay para asegurar que gruposObtenidos se llene antes de pedir comprobantes
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         setActiveVespertino(grupoParam);
                         setShowContent(true);
-                        getComprobantes(grupoParam, cursoParam);
+                        setIsFetching(true);
+                        try {
+                            await getComprobantes(grupoParam, cursoParam);
+                        } finally {
+                            setIsFetching(false);
+                        }
                     }, 50);
                 }
             }
@@ -746,15 +755,7 @@ export function ComprobanteRecibo() {
         return () => window.removeEventListener('admin-ws-message', onAdminEvent);
     }, [activeCategory, activeVespertino]);
 
-    // Auto-ocultar overlay tras 2s para simular la carga inicial
-    useEffect(() => {
-        if (!showLoadingScreen) return;
-        const t = setTimeout(() => {
-            setShowLoadingScreen(false);
-            setIsLoading(false);
-        }, 2000);
-        return () => clearTimeout(t);
-    }, [showLoadingScreen]);
+
 
     // ==================== ACCIONES DE COMPROBANTES ====================
 
@@ -975,9 +976,7 @@ export function ComprobanteRecibo() {
 
     return (
         <div className="w-full h-full min-h-[calc(100vh-80px)] flex flex-col bg-white overflow-x-hidden">
-            {showLoadingScreen && (
-                <LoadingOverlay message="Cargando validación de recibos..." />
-            )}
+
             {/* ==================== HEADER Y FILTROS ==================== */}
             <div className="pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-2 xs:pb-2 sm:pb-3 w-full max-w-full mx-auto">
                 <div className="w-full max-w-full mx-auto px-2 xs:px-3 sm:px-4">
@@ -1237,15 +1236,25 @@ export function ComprobanteRecibo() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {(vistaActual === 'aprobados' ? displayedList : currentList).length === 0 && (
+                                        {isFetching && (
+                                            <tr>
+                                                <td colSpan={vistaActual === 'rechazados' ? '8' : vistaActual === 'aprobados' ? '7' : '7'} className="px-4 xs:px-6 py-12 xs:py-16 text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mb-3"></div>
+                                                        <p className="text-gray-500 text-sm font-medium">Cargando comprobantes...</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!isFetching && (vistaActual === 'aprobados' ? displayedList : currentList).length === 0 && (
                                             <tr>
                                                 <td colSpan={vistaActual === 'rechazados' ? '8' : vistaActual === 'aprobados' ? '7' : '7'} className="px-4 xs:px-6 py-12 xs:py-16 text-center text-gray-500">
                                                     <div className="flex flex-col items-center">
                                                         <div className={`w-12 xs:w-16 h-12 xs:h-16 rounded-full flex items-center justify-center mb-3 xs:mb-4 ${vistaActual === 'aprobados' ? 'bg-green-100' :
-                                                                vistaActual === 'rechazados' ? 'bg-red-100' : 'bg-gray-100'
+                                                            vistaActual === 'rechazados' ? 'bg-red-100' : 'bg-gray-100'
                                                             }`}>
                                                             <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 xs:h-8 w-6 xs:w-8 ${vistaActual === 'aprobados' ? 'text-green-400' :
-                                                                    vistaActual === 'rechazados' ? 'text-red-400' : 'text-gray-400'
+                                                                vistaActual === 'rechazados' ? 'text-red-400' : 'text-gray-400'
                                                                 }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                             </svg>
@@ -1268,7 +1277,7 @@ export function ComprobanteRecibo() {
                                         {(vistaActual === 'aprobados' ? displayedList : currentList).map((comprobante) => (
                                             <tr key={comprobante.id_estudiante ?? `${comprobante.folio}-${comprobante.created_at}`}
                                                 className={`hover:bg-gray-50 transition-colors duration-150 ${vistaActual === 'rechazados' ? 'bg-red-50/30' :
-                                                        vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
+                                                    vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
                                                     }`}>
                                                 {/* Columna Folio */}
                                                 <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
@@ -1508,7 +1517,7 @@ export function ComprobanteRecibo() {
                                         ) : (
                                             Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 2 && vistaActual === 'aprobados' && comprobantesObtenidos.map((comprobante) => (
                                                 <tr key={comprobante.id} className={`hover:bg-gray-50 transition-colors duration-150 ${vistaActual === 'rechazados' ? 'bg-red-50/30' :
-                                                        vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
+                                                    vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
                                                     }`}>
                                                     {/* Columna Folio */}
                                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">
@@ -1676,7 +1685,7 @@ export function ComprobanteRecibo() {
                                         ) : (
                                             Array.isArray(comprobantesObtenidos) && comprobantesObtenidos.verificacion === 3 && vistaActual === 'pendientes' && comprobantesObtenidos.map((comprobante) => (
                                                 <tr key={comprobante.id} className={`hover:bg-gray-50 transition-colors duration-150 ${vistaActual === 'rechazados' ? 'bg-red-50/30' :
-                                                        vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
+                                                    vistaActual === 'aprobados' ? 'bg-green-50/30' : ''
                                                     }`}>
                                                     {/* Columna Folio */}
                                                     <td className="px-2 xs:px-4 sm:px-6 py-3 xs:py-4 text-xs xs:text-sm text-gray-900 text-center border-r border-gray-200">

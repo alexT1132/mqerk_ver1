@@ -702,48 +702,48 @@ export default function FinanzasIngresos() {
         </div>
       </header>
 
-      {/* Tarjetas rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Hoy</p>
-          <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.today)}</p>
-          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.today)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.today}</span></p>
+      {/* Tarjetas rápidas: móvil 2 cols bien asentadas; sm+ sin cambios */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 mb-6">
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Hoy</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-indigo-600 truncate" title={formatCurrency(totals.today)}>{formatCurrency(totals.today)}</p>
+          <p className="mt-1 text-[10px] xs:text-[11px] text-gray-600 leading-tight">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.today)}</span><span className="hidden xs:inline"> · </span><span className="block xs:inline">Ventas: <span className="font-medium text-gray-800">{counts.today}</span></span></p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Últimos 7 días</p>
-          <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.week)}</p>
-          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.week)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.week}</span></p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Últimos 7 días</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-indigo-600 truncate" title={formatCurrency(totals.week)}>{formatCurrency(totals.week)}</p>
+          <p className="mt-1 text-[10px] xs:text-[11px] text-gray-600 leading-tight">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.week)}</span><span className="hidden xs:inline"> · </span><span className="block xs:inline">Ventas: <span className="font-medium text-gray-800">{counts.week}</span></span></p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Mes</p>
-          <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.month)}</p>
-          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.month)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.month}</span></p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Mes</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-indigo-600 truncate" title={formatCurrency(totals.month)}>{formatCurrency(totals.month)}</p>
+          <p className="mt-1 text-[10px] xs:text-[11px] text-gray-600 leading-tight">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.month)}</span><span className="hidden xs:inline"> · </span><span className="block xs:inline">Ventas: <span className="font-medium text-gray-800">{counts.month}</span></span></p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Año</p>
-          <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totals.year)}</p>
-          <p className="mt-1 text-[11px] text-gray-600">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.year)}</span> · Ventas: <span className="font-medium text-gray-800">{counts.year}</span></p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Año</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-indigo-600 truncate" title={formatCurrency(totals.year)}>{formatCurrency(totals.year)}</p>
+          <p className="mt-1 text-[10px] xs:text-[11px] text-gray-600 leading-tight">Ticket: <span className="font-medium text-gray-800">{formatCurrency(avgTicket.year)}</span><span className="hidden xs:inline"> · </span><span className="block xs:inline">Ventas: <span className="font-medium text-gray-800">{counts.year}</span></span></p>
         </div>
       </div>
 
-      {/* Registro de ingresos */}
+      {/* Registro de ingresos: móvil apilado (título/total arriba, botones abajo); sm+ igual que antes */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden w-full">
-        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
-          <div>
+        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-baseline gap-2 gap-y-1">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Registro de ingresos</h2>
-          </div>
-          <div className="flex items-center gap-3">
             <div className="sm:hidden text-xs text-gray-600">Total: <span className="font-semibold text-gray-900">{formatCurrency(totals.all)}</span></div>
-            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+          </div>
+          <div className="flex flex-wrap items-center gap-2 md:gap-2 sm:gap-3">
+            <button onClick={() => setShowFilters(s => !s)} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
               {showFilters ? 'Ocultar filtros' : 'Filtros'}
             </button>
-            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">
               {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
             </button>
             {asesoriasPendientes.length > 0 && (
               <button
                 onClick={() => setShowConfirmacionModal(true)}
-                className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm relative"
+                className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm font-semibold rounded-xl md:rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm relative"
               >
                 <span className="hidden sm:inline">Confirmar Asesorías</span>
                 <span className="sm:hidden">Confirmar</span>
@@ -752,7 +752,7 @@ export default function FinanzasIngresos() {
                 </span>
               </button>
             )}
-            <button onClick={openModal} className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+            <button onClick={openModal} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 w-full md:w-auto">
               <span className="sm:hidden">Nuevo</span>
               <span className="hidden sm:inline">Nuevo ingreso</span>
             </button>
@@ -806,111 +806,40 @@ export default function FinanzasIngresos() {
           <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
         )}
 
-        {/* Vista móvil (cards) */}
-        <div className="sm:hidden p-4 space-y-3">
-          {loading && <div className="text-sm text-gray-500">Cargando…</div>}
-          {error && <div className="text-sm text-amber-600">{error}</div>}
-          {rows.map((r, idx) => (
-            <div key={idx} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 cursor-pointer" onClick={() => openEdit(r)}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="text-sm font-semibold text-gray-900 truncate pr-2">{idx + 1}. {r.alumno}</div>
-                <select
-                  className={`${statusClasses(r.estatus)} rounded-md text-[11px] px-2 py-1`}
-                  value={r.estatus}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={async (e) => {
-                    const newVal = e.target.value;
-                    setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: newVal } : x));
-                    try {
-                      await api.put(`/finanzas/ingresos/${r._id}`, { estatus: newVal });
-                      if (r.calendarEventId) {
-                        const desc = `Asesor: ${r.asesor || '-'} | Método: ${r.metodo} | Importe: ${formatCurrency(r.importe)} | Estatus: ${newVal}` + (r.descripcion ? ` | Nota: ${r.descripcion}` : '');
-                        try {
-                          await api.put(`/admin/calendar/events/${r.calendarEventId}`, { descripcion: desc });
-                        } catch (calErr) {
-                          console.warn('No se pudo actualizar el evento de calendario:', calErr);
-                        }
-                      }
-                    } catch (err) {
-                      setRows(prev => prev.map(x => x._id === r._id ? { ...x, estatus: r.estatus } : x));
-                    }
-                  }}
-                >
-                  <option value="Pagado">Pagado</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Vencido">Vencido</option>
-                </select>
-              </div>
-              <div className="text-xs text-gray-600 mb-2 truncate">{r.curso}</div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-600 mb-2">
-                <div className="flex items-center gap-1"><span className="text-gray-500">Inicio:</span><span className="font-medium text-gray-800">{r.fechaInicio}</span></div>
-                <div className="flex items-center gap-1"><span className="text-gray-500">Hora:</span><span className="font-medium text-gray-800">{r.horaInicio ? String(r.horaInicio).slice(0, 5) : '-'}</span></div>
-                <div className="flex items-center gap-1"><span className="text-gray-500">Asesor:</span><span className="font-medium text-gray-800 truncate">{r.asesor}</span></div>
-                <div className="flex items-center gap-1"><span className="text-gray-500">Método:</span><span className="font-medium text-gray-800">{r.metodo}</span></div>
-                <div className="flex items-center justify-end gap-1 col-span-2">
-                  <span className="text-gray-500">Importe</span>
-                  <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">{formatCurrency(r.importe)}</span>
-                </div>
-              </div>
-              {r.descripcion ? (
-                <div className="text-[11px] text-gray-600 truncate"><span className="text-gray-500">Descripción:</span> <span className="text-gray-800" title={r.descripcion}>{r.descripcion}</span></div>
-              ) : null}
-              <div className="mt-1 text-[11px] text-gray-600 flex items-center gap-2">
-                <span className="text-gray-500">Asistencia:</span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md ${asistenciaClasses(r.asistenciaEstado)}`}>{r.asistenciaEstado || '—'}</span>
-              </div>
-              <div className="mt-2 flex justify-end gap-2">
-                {r.descripcion ? (
-                  <button
-                    className="inline-flex items-center px-2 py-1 text-[10px] rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
-                    title="Ver descripción"
-                    onClick={(e) => { e.stopPropagation(); setDescRow(r); setDescOpen(true); }}
-                  >👁️ Ver</button>
-                ) : null}
-                <button
-                  className="inline-flex items-center px-2 py-1 text-[10px] rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-                  title={r.asistenciaEstado ? `Asistencia: ${r.asistenciaEstado}` : 'Marcar asistencia'}
-                  onClick={(e) => { e.stopPropagation(); setAsistRow(r); setAsistEstado(r.asistenciaEstado || 'Impartida'); setAsistNota(r.asistenciaNota || ''); setAsistOpen(true); }}
-                >✅ Asistencia</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Vista desktop/tablet (tabla): hasta 1920px table-fixed para llenar ancho (monitores chicos) */}
-        <div className="hidden sm:block w-full">
-          <div className="overflow-x-auto max-h-[60vh] w-full">
-            <table className="w-full min-w-0 min-[1920px]:min-w-[1260px] text-sm table-fixed min-[1920px]:table-auto">
+        {/* Tabla: móvil y tablet (< lg) ancho fijo y scroll horizontal; lg (1024+) ocupa el ancho */}
+        <div className="w-full min-w-0">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh] w-full -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0">
+            <table className="w-full min-w-[1020px] lg:min-w-0 lg:w-full min-[1920px]:min-w-[1260px] text-xs sm:text-sm table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[3%] min-[1920px]:w-auto">#</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[11%] min-[1920px]:w-auto">Alumno</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[13%] min-[1920px]:w-auto">Curso / Asesoría</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Fecha</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[5%] min-[1920px]:w-auto">Hora</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[9%] min-[1920px]:w-auto">Asesor</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Pago</th>
-                  <th className="text-right font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Importe</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto">Estatus</th>
-                  <th className="text-center font-semibold px-2 py-3 border-r border-gray-200 last:border-r-0 w-[5%] min-[1920px]:w-auto whitespace-nowrap">Desc.</th>
-                  <th className="text-left font-semibold px-4 py-3 border-r border-gray-200 last:border-r-0 w-[8%] min-[1920px]:w-auto whitespace-nowrap">Asistencia</th>
-                  <th className="text-left font-semibold px-4 py-3 w-[11%] min-[1920px]:w-auto">Acciones</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[3%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">#</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[11%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Alumno</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[13%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Curso / Asesoría</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Fecha</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[5%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Hora</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[9%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Asesor</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Pago</th>
+                  <th className="text-right font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Importe</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[7%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Estatus</th>
+                  <th className="text-center font-semibold px-2 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[5%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Desc.</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 last:border-r-0 w-[8%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Asistencia</th>
+                  <th className="text-left font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 w-[11%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, idx) => (
                   <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50/50 cursor-pointer" onClick={() => openEdit(r)}>
-                    <td className="px-4 py-3 text-gray-500 border-r border-gray-100">{idx + 1}</td>
-                    <td className="px-4 py-3 text-gray-900 font-medium max-w-[240px] truncate border-r border-gray-100">{r.alumno}</td>
-                    <td className="px-4 py-3 text-gray-700 max-w-[260px] truncate border-r border-gray-100">{r.curso}</td>
-                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{(r.fechaInicio && dayjs(r.fechaInicio).isValid()) ? dayjs(r.fechaInicio).format('DD/MM/YY') : (r.fechaInicio || '-')}</td>
-                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{r.horaInicio ? String(r.horaInicio).slice(0, 5) : '-'}</td>
-                    <td className="px-4 py-3 text-gray-700 max-w-[200px] truncate border-r border-gray-100">{r.asesor}</td>
-                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">{String(r.metodo || '').toLowerCase()}</td>
-                    <td className="px-4 py-3 text-right border-r border-gray-100">
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-500 border-r border-gray-100 text-xs sm:text-sm">{idx + 1}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-900 font-medium max-w-[240px] truncate border-r border-gray-100 text-xs sm:text-sm">{r.alumno}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 max-w-[260px] truncate border-r border-gray-100 text-xs sm:text-sm">{r.curso}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 border-r border-gray-100 text-xs sm:text-sm whitespace-nowrap">{(r.fechaInicio && dayjs(r.fechaInicio).isValid()) ? dayjs(r.fechaInicio).format('DD/MM/YY') : (r.fechaInicio || '-')}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 border-r border-gray-100 text-xs sm:text-sm whitespace-nowrap">{r.horaInicio ? String(r.horaInicio).slice(0, 5) : '-'}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 max-w-[200px] truncate border-r border-gray-100 text-xs sm:text-sm">{r.asesor}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 border-r border-gray-100 text-xs sm:text-sm whitespace-nowrap">{String(r.metodo || '').toLowerCase()}</td>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-right border-r border-gray-100 text-xs sm:text-sm whitespace-nowrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-semibold">{formatCurrency(r.importe)}</span>
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-100">
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-100 text-xs sm:text-sm">
                       <select
                         className={`${statusClasses(r.estatus)} rounded-md text-xs px-2 py-1`}
                         value={r.estatus}
@@ -940,10 +869,10 @@ export default function FinanzasIngresos() {
                         <option value="Vencido">Vencido</option>
                       </select>
                     </td>
-                    <td className="px-2 py-3 text-gray-700 border-r border-gray-100 text-center w-[60px] min-w-[60px] max-w-[60px]">
+                    <td className="px-2 py-2.5 sm:py-3 text-gray-700 border-r border-gray-100 text-center w-[60px] min-w-[60px] max-w-[60px] text-xs sm:text-sm">
                       {r.descripcion ? (
                         <button
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 text-indigo-600 mx-auto"
+                          className="inline-flex h-7 w-7 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 text-indigo-600 mx-auto touch-manipulation"
                           aria-label="Ver descripción"
                           title="Ver descripción"
                           onClick={(e) => { e.stopPropagation(); setDescRow(r); setDescOpen(true); }}
@@ -954,10 +883,10 @@ export default function FinanzasIngresos() {
                         <span className="text-gray-300">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 border-r border-gray-100">
-                      <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-md ${asistenciaClasses(r.asistenciaEstado)}`}>{r.asistenciaEstado || '—'}</span>
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 border-r border-gray-100 text-xs sm:text-sm">
+                      <span className={`inline-flex items-center px-2 py-0.5 text-[11px] sm:text-xs rounded-md whitespace-nowrap ${asistenciaClasses(r.asistenciaEstado)}`}>{r.asistenciaEstado || '—'}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 text-gray-700 text-xs sm:text-sm">
                       <div className="flex items-center gap-2">
                         <button
                           className="inline-flex items-center px-2 py-1 text-xs rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50"
@@ -1169,15 +1098,15 @@ export default function FinanzasIngresos() {
         document.getElementById('modal-root')
       )}
 
-      {/* Modal Editar Ingreso */}
+      {/* Modal Editar Ingreso: móvil con pie apilado y padding reducido; sm+ sin cambios */}
       {editOpen && editData && createPortal(
-        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-4">
-          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
-              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Editar ingreso</h3>
+        <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full flex items-center justify-center p-3 xs:p-4">
+          <div className="relative mx-auto border-2 border-slate-300 w-full max-w-[min(36rem,92vw)] sm:max-w-xl shadow-2xl rounded-2xl bg-white max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-4 xs:px-5 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Editar ingreso</h3>
               <button
                 onClick={closeEdit}
-                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200"
+                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all duration-200 touch-manipulation"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1185,7 +1114,7 @@ export default function FinanzasIngresos() {
               </button>
             </div>
             <form onSubmit={onEditSubmit} className="flex-1 flex flex-col overflow-hidden">
-              <div className="p-6 overflow-y-auto space-y-6 no-scrollbar">
+              <div className="p-4 xs:p-5 sm:p-6 overflow-y-auto space-y-6 no-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Alumno</label>
@@ -1268,26 +1197,26 @@ export default function FinanzasIngresos() {
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-between gap-3 sticky bottom-0">
+              <div className="px-4 xs:px-5 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-slate-50/80 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sticky bottom-0">
                 <button
                   type="button"
                   onClick={() => { setConfirmError(''); setRowToDelete(editData); setConfirmOpen(true); }}
-                  className="px-5 py-2 text-sm font-bold text-rose-600 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 transition-all duration-200 flex items-center gap-2"
+                  className="min-h-[44px] touch-manipulation w-full sm:w-auto px-5 py-2.5 sm:py-2 text-sm font-bold text-rose-600 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 transition-all duration-200 flex items-center justify-center gap-2 shrink-0"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   Eliminar
                 </button>
-                <div className="flex items-center gap-3">
+                <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={closeEdit}
-                    className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                    className="min-h-[44px] touch-manipulation flex-1 sm:flex-initial px-6 py-2.5 sm:py-2 text-sm font-bold bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shrink-0"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                    className="min-h-[44px] touch-manipulation flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 sm:py-2 text-sm font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200 shrink-0"
                   >
                     Actualizar
                   </button>

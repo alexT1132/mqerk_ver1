@@ -54,9 +54,9 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
     setIsMenuOpen(false);
   };
 
-  // Efecto para controlar el scroll del body cuando el menú móvil está abierto
+  // Efecto para controlar el scroll del body cuando el menú móvil está abierto (incl. tablet/iPad < 1024px)
   useEffect(() => {
-    if (isMenuOpen && window.innerWidth < 768) {
+    if (isMenuOpen && window.innerWidth < 1024) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -121,17 +121,17 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
         <HeaderComponent />
       )}
 
-      {/* Sidebar para pantallas grandes */}
+      {/* Sidebar para pantallas grandes (lg+: 1024px); en tablet/iPad se usa menú flotante */}
       {SideBarDesktopComponent && (
-        <div className="fixed left-0 top-14 md:top-16 lg:top-20 bottom-0 z-40 hidden sm:block transition-all duration-300">
+        <div className="fixed left-0 top-14 md:top-16 lg:top-20 bottom-0 z-40 hidden lg:block transition-all duration-300">
           <SideBarDesktopComponent {...sidebarProps} setDesktopSidebarOpen={setIsDesktopSidebarOpen} />
         </div>
       )}
 
-      {/* Overlay con blur para móvil */}
+      {/* Overlay con blur para móvil/tablet (menú drawer abierto hasta lg) */}
       {hasSidebar && isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 sm:hidden transition-all duration-150 ease-out"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden transition-all duration-150 ease-out"
           onClick={closeMenu}
           aria-hidden="true"
           style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
@@ -151,12 +151,12 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
       {/* Sidebar para móvil */}
       {SideBarSmComponent && <SideBarSmComponent {...sidebarProps} isMenuOpen={isMenuOpen} closeMenu={closeMenu} />}
 
-      {/* Botón hamburguesa flotante (solo móvil) */}
+      {/* Botón hamburguesa flotante (móvil y tablet/iPad; sidebar solo desde lg) */}
       {/* Mostrar si hay sidebar Y (no es ruta de cursos O hay curso seleccionado) */}
       {hasSidebar && (!isCoursesRoute || hasSelectedCourse) && (
         <button
           onClick={toggleMenu}
-          className="sm:hidden fixed bottom-4 right-4 w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 z-50 flex items-center justify-center"
+          className="lg:hidden fixed bottom-4 right-4 w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 z-50 flex items-center justify-center"
           aria-label="Abrir menú"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" strokeWidth={2}>
@@ -176,7 +176,7 @@ export function Layout({ children, HeaderComponent, SideBarDesktopComponent, Sid
             ? ''
             : ' pb-10') +
           (hasSidebar
-            ? (' sm:ml-20 ' + (isDesktopSidebarOpen ? ' lg:ml-64' : ' lg:ml-20') + ' transition-none lg:transition-[margin] lg:duration-200')
+            ? (' ' + (isDesktopSidebarOpen ? ' lg:ml-64' : ' lg:ml-20') + ' transition-none lg:transition-[margin] lg:duration-200')
             : '') +
           (contentClassName ? ` ${contentClassName}` : '') +
           (isAdminBienvenidaRoute ? ' p-0' : '')

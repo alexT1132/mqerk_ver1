@@ -925,10 +925,10 @@ function StudentProfilePage() {
     switch (activeTab) {
       case 'general':
         return (
-          <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
+          <div className="w-full max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-4 sm:space-y-6">
             {/* Sección Superior: Foto y Datos Básicos */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -939,10 +939,10 @@ function StudentProfilePage() {
                 </h3>
               </div>
 
-              <div className="p-5 sm:p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="p-3 xs:p-4 sm:p-6 lg:p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
                   {/* Foto del estudiante */}
-                  <div className="lg:col-span-4 flex flex-col items-center space-y-4">
+                  <div className="lg:col-span-4 flex flex-col items-center space-y-3 sm:space-y-4">
                     <div className="relative">
                       <img
                         src={student?.fotoAbs || defaultStudentPhoto}
@@ -987,7 +987,7 @@ function StudentProfilePage() {
                   </div>
 
                   {/* Datos básicos */}
-                  <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div className="md:col-span-2 border-b-2 border-slate-200 pb-4 mb-4">
                       <h4 className="text-lg sm:text-xl font-extrabold text-slate-800 flex items-center">
                         <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3 border-2 border-slate-300">
@@ -1045,19 +1045,19 @@ function StudentProfilePage() {
             </div>
 
             {/* Sección: Información de Contacto */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-extrabold text-slate-900 flex items-center">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white rounded-xl flex items-center justify-center mr-2 sm:mr-3 lg:mr-4 shadow-md border-2 border-slate-300 shrink-0">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    Datos de Contacto del Estudiante
+                    <span className="min-w-0">Datos de Contacto del Estudiante</span>
                   </h3>
                 </div>
-                <div className="p-6 space-y-4">
+                <div className="p-3 xs:p-4 sm:p-6 space-y-3 sm:space-y-4">
                   <InputField
                     label="Correo Electrónico"
                     field="personal.email"
@@ -1088,17 +1088,17 @@ function StudentProfilePage() {
               </div>
 
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-extrabold text-slate-900 flex items-center">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white rounded-xl flex items-center justify-center mr-2 sm:mr-3 lg:mr-4 shadow-md border-2 border-slate-300 shrink-0">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
-                    Información del Tutor/Responsable
+                    <span className="min-w-0">Información del Tutor/Responsable</span>
                   </h3>
                 </div>
-                <div className="p-6 space-y-4">
+                <div className="p-3 xs:p-4 sm:p-6 space-y-3 sm:space-y-4">
                   <InputField
                     label="Nombre del Tutor"
                     field="personal.tutorName"
@@ -1139,10 +1139,10 @@ function StudentProfilePage() {
 
       case 'academic':
         return (
-          <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
+          <div className="w-full max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-4 sm:space-y-6">
             {/* Sección: Nivel Educativo Actual */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1182,7 +1182,7 @@ function StudentProfilePage() {
 
             {/* Sección: Aspiraciones Académicas */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1230,9 +1230,9 @@ function StudentProfilePage() {
 
       case 'course':
         return (
-          <div className="max-w-5xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
+          <div className="w-full max-w-5xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1325,10 +1325,10 @@ function StudentProfilePage() {
 
       case 'health':
         return (
-          <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
+          <div className="w-full max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-4 sm:space-y-6">
             {/* Sección: Información Médica */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1424,7 +1424,7 @@ function StudentProfilePage() {
             </div>
 
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1489,9 +1489,9 @@ function StudentProfilePage() {
 
       case 'expectations':
         return (
-          <div className="max-w-4xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
+          <div className="w-full max-w-4xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1501,7 +1501,7 @@ function StudentProfilePage() {
                   Objetivos y Expectativas del Estudiante
                 </h3>
               </div>
-              <div className="p-6 space-y-6">
+              <div className="p-3 xs:p-4 sm:p-6 space-y-4 sm:space-y-6">
                 <InputField label="Cambio que Quiere Lograr" field="expectations.cambioQuiereLograr" value={getNestedValue(formData, 'expectations.cambioQuiereLograr')} onChange={handleInputChange} type="textarea" maxLength={500} disabled={!isEditing} />
                 <InputField label="Comentario/Expectativa" field="expectations.comentarioEspera" value={getNestedValue(formData, 'expectations.comentarioEspera')} onChange={handleInputChange} type="textarea" maxLength={500} disabled={!isEditing} />
               </div>
@@ -1514,9 +1514,9 @@ function StudentProfilePage() {
         return null;
       case 'account':
         return (
-          <div className="max-w-3xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-6">
+          <div className="w-full max-w-3xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-5 sm:px-8 py-4 sm:py-5 border-b-2 border-slate-300">
+              <div className="bg-gradient-to-r from-slate-100 to-gray-100 px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5 border-b-2 border-slate-300">
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-md border-2 border-slate-300">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1527,7 +1527,7 @@ function StudentProfilePage() {
                 </h3>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-3 xs:p-4 sm:p-6 space-y-4 sm:space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
                   <div className="flex gap-2">
@@ -1618,7 +1618,7 @@ function StudentProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-8 sm:pt-12 pb-4 sm:pb-8">
+    <div className="min-h-screen bg-white pt-4 xs:pt-6 sm:pt-8 md:pt-12 pb-3 xs:pb-4 sm:pb-8">
       <CustomNotification
         message={notification.message}
         type={notification.type}
@@ -1660,16 +1660,16 @@ function StudentProfilePage() {
         </div>
       )}
 
-      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto px-2 sm:px-4 lg:px-8">
-        {/* Header mejorado con fondo destacado */}
-        <div className="mb-6 sm:mb-8 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-lg p-4 sm:p-6">
+      <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto px-0 sm:px-4 lg:px-8">
+        {/* Header mejorado con fondo destacado: móvil a ancho completo (px-0 en wrapper), sin márgenes laterales */}
+        <div className="mb-4 xs:mb-6 sm:mb-8 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-none sm:rounded-xl lg:rounded-2xl border-0 sm:border-2 border-slate-200 shadow-lg p-3 xs:p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all duration-200 self-start border border-slate-200 hover:border-slate-300 shadow-sm"
+                className="flex items-center min-h-[44px] touch-manipulation px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all duration-200 self-start border border-slate-200 hover:border-slate-300 shadow-sm"
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <span className="font-medium">Volver a Lista</span>
@@ -1702,6 +1702,15 @@ function StudentProfilePage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               {!isEditing ? (
                 <>
+                  <button
+                    onClick={() => navigate(`/administrativo/student/${formData.folio}/pagos`)}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm border border-emerald-700"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Ver Pagos
+                  </button>
                   <button
                     onClick={() => {
                       setIsEditing(true);
@@ -1744,9 +1753,9 @@ function StudentProfilePage() {
           </div>
         </div>
 
-        {/* Navegación + Contenido unificados en un solo contenedor para aprovechar mejor el espacio */}
+        {/* Navegación + Contenido: móvil a ancho completo, sin márgenes laterales */}
         <div className="mb-6">
-          <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden">
+          <div className="bg-white rounded-none sm:rounded-xl lg:rounded-2xl border-0 sm:border-2 border-slate-200 shadow-xl overflow-hidden">
             {/* Tabs en el header del mismo contenedor (todas las vistas) */}
             <div className="border-b">
               <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2 sm:gap-3 p-2 sm:p-3">
@@ -1765,7 +1774,7 @@ function StudentProfilePage() {
                 ))}
               </nav>
             </div>
-            <section className="min-h-[400px] p-3 sm:p-5">
+            <section className="min-h-[300px] sm:min-h-[400px] p-2 xs:p-3 sm:p-5">
               {renderTabContent()}
             </section>
           </div>

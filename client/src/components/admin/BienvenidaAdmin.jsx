@@ -171,13 +171,13 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
 
   return (
     <div className="relative text-white overflow-hidden
-      px-3 py-10
-      xs:px-4 xs:py-12
-      sm:px-5 sm:py-16
-      md:px-6 md:py-20
-      lg:px-8 lg:py-24
-      xl:px-10 xl:py-28
-      2xl:px-12 2xl:py-32
+      px-3 pt-20 pb-10
+      xs:px-4 xs:pt-24 xs:pb-12
+      sm:px-5 sm:pt-28 sm:pb-16
+      md:px-6 md:pt-32 md:pb-20
+      lg:px-8 lg:pt-36 lg:pb-24
+      xl:px-10 xl:pt-40 xl:pb-28
+      2xl:px-12 2xl:pt-44 2xl:pb-32
       min-h-[400px] sm:min-h-[500px]
       bg-black
     ">
@@ -221,11 +221,12 @@ const GreetingHeader = memo(({ greeting, adminName }) => {
       <div className="relative z-10 text-center">
 
         <h1 className="font-extrabold leading-tight animate-slide-down mb-3 xs:mb-4 sm:mb-5 lg:mb-6
-          text-[clamp(1.75rem,7vw,3.5rem)]
-          xs:text-[clamp(2.25rem,6vw,4rem)]
-          sm:text-[clamp(3rem,5vw,4.5rem)]
-          md:text-[clamp(3.5rem,4.5vw,5rem)]
-          lg:text-[clamp(4rem,4vw,6rem)]
+          text-[clamp(2rem,8vw,4rem)]
+          xs:text-[clamp(2.5rem,7.5vw,4.5rem)]
+          sm:text-[clamp(3.5rem,6.5vw,5.5rem)]
+          md:text-[clamp(4rem,6vw,6rem)]
+          lg:text-[clamp(4.5rem,5vw,7rem)]
+          xl:text-[clamp(5rem,5vw,8rem)]
           tracking-tighter
           bg-gradient-to-r from-white via-yellow-100 to-white
           bg-clip-text text-transparent
@@ -547,6 +548,21 @@ function Bienvenida_Admin1() {
       minHeight: '100vh',
       width: '100%'
     }}>
+      <style>
+        {`
+          @keyframes lightsFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.45; }
+            33% { transform: translate(1.5%, -1%) scale(1.02); opacity: 0.65; }
+            66% { transform: translate(-1%, 1.5%) scale(0.99); opacity: 0.55; }
+          }
+          @keyframes lightsPulse {
+            0%, 100% { opacity: 0.35; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.55; transform: translate(-50%, -50%) scale(1.05); }
+          }
+          .animate-lights-float { animation: lightsFloat ease-in-out infinite; }
+          .animate-lights-pulse { animation: lightsPulse ease-in-out infinite; }
+        `}
+      </style>
       <div className="w-full min-h-full">
 
         {/* Header con saludo y nombre (GreetingHeader solo muestra lo que le pasas) */}
@@ -555,9 +571,20 @@ function Bienvenida_Admin1() {
           adminName={name}
         />
 
-        {/* Tarjetas con info - los datos vienen de los contextos/hooks */}
-        <div className="px-3 py-4 xs:px-4 xs:py-5 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 xl:px-10 xl:py-12">
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-7 lg:gap-8 xl:gap-10 w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
+        {/* Tarjetas con info - los datos vienen de los contextos/hooks. Fondo con luces suaves animadas. */}
+        <div className="relative px-3 py-4 xs:px-4 xs:py-5 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 xl:px-10 xl:py-12 overflow-hidden">
+          {/* Capa de luces/reflejos suaves en el fondo (mobile, tablet, desktop) */}
+          <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
+            <div className="absolute top-[10%] left-[5%] w-40 h-40 xs:w-52 xs:h-52 sm:w-64 sm:h-64 md:w-80 md:h-80 bg-indigo-300/20 rounded-full blur-3xl animate-lights-float" style={{ animationDuration: '22s' }} />
+            <div className="absolute top-[20%] right-[0%] w-32 h-32 xs:w-40 xs:h-40 sm:w-56 sm:h-56 bg-purple-300/15 rounded-full blur-3xl animate-lights-float" style={{ animationDuration: '28s', animationDelay: '-5s' }} />
+            <div className="absolute bottom-[15%] left-[10%] w-36 h-36 xs:w-44 xs:h-44 sm:w-60 sm:h-60 bg-blue-200/20 rounded-full blur-3xl animate-lights-float" style={{ animationDuration: '25s', animationDelay: '-10s' }} />
+            <div className="absolute bottom-[25%] right-[15%] w-28 h-28 xs:w-36 xs:h-36 sm:w-48 sm:h-48 bg-violet-300/15 rounded-full blur-3xl animate-lights-float" style={{ animationDuration: '30s', animationDelay: '-2s' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 xs:w-64 xs:h-64 sm:w-96 sm:h-96 bg-indigo-200/10 rounded-full blur-3xl animate-lights-pulse" style={{ animationDuration: '8s' }} />
+          </div>
+          {/* Contenido por encima de las luces */}
+          <div className="relative z-10">
+          {/* Móvil: 2 tarjetas por fila; md+: 3 (Fecha, Hora, Notificaciones). Igual que dashboard de métricas en móvil. */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-7 lg:gap-8 xl:gap-10 w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto">
 
             {/* Tarjeta de Fecha (esto se queda en frontend) */}
             <InfoCard
@@ -610,6 +637,7 @@ function Bienvenida_Admin1() {
           {dailyQuote && (
             <QuoteCard quote={dailyQuote.quote} author={dailyQuote.author} />
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -438,58 +438,59 @@ export default function FinanzasPagosAsesores() {
         </div>
       )}
 
-      {/* Tarjetas rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Hoy</p>
-          <p className="text-2xl font-semibold text-emerald-600">{money(resumen.today)}</p>
+      {/* Tarjetas rápidas: móvil 2 cols bien asentadas; sm+ sin cambios */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 xs:gap-3 sm:gap-4 mb-6">
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Hoy</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-emerald-600 truncate" title={money(resumen.today)}>{money(resumen.today)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Últimos 7 días</p>
-          <p className="text-2xl font-semibold text-emerald-600">{money(resumen.week)}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Últimos 7 días</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-emerald-600 truncate" title={money(resumen.week)}>{money(resumen.week)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Mes</p>
-          <p className="text-2xl font-semibold text-emerald-600">{money(resumen.month)}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Mes</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-emerald-600 truncate" title={money(resumen.month)}>{money(resumen.month)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Año</p>
-          <p className="text-2xl font-semibold text-emerald-600">{money(resumen.year)}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Año</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-emerald-600 truncate" title={money(resumen.year)}>{money(resumen.year)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Pagos</p>
-          <p className="text-2xl font-semibold text-gray-900">{loading ? '…' : resumen.count}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Pagos</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-gray-900 truncate">{loading ? '…' : resumen.count}</p>
         </div>
       </div>
 
       {error && <div className="mb-4 p-3 rounded bg-rose-100 text-rose-700 text-sm">{error}</div>}
 
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden w-full">
-        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">Registro de pagos a asesores</h2>
-          <div className="flex items-center gap-2">
-            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
-            <button onClick={openNew} className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Nuevo pago</button>
+          <div className="flex flex-wrap items-center gap-2 md:gap-2">
+            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
+            <button onClick={openNew} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 w-full md:w-auto"><span className="sm:hidden">Nuevo</span><span className="hidden sm:inline">Nuevo pago</span></button>
           </div>
         </div>
         {exportExcelError && (
           <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
         )}
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-0 min-[1920px]:min-w-[1100px] text-sm table-fixed min-[1920px]:table-auto">
-            <thead className="bg-gray-50 text-gray-600">
+        <div className="w-full min-w-0">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh] w-full -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0">
+            <table className="w-full min-w-[1020px] lg:min-w-0 lg:w-full min-[1920px]:min-w-[1100px] text-xs sm:text-sm table-fixed min-[1920px]:table-auto">
+            <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[6%] min-[1920px]:w-auto">ID_Pago</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Asesor</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[14%] min-[1920px]:w-auto">Tipo de servicio</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Monto base</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Horas trabajadas</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Honorarios / Comisión</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Ingreso final</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Fecha de pago</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Método de pago</th>
-                <th className="px-3 py-2 text-center font-semibold border-r border-gray-200 w-[6%] min-[1920px]:w-auto">Nota</th>
-                <th className="px-3 py-2 text-center font-semibold w-[6%] min-[1920px]:w-auto">Status</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[6%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">ID_Pago</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Asesor</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[14%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Tipo servicio</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Monto base</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Horas</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Honor./Com.</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[10%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Ingreso final</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[10%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Fecha pago</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[8%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Método</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold border-r border-gray-200 w-[6%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Nota</th>
+                <th className="px-2 xs:px-3 py-2.5 sm:py-2 text-center font-semibold w-[6%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Status</th>
                 {/* Columna de acciones removida: edición por click en fila, eliminación dentro del modal */}
               </tr>
             </thead>
@@ -535,6 +536,7 @@ export default function FinanzasPagosAsesores() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

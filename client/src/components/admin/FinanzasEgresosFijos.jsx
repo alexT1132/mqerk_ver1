@@ -579,69 +579,62 @@ export default function FinanzasEgresosFijos() {
         </div>
       </header>
 
-      {/* Tarjetas rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-6 mb-6 lg:mb-8 xl:mb-8 2xl:mb-8">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
-          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Hoy</p>
-          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
-            {formatCurrency(totals.today)}
-          </p>
+      {/* Tarjetas rápidas: móvil 2 cols; iPad (768–1023) 2x2; lg+ 4 en fila */}
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-6 mb-6 lg:mb-8 xl:mb-8 2xl:mb-8">
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Hoy</p>
+          <p className="text-lg xs:text-xl sm:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600 truncate" title={formatCurrency(totals.today)}>{formatCurrency(totals.today)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
-          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Últimos 7 días</p>
-          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
-            {formatCurrency(totals.week)}
-          </p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Últimos 7 días</p>
+          <p className="text-lg xs:text-xl sm:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600 truncate" title={formatCurrency(totals.week)}>{formatCurrency(totals.week)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
-          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Mes</p>
-          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
-            {formatCurrency(totals.month)}
-          </p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Mes</p>
+          <p className="text-lg xs:text-xl sm:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600 truncate" title={formatCurrency(totals.month)}>{formatCurrency(totals.month)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7">
-          <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Año</p>
-          <p className="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600">
-            {formatCurrency(totals.year)}
-          </p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 lg:p-6 xl:p-6 2xl:p-7 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">Año</p>
+          <p className="text-lg xs:text-xl sm:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-semibold text-rose-600 truncate" title={formatCurrency(totals.year)}>{formatCurrency(totals.year)}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden w-full">
-        <div className="p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-8 2xl:p-10 border-b border-gray-200 flex items-center justify-between">
-          <div>
+        <div className="p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-8 2xl:p-10 border-b border-gray-200 flex flex-col gap-4 md:gap-4">
+          <div className="flex flex-wrap items-baseline gap-2 gap-y-1">
             <h2 className="text-base sm:text-lg lg:text-xl xl:text-xl 2xl:text-2xl font-semibold text-gray-900">
               Registro de gastos fijos
             </h2>
-            <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500 mt-0.5">
+            <p className="text-xs lg:text-sm xl:text-sm 2xl:text-base text-gray-500">
               Total pagado:{" "}
               <span className="font-semibold text-gray-900">
                 {formatCurrency(totals.all)}
               </span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowFilters(s => !s)} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+          <div className="flex flex-wrap items-center gap-2 md:gap-2">
+            <button onClick={() => setShowFilters(s => !s)} className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
               {showFilters ? 'Ocultar filtros' : 'Filtros'}
             </button>
             <button
               onClick={handleExportExcel}
               disabled={exportExcelLoading}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
               {exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}
             </button>
             <button
               onClick={() => setPlantillaModalOpen(true)}
-              className="px-3 py-1.5 text-sm rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
             >
               Plantillas
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+              className="min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg bg-rose-600 text-white hover:bg-rose-700 w-full md:w-auto"
             >
-              Nuevo egreso fijo
+              <span className="sm:hidden">Nuevo</span>
+              <span className="hidden sm:inline">Nuevo egreso fijo</span>
             </button>
           </div>
         </div>
@@ -692,22 +685,22 @@ export default function FinanzasEgresosFijos() {
           <div className="px-6 py-2 text-sm text-amber-600">{exportExcelError}</div>
         )}
 
-        {/* Tabla desktop: hasta 1920px table-fixed para llenar ancho (monitores chicos) */}
-        <div className="hidden sm:block w-full">
-          <div className="overflow-x-auto max-h-[60vh] w-full">
-            <table className="w-full min-w-0 min-[1920px]:min-w-[1260px] text-sm lg:text-base xl:text-base 2xl:text-base table-fixed min-[1920px]:table-auto">
+        {/* Tabla: móvil y tablet (hasta 1023px) ancho fijo y scroll horizontal; lg (1024+) ocupa el ancho del contenedor */}
+        <div className="w-full min-w-0">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh] w-full -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0">
+            <table className="w-full min-w-[1020px] lg:min-w-0 lg:w-full min-[1920px]:min-w-[1260px] text-xs sm:text-sm lg:text-base xl:text-base 2xl:text-base table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[4%] min-[1920px]:w-auto">#</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Fecha</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[6%] min-[1920px]:w-auto">Hora</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Categoría</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[8%] min-[1920px]:w-auto">Descripción</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[14%] min-[1920px]:w-auto">Proveedor</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Frecuencia</th>
-                  <th className="text-center font-semibold px-1 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto">Método de pago</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto">Importe</th>
-                  <th className="text-center font-semibold px-4 py-3 lg:py-4 xl:py-4 2xl:py-4 w-[14%] min-[1920px]:w-auto">Estatus</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[4%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">#</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Fecha</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[6%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Hora</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Categoría</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[8%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Descripción</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[14%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Proveedor</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Frecuencia</th>
+                  <th className="text-center font-semibold px-1 xs:px-2 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[12%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Método de pago</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 border-r border-gray-200 w-[10%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Importe</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 xl:py-4 2xl:py-4 w-[14%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Estatus</th>
                 </tr>
               </thead>
               <tbody>
@@ -882,165 +875,6 @@ export default function FinanzasEgresosFijos() {
           </div>
         </div>
 
-        {/* Móvil - cards */}
-        <div className="sm:hidden p-4 space-y-3">
-          {rows.length === 0 ? (
-            <div className="text-sm text-gray-500">No hay egresos fijos.</div>
-          ) : (
-            rows.map((r, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 cursor-pointer"
-                onClick={() => {
-                  setEditIndex(idx);
-                  setEditData({ ...r });
-                  setEditOpen(true);
-                }}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="text-sm font-semibold text-gray-900 truncate pr-2">
-                    {idx + 1}. {r.categoria}
-                  </div>
-                  <span className="text-xs text-gray-500">{formatDate(r.fecha)}</span>
-                </div>
-                <div className="text-[11px] text-gray-600 mb-2 truncate">
-                  {r.descripcion || "-"}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-600 mb-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Proveedor:</span>
-                    <span className="font-medium text-gray-800">
-                      {r.proveedor || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Hora:</span>
-                    <span className="font-medium text-gray-800">
-                      {r.hora ? String(r.hora).slice(0, 5) : "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Método:</span>
-                    <span className="font-medium text-gray-800">
-                      {String(r.metodo || "").toLowerCase()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500">Frec.:</span>
-                    <select
-                      value={r.frecuencia}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        try {
-                          await patchGasto(idx, { frecuencia: e.target.value });
-                        } catch (err) {
-                          console.error("No se pudo actualizar frecuencia", err);
-                        }
-                      }}
-                      className="rounded-md text-[10px] px-1.5 py-0.5 border border-gray-200"
-                    >
-                      {FRECUENCIAS.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-end gap-1 col-span-2">
-                    <span className="text-gray-500">Importe</span>
-                    <span className="text-sm font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
-                      {formatCurrency(r.importe)}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-1 text-[11px] text-gray-600 flex items-center gap-2">
-                  <span className="text-gray-500">Estatus:</span>
-                  <select
-                    value={r.estatus}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={async (e) => {
-                      const next = e.target.value;
-                      // Validación de presupuesto si va a Pagado
-                      if (next === "Pagado") {
-                        const item = rows[idx];
-                        const month = dayjs(item.fecha).format("YYYY-MM");
-                        let snap = null;
-                        try {
-                          const r = await getResumenMensual(month);
-                          snap = {
-                            budget: Number(r.budget || 0),
-                            spent: Number(r.spent || 0),
-                            leftover: Number(r.leftover || 0),
-                          };
-                        } catch {
-                          snap = getBudgetSnapshot(month);
-                        }
-                        const exceed = Math.max(
-                          0,
-                          Number(item.importe || 0) - snap.leftover
-                        );
-                        if (snap.budget > 0 && exceed > 0) {
-                          setBudgetWarn({
-                            open: true,
-                            context: "status",
-                            info: {
-                              idx,
-                              month,
-                              snap,
-                              amount: Number(item.importe || 0),
-                              exceed,
-                            },
-                          });
-                          return;
-                        }
-                      }
-
-                      // UI optimista
-                      const prevRows = rows;
-                      const optimistic = rows.map((x, i) =>
-                        i === idx ? { ...x, estatus: next } : x
-                      );
-                      setRows(optimistic);
-                      saveExpenses("fijos", optimistic);
-
-                      try {
-                        if (rows[idx]?.id) {
-                          const updated = await updateGastoFijo(rows[idx].id, { estatus: next });
-                          // sincronizar con respuesta del backend
-                          setRows((current) => {
-                            const synced = current.map((x) =>
-                              x.id === updated.id ? { ...x, ...updated } : x
-                            );
-                            saveExpenses("fijos", synced);
-                            return synced;
-                          });
-                        }
-                        // refrescar presupuesto si corresponde
-                        if (next === "Pagado") {
-                          const month = dayjs(rows[idx].fecha).format("YYYY-MM");
-                          await refreshBudgetSummary(month);
-                        }
-                      } catch (err) {
-                        // rollback en error
-                        setRows(prevRows);
-                        saveExpenses("fijos", prevRows);
-                        console.error("No se pudo actualizar estatus", err);
-                        // Aquí podrías añadir un toast de error
-                      }
-                    }}
-                    className={`rounded-md text-[10px] px-1.5 py-0.5 border ${r.estatus === "Pagado"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
-                  >
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Pagado">Pagado</option>
-                  </select>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
       </div>
 
       {/* Modal Nuevo egreso fijo */}
@@ -1354,6 +1188,7 @@ export default function FinanzasEgresosFijos() {
                         <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Auto-instanciar</span>
                       </label>
                     </div>
+                    <p className="text-[10px] text-slate-500 mt-1">Con Auto-instanciar y Fecha de inicio, el servidor crea los gastos automáticamente según la frecuencia y día de pago.</p>
                     <button
                       onClick={async () => {
                         try {
@@ -1365,10 +1200,10 @@ export default function FinanzasEgresosFijos() {
                           setPlantillaForm({ categoria: '', descripcion: '', proveedor: '', frecuencia: 'Mensual', metodo: 'Efectivo', monto_sugerido: '', dia_pago: '', hora_preferida: '', recordar_minutos: 30, auto_evento: true, auto_instanciar: true, fecha_inicio: '', cadencia_anchor: '' });
                         } catch (e) { console.error('crear plantilla', e); }
                       }}
-                      className="h-full w-full bg-indigo-600 text-white font-extrabold rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 px-6 py-4 flex items-center justify-center gap-2"
+                      className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-md hover:bg-indigo-700 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                       Agregar plantilla
                     </button>
@@ -1471,8 +1306,11 @@ export default function FinanzasEgresosFijos() {
                                         if (evId && gasto?.id) {
                                           try {
                                             const updated = await updateGastoFijo(gasto.id, { calendar_event_id: evId });
-                                            setRows(prev => prev.map(x => x.id === updated.id ? { ...updated, calendarEventId: updated.calendar_event_id ?? evId } : x));
-                                            saveExpenses('fijos', rows);
+                                            setRows(prev => {
+                                              const next = prev.map(x => x.id === updated.id ? { ...updated, calendarEventId: updated.calendar_event_id ?? evId } : x);
+                                              saveExpenses('fijos', next);
+                                              return next;
+                                            });
                                           } catch (_) { }
                                         }
                                       } catch (err) { console.warn('evento plantilla manual', err?.response?.status || err?.message || err); }
@@ -1503,10 +1341,10 @@ export default function FinanzasEgresosFijos() {
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end sticky bottom-0">
+            <div className="px-4 sm:px-6 py-3 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end sticky bottom-0">
               <button
                 onClick={() => setPlantillaModalOpen(false)}
-                className="px-8 py-2.5 bg-slate-800 text-white font-black rounded-2xl hover:bg-slate-900 shadow-lg shadow-slate-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                className="px-5 py-2 bg-slate-700 text-white text-sm font-bold rounded-xl hover:bg-slate-800 active:scale-[0.98] transition-all duration-200 touch-manipulation min-h-[40px]"
               >
                 Cerrar gestión
               </button>
@@ -1695,10 +1533,10 @@ export default function FinanzasEgresosFijos() {
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end gap-3 sticky bottom-0">
+            <div className="px-4 sm:px-6 py-3 border-t border-gray-100 bg-slate-50/80 flex items-center justify-end gap-2 sm:gap-3 sticky bottom-0">
               <button
                 onClick={() => { setPlantillaEditOpen(false); setPlantillaEdit(null); }}
-                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                className="px-4 py-2 text-sm font-bold rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 touch-manipulation min-h-[40px]"
               >
                 Cancelar
               </button>
@@ -1727,7 +1565,7 @@ export default function FinanzasEgresosFijos() {
                     setPlantillaEdit(null);
                   } catch (e) { console.error('update plantilla', e); }
                 }}
-                className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                className="px-5 py-2 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98] transition-all duration-200 touch-manipulation min-h-[40px]"
               >
                 Guardar cambios
               </button>

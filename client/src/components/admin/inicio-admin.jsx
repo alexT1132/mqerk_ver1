@@ -8,7 +8,18 @@ import { useAuth } from '../../context/AuthContext.jsx';
 // INTEGRACIÓN BACKEND - ¡Contexto admin listo!
 import { useAdminContext } from '../../context/AdminContext.jsx';
 
-// Componente para cada tarjeta métrica individual
+/*
+ * RESPONSIVIDAD MÓVIL (guía para futuros ajustes):
+ * - Breakpoints: base (<640) móvil, sm 640, md 768, lg 1024, xl 1280. Diseño por viewport lógico, no pulgadas.
+ * - Tarjetas: en móvil conviene 2 columnas (grid-cols-2) o scroll horizontal (overflow-x-auto + flex + min-w en cada card).
+ * - Área táctil mínima: botones y cards clicables ~44px altura; ya se usa touch-manipulation donde aplica.
+ * - Textos: en móvil evitar truncar títulos de métricas; si hace falta, line-clamp o text-sm más pequeño.
+ * - FAB/menú: si existe en el layout, dejar espacio inferior (safe-area o pb) para que no quede bajo la barra del navegador.
+ * Ver: .cursor/skills/reglas-responsividad/SKILL.md y docs/reglas_responsivide.md
+ */
+
+// Componente para cada tarjeta métrica individual.
+// Móvil: ya tiene touch-manipulation y min-h por breakpoint; si el grid pasa a scroll horizontal, añadir min-w-[140px] o min-w-[160px] a cada card para que no se aplasten.
 function MetricCard({ title, value, icon, description, onClick, isClickable = false, colorScheme, isLoading = false }) {
     const [isHovered, setIsHovered] = useState(false);
 
@@ -437,7 +448,8 @@ function DashboardMetrics() {
 
             <div className="flex-1 flex flex-col justify-center items-center py-3 xs:py-4 sm:py-5 md:py-6">
                 <div className="w-full max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto px-3 xs:px-4 sm:px-5 md:px-6 2xl:px-4">
-                    <div className="grid grid-cols-6 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 2xl:gap-8 auto-rows-fr">
+                    {/* Móvil: 2 columnas; tablet: 3; desktop: 6. En móvil no hay espacio horizontal, solo 2 tarjetas por fila. */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 2xl:gap-8 auto-rows-fr">
                         {metricsData.map((metric, index) => (
                             <MetricCard
                                 key={metric.id}
@@ -453,7 +465,7 @@ function DashboardMetrics() {
                         ))}
                     </div>
 
-                    {/* Indicador móvil */}
+                    {/* Indicador móvil: recordatorio de que las tarjetas son tocables. En móvil asegurar que el mensaje no quede cortado por teclado o barra del navegador. */}
                     <div className="mt-4 xs:mt-5 sm:mt-6 lg:hidden">
                         <div className="flex items-center justify-center gap-2 text-gray-500/80">
                             <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full"></div>

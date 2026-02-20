@@ -296,13 +296,13 @@ export function ReportesPagos_Admin_comp() {
   }
 
   return (
-    <div className="px-6 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 bg-white min-h-screen">
+    <div className="px-2 xs:px-3 sm:px-6 pt-6 xs:pt-8 sm:pt-10 md:pt-12 pb-6 bg-white min-h-screen w-full">
       {(showLoadingScreen || isLoading) && (
         <LoadingOverlay message="Cargando reportes de pagos..." />
       )}
-      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto">
+      <div className="max-w-7xl xl:max-w-screen-2xl 2xl:max-w-none mx-auto w-full">
         {/* Header mejorado */}
-        <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl p-5 sm:p-6 mb-6 sticky top-0 z-30">
+        <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-xl p-3 xs:p-4 sm:p-6 mb-6 sticky top-0 z-30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 mb-2">Reportes de Pagos</h1>
@@ -365,7 +365,7 @@ export function ReportesPagos_Admin_comp() {
         </div>
 
         {/* Filtros de fecha */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 border-2 border-slate-200">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 xs:p-4 sm:p-6 mb-6 border-2 border-slate-200">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
               <label htmlFor="fechaInicio" className="block text-sm font-semibold text-slate-700 mb-2">
@@ -400,8 +400,8 @@ export function ReportesPagos_Admin_comp() {
           </div>
         </div>
 
-        {/* Métricas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 mb-6">
+        {/* Métricas principales: móvil 2 columnas para aprovechar ancho */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6 mb-6">
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 hover:border-green-300 transition-all duration-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -493,17 +493,17 @@ export function ReportesPagos_Admin_comp() {
             </div>
           )}
 
-        {/* Gráficas principales */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="ingresos-mes">
+        {/* Gráficas principales: móvil 2 columnas cuando quepan, xl 3 */}
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 mb-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible" data-chart="ingresos-mes">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Mes</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Solo pagos aprobados</div>
-            <div className="flex-1 min-h-[240px]">
+            <div className="h-[220px] xs:h-[240px] min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={(reportes.ingresosPorMes || [])}>
+                <BarChart data={(reportes.ingresosPorMes || [])} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} domain={[0, 'auto']} />
                   <Tooltip formatter={(v) => formatCurrencyMXN(v)} />
                   <Bar dataKey="ingresos" fill="#6366F1" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -511,18 +511,18 @@ export function ReportesPagos_Admin_comp() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="pagos-curso">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible" data-chart="pagos-curso">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Pagos por Curso</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Cantidad de pagos aprobados</div>
-            <div className="flex-1 min-h-[240px]">
+            <div className="h-[220px] xs:h-[240px] min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={(reportes.pagosPorCurso || [])}>
+                <BarChart data={(reportes.pagosPorCurso || [])} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="curso" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
-                  <YAxis yAxisId={0} tick={{ fontSize: 11 }} />
-                  <YAxis yAxisId={1} orientation="right" tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="curso" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
+                  <YAxis yAxisId={0} tick={{ fontSize: 10 }} domain={[0, 'auto']} />
+                  <YAxis yAxisId={1} orientation="right" tick={{ fontSize: 10 }} domain={[0, 'auto']} />
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="pagos" name="Pagos" fill="#10B981" radius={[4, 4, 0, 0]} yAxisId={0} />
                   <Bar dataKey="ingresos" name="Ingresos" fill="#0EA5E9" radius={[4, 4, 0, 0]} yAxisId={1} />
                 </BarChart>
@@ -530,15 +530,15 @@ export function ReportesPagos_Admin_comp() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col" data-chart="metodos-pago">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible" data-chart="metodos-pago">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Distribución por Método</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Métodos de pago (aprobados)</div>
-            <div className="flex-1 min-h-[240px]">
+            <div className="h-[220px] xs:h-[240px] min-w-0 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
                   <Tooltip formatter={(v, _, p) => `${v} (${p.payload.porcentaje}%)`} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Pie data={(reportes.metodosDepago || [])} dataKey="cantidad" nameKey="metodo" innerRadius={50} outerRadius={80} paddingAngle={4}>
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Pie data={(reportes.metodosDepago || [])} dataKey="cantidad" nameKey="metodo" innerRadius="40%" outerRadius="65%" paddingAngle={4} cx="50%" cy="50%">
                     {(reportes.metodosDepago || []).map((d, i) => {
                       const colors = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#0EA5E9', '#8B5CF6'];
                       return <Cell key={i} fill={colors[i % colors.length]} />;
@@ -550,32 +550,32 @@ export function ReportesPagos_Admin_comp() {
           </div>
         </div>
 
-        {/* Gráficas temporales adicionales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col">
+        {/* Gráficas temporales adicionales: móvil 2 columnas */}
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 xs:gap-4 sm:gap-6 mb-10">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Semana</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Semanas en el rango</div>
-            <div className="flex-1 min-h-[260px]">
+            <div className="h-[240px] sm:h-[260px] min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={(reportes.ingresosPorSemana || []).slice().reverse()}>
+                <LineChart data={(reportes.ingresosPorSemana || []).slice().reverse()} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="semana" tickFormatter={(v) => `S${v}`} />
-                  <YAxis />
-                  <Tooltip formatter={(v) => formatCurrencyMXN(v)} labelFormatter={(l, p) => `Semana ${p[0]?.payload?.semana} ${p[0]?.payload?.anio}`} />
+                  <XAxis dataKey="semana" tick={{ fontSize: 10 }} tickFormatter={(v) => `S${v}`} />
+                  <YAxis tick={{ fontSize: 10 }} domain={[0, 'auto']} />
+                  <Tooltip formatter={(v) => formatCurrencyMXN(v)} labelFormatter={(l, p) => p?.[0]?.payload ? `Semana ${p[0].payload.semana} ${p[0].payload.anio}` : l} />
                   <Line type="monotone" dataKey="ingresos" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Año</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Visión global</div>
-            <div className="flex-1 min-h-[260px]">
+            <div className="h-[240px] sm:h-[260px] min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={(reportes.ingresosPorAnio || [])}>
+                <BarChart data={(reportes.ingresosPorAnio || [])} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="anio" />
-                  <YAxis />
+                  <XAxis dataKey="anio" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} domain={[0, 'auto']} />
                   <Tooltip formatter={(v) => formatCurrencyMXN(v)} />
                   <Bar dataKey="ingresos" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -605,26 +605,26 @@ export function ReportesPagos_Admin_comp() {
           </div>
         </div>
 
-        {/* Tabla detallada de pagos */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-12 border border-slate-200">
+        {/* Tabla detallada: mismo criterio que Finanzas/Generar contrato; en móvil scroll horizontal */}
+        <div className="bg-white rounded-lg shadow-sm p-3 xs:p-4 mb-12 border border-slate-200 w-full">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-slate-700">Pagos Detallados</h3>
             <span className="text-xs text-slate-500 font-medium">Mostrando {reportes.pagosDetallados?.length || 0} registros</span>
           </div>
-          <div className="overflow-auto rounded border border-slate-200">
-            <table className="min-w-full text-xs">
+          <div className="overflow-x-auto w-full rounded border border-slate-200">
+            <table className="w-full min-w-[900px] text-xs table-fixed min-[1920px]:table-auto">
               <thead className="bg-slate-50">
                 <tr className="border-b border-slate-200">
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Folio</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Alumno</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Curso</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Grupo</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Estado</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Importe</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Método</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Motivo Rechazo</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Creado</th>
-                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px]">Actualizado</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[7%] min-[1920px]:w-auto">Folio</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[12%] min-[1920px]:w-auto">Alumno</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[10%] min-[1920px]:w-auto">Curso</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[8%] min-[1920px]:w-auto">Grupo</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[8%] min-[1920px]:w-auto">Estado</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[8%] min-[1920px]:w-auto">Importe</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[8%] min-[1920px]:w-auto">Método</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[12%] min-[1920px]:w-auto">Motivo Rechazo</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[12%] min-[1920px]:w-auto">Creado</th>
+                  <th className="px-2 py-2 text-left font-semibold text-slate-700 text-[11px] w-[15%] min-[1920px]:w-auto">Actualizado</th>
                 </tr>
               </thead>
               <tbody>

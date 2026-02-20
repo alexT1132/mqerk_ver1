@@ -90,9 +90,9 @@ export default function FinanzasEgresos() {
 					</div>
 				</div>
 
-				<div className="hidden sm:block w-full">
-					<div className="overflow-x-auto max-h-[60vh] w-full">
-						<table className="w-full min-w-0 min-[1920px]:min-w-[1260px] text-sm table-fixed min-[1920px]:table-auto">
+				<div className="w-full">
+					<div className="overflow-x-auto max-h-[60vh] w-full -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0">
+						<table className="w-full min-w-[720px] min-[1920px]:min-w-[1260px] text-sm table-fixed min-[1920px]:table-auto">
 							<thead className="bg-gray-50/80 backdrop-blur text-gray-600 sticky top-0 z-10">
 								<tr>
 									<th className="text-left font-semibold px-4 py-3 border-r border-gray-200 w-[5%] min-[1920px]:w-auto">#</th>
@@ -133,33 +133,6 @@ export default function FinanzasEgresos() {
 					</div>
 				</div>
 
-				{/* Vista móvil con cards */}
-				<div className="sm:hidden p-4 space-y-3">
-					{loading ? (
-						<div className="text-sm text-gray-500">Cargando egresos...</div>
-					) : rows.length === 0 ? (
-						<div className="text-sm text-gray-500">No hay egresos.</div>
-					) : (
-						rows.map((r, idx) => (
-							<div key={idx} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
-								<div className="flex items-start justify-between mb-2">
-									<div className="text-sm font-semibold text-gray-900 truncate pr-2">{idx + 1}. {r.concepto}</div>
-									<span className="text-xs text-gray-500">{r.fecha}</span>
-								</div>
-								<div className="grid grid-cols-2 gap-2 text-[11px] text-gray-600 mb-2">
-									<div className="flex items-center gap-1"><span className="text-gray-500">Método:</span><span className="font-medium text-gray-800">{String(r.metodo || '').toLowerCase()}</span></div>
-									<div className="flex items-center justify-end gap-1 col-span-2">
-										<span className="text-gray-500">Importe</span>
-										<span className="text-sm font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">{formatCurrency(r.importe)}</span>
-									</div>
-								</div>
-								{r.descripcion ? (
-									<div className="text-[11px] text-gray-600 truncate"><span className="text-gray-500">Descripción:</span> <span className="text-gray-800" title={r.descripcion}>{r.descripcion}</span></div>
-								) : null}
-							</div>
-						))
-					)}
-				</div>
 			</div>
 		</section>
 	);

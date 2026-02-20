@@ -341,33 +341,33 @@ export default function FinanzasEgresosPresupuesto() {
             <Link to="/administrativo/finanzas/egresos/fijos" className="text-sm text-gray-600 hover:text-gray-800">Gastos fijos</Link>
             <Link to="/administrativo/finanzas/egresos/variables" className="text-sm text-gray-600 hover:text-gray-800">Gastos variables</Link>
             <Link to="/administrativo/finanzas" className="text-sm text-indigo-600 hover:text-indigo-800">Finanzas</Link>
-            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="ml-2 px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
+            <button onClick={handleExportExcel} disabled={exportExcelLoading} className="ml-2 min-h-[44px] md:min-h-0 touch-manipulation px-3 py-2.5 md:py-2 text-sm rounded-xl md:rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60">{exportExcelLoading ? 'Exportando…' : 'Exportar Excel'}</button>
           </div>
         </div>
       </header>
 
-      {/* Resumen rápido */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Mes seleccionado</p>
-          <p className="text-2xl font-semibold text-gray-800">{dayjs(mes + '-01').format('MMMM YYYY')}</p>
+      {/* Resumen rápido: móvil 2 cols bien asentadas; sm+ sin cambios */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 mb-6">
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Mes seleccionado</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-gray-800 truncate" title={dayjs(mes + '-01').format('MMMM YYYY')}>{dayjs(mes + '-01').format('MMMM YYYY')}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Presupuesto</p>
-          <p className="text-2xl font-semibold text-indigo-600">{formatCurrency(totalMesSeleccionado)}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Presupuesto</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-indigo-600 truncate" title={formatCurrency(totalMesSeleccionado)}>{formatCurrency(totalMesSeleccionado)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Gastado</p>
-          <p className="text-2xl font-semibold text-rose-600">{formatCurrency(gastadoMes)}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Gastado</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-rose-600 truncate" title={formatCurrency(gastadoMes)}>{formatCurrency(gastadoMes)}</p>
         </div>
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">Disponible</p>
-          <p className="text-2xl font-semibold text-emerald-600">{formatCurrency(disponible)}</p>
+        <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+          <p className="text-[11px] xs:text-xs text-gray-500">Disponible</p>
+          <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-emerald-600 truncate" title={formatCurrency(disponible)}>{formatCurrency(disponible)}</p>
         </div>
         {excedenteMes > 0 && (
-          <div className="bg-white/90 backdrop-blur rounded-3xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-5">
-            <p className="text-xs text-gray-500">Excedente</p>
-            <p className="text-2xl font-semibold text-rose-700">{formatCurrency(excedenteMes)}</p>
+          <div className="bg-white/90 backdrop-blur rounded-2xl sm:rounded-3xl shadow-sm ring-1 ring-gray-100 p-3 xs:p-4 sm:p-5 min-w-0 min-h-[100px] xs:min-h-[108px] sm:min-h-0 flex flex-col justify-between">
+            <p className="text-[11px] xs:text-xs text-gray-500">Excedente</p>
+            <p className="text-lg xs:text-xl sm:text-2xl font-semibold text-rose-700 truncate" title={formatCurrency(excedenteMes)}>{formatCurrency(excedenteMes)}</p>
           </div>
         )}
       </div>
@@ -400,16 +400,16 @@ export default function FinanzasEgresosPresupuesto() {
 
         <div className="px-3 xs:px-4 sm:px-6 pb-6">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Histórico de presupuestos</h3>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-0 min-[1920px]:min-w-[760px] text-sm table-fixed min-[1920px]:table-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[50vh] w-full -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0">
+            <table className="w-full min-w-[640px] lg:min-w-0 lg:w-full min-[1920px]:min-w-[760px] text-xs sm:text-sm table-fixed min-[1920px]:table-auto">
               <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                 <tr>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Mes</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Monto</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Gastado</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Disponible</th>
-                  <th className="text-center font-semibold px-4 py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto">Excedente</th>
-                  <th className="text-center font-semibold px-4 py-3 w-[10%] min-[1920px]:w-auto">Acciones</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Mes</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Monto</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Gastado</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Disponible</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 border-r border-gray-200 w-[18%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Excedente</th>
+                  <th className="text-center font-semibold px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3 w-[10%] min-[1920px]:w-auto whitespace-nowrap text-xs sm:text-sm">Acciones</th>
                 </tr>
               </thead>
               <tbody>

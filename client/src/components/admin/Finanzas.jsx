@@ -83,15 +83,15 @@ export default function FinanzasHome() {
         </div>
       </div>
 
-      {/* Grid de tarjetas estilo dashboard */}
+      {/* Grid de tarjetas: móvil 2 cols cuadradas/organizadas; desktop igual que antes */}
       <div className="flex-1 flex flex-col justify-center items-center py-4 sm:py-6 2xl:py-8">
-        <div className="w-full max-w-6xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 2xl:gap-14 auto-rows-fr">
+        <div className="w-full max-w-6xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-2 xs:px-3 sm:px-6 lg:px-8 xl:px-10 2xl:px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 xs:gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 2xl:gap-14 auto-rows-fr">
 
             {/* Tarjeta Ingresos */}
             <Link
               to="/administrativo/finanzas/ingresos"
-              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-emerald-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-4 xs:p-5 sm:p-6 lg:p-8 xl:p-9 2xl:p-10 min-h-[180px] sm:min-h-[220px] lg:min-h-[320px] xl:min-h-[380px] 2xl:min-h-[440px] flex flex-col justify-between overflow-hidden"
+              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-emerald-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-9 2xl:p-10 min-h-[240px] xs:min-h-[260px] sm:min-h-[220px] lg:min-h-[320px] xl:min-h-[380px] 2xl:min-h-[440px] flex flex-col justify-between overflow-hidden"
             >
               {/* Línea decorativa superior */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400"></div>
@@ -104,38 +104,36 @@ export default function FinanzasHome() {
                 }}></div>
               </div>
 
-              {/* Header */}
-              <div className="relative z-10 flex items-start justify-between mb-4 sm:mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
-                <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-4 xl:space-x-5 2xl:space-x-5">
-                  <div className="flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-16 2xl:h-16 rounded-xl bg-emerald-50 border-2 border-emerald-200 group-hover:bg-emerald-100 group-hover:border-emerald-300 transition-colors duration-300 shadow-sm">
-                    {/* Icono: Entrada (flecha hacia abajo a una base) */}
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-8 2xl:h-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              {/* Header: compacto en móvil, alineado */}
+              <div className="relative z-10 flex items-start justify-between gap-2 mb-3 xs:mb-4 sm:mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
+                <div className="flex items-center gap-2 xs:gap-3 sm:space-x-4 lg:space-x-4 xl:space-x-5 2xl:space-x-5 min-w-0">
+                  <div className="flex items-center justify-center w-9 h-9 xs:w-11 xs:h-11 sm:w-14 sm:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-16 2xl:h-16 rounded-lg xs:rounded-xl bg-emerald-50 border-2 border-emerald-200 group-hover:bg-emerald-100 group-hover:border-emerald-300 transition-colors duration-300 shadow-sm shrink-0">
+                    <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-8 2xl:h-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v10m0 0l-3-3m3 3l3-3M4 20h16" />
                     </svg>
                   </div>
-                  <div>
-                    <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-0.5">Ingresos</h3>
-                    <p className="text-xs sm:text-sm lg:text-sm xl:text-base 2xl:text-base font-extrabold text-emerald-700 uppercase tracking-wider">Gestión Financiera</p>
+                  <div className="min-w-0">
+                    <h3 className="text-base xs:text-lg sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-0.5">Ingresos</h3>
+                    <p className="text-[10px] xs:text-xs sm:text-sm lg:text-sm xl:text-base 2xl:text-base font-extrabold text-emerald-700 uppercase tracking-wider break-words">Gestión Financiera</p>
                   </div>
                 </div>
 
-                <div className="hidden sm:block text-right">
+                <div className="hidden sm:block text-right shrink-0">
                   <div className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-1">{loading ? '…' : fmtMoney(metrics.totalMonth)}</div>
                   <div className="text-[10px] sm:text-xs lg:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold bg-slate-100 border border-slate-200 px-2 py-0.5 sm:py-1 xl:py-1.5 2xl:py-1.5 rounded-lg">Este mes</div>
                 </div>
               </div>
 
               {/* Contenido principal */}
-              <div className="relative z-10 flex-1 mb-4 sm:mb-6 lg:mb-6 xl:mb-7 2xl:mb-8">
+              <div className="relative z-10 flex-1 min-h-0 mb-3 xs:mb-4 sm:mb-6 lg:mb-6 xl:mb-7 2xl:mb-8 flex flex-col">
                 {/* Descripción: resumida en móvil */}
                 <p className="hidden sm:block text-gray-600 leading-relaxed mb-6 lg:mb-6 xl:mb-7 2xl:text-base 2xl:mb-8">
                   Administra cobros, depósitos y conciliación bancaria. Control completo de todos los ingresos de la academia.
                 </p>
-                <p className="block sm:hidden text-[11px] text-gray-600 mb-3">Resumen de ingresos de la academia</p>
+                <p className="block sm:hidden text-[10px] xs:text-[11px] text-gray-600 mb-2">Resumen de ingresos</p>
 
-                {/* Estadísticas en línea */}
-                {/* Compacto en móvil */}
-                <div className="grid sm:hidden grid-cols-2 gap-2 bg-gray-50 rounded-lg p-2 mb-4">
+                {/* Estadísticas en línea: compacto en móvil */}
+                <div className="grid sm:hidden grid-cols-2 gap-2 xs:gap-3 bg-gray-50 rounded-lg p-2.5 xs:p-3 mb-0">
                   <div className="text-center">
                     <div className="text-base font-bold text-emerald-600">{loading ? '…' : metrics.countMonth}</div>
                     <div className="text-[10px] text-gray-500">Transacc.</div>
@@ -182,16 +180,16 @@ export default function FinanzasHome() {
               </div>
 
               {/* Footer */}
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center text-emerald-700 font-extrabold group-hover:text-emerald-800 transition-colors xl:text-base 2xl:text-lg">
+              <div className="relative z-10 flex items-center justify-between gap-2 mt-auto pt-3 xs:pt-4 sm:pt-0">
+                <div className="flex items-center text-emerald-700 font-extrabold group-hover:text-emerald-800 transition-colors text-xs xs:text-sm xl:text-base 2xl:text-lg">
                   <span className="hidden sm:inline mr-2">Administrar</span>
-                  <svg className="w-4 h-4 sm:w-4 sm:h-4 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4 sm:h-4 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                   </svg>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2.5 h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3 bg-emerald-500 rounded-full border-2 border-emerald-700"></div>
-                  <span className="text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Sistema activo</span>
+                <div className="flex items-center space-x-1.5 xs:space-x-2 shrink-0">
+                  <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3 bg-emerald-500 rounded-full border-2 border-emerald-700"></div>
+                  <span className="text-[10px] xs:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Activo</span>
                 </div>
               </div>
 
@@ -205,7 +203,7 @@ export default function FinanzasHome() {
               tabIndex={0}
               onClick={() => setShowEgresosMenu(true)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowEgresosMenu(true); } }}
-              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-rose-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-9 2xl:p-10 min-h-[180px] sm:min-h-[220px] lg:min-h-[320px] xl:min-h-[380px] 2xl:min-h-[440px] flex flex-col justify-between overflow-hidden cursor-pointer"
+              className="group relative bg-white rounded-xl sm:rounded-2xl border-2 border-slate-200 hover:border-rose-300 shadow-lg hover:shadow-2xl transition-all duration-300 p-3 xs:p-4 sm:p-6 lg:p-8 xl:p-9 2xl:p-10 min-h-[240px] xs:min-h-[260px] sm:min-h-[220px] lg:min-h-[320px] xl:min-h-[380px] 2xl:min-h-[440px] flex flex-col justify-between overflow-hidden cursor-pointer"
             >
               {/* Línea decorativa superior */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-rose-400 to-pink-400"></div>
@@ -218,18 +216,17 @@ export default function FinanzasHome() {
                 }}></div>
               </div>
 
-              {/* Header */}
-              <div className="relative z-10 flex items-start justify-between mb-1 sm:mb-4 lg:mb-6 xl:mb-7 2xl:mb-8">
-                <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-4 xl:space-x-5 2xl:space-x-5">
-                  <div className="flex items-center justify-center w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-16 2xl:h-16 rounded-xl bg-rose-50 border-2 border-rose-200 group-hover:bg-rose-100 group-hover:border-rose-300 transition-colors duration-300 shadow-sm">
-                    {/* Icono: Salida (flecha hacia arriba desde una base) */}
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-8 2xl:h-8 text-rose-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              {/* Header: compacto en móvil */}
+              <div className="relative z-10 flex items-start justify-between gap-2 mb-3 xs:mb-4 sm:mb-4 lg:mb-6 xl:mb-7 2xl:mb-8">
+                <div className="flex items-center gap-2 xs:gap-3 sm:space-x-4 lg:space-x-4 xl:space-x-5 2xl:space-x-5 min-w-0">
+                  <div className="flex items-center justify-center w-9 h-9 xs:w-11 xs:h-11 sm:w-14 sm:h-14 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-16 2xl:h-16 rounded-lg xs:rounded-xl bg-rose-50 border-2 border-rose-200 group-hover:bg-rose-100 group-hover:border-rose-300 transition-colors duration-300 shadow-sm shrink-0">
+                    <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-8 2xl:h-8 text-rose-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20V10m0 0l-3 3m3-3l3 3M4 4h16" />
                     </svg>
                   </div>
-                  <div>
-                    <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-0.5">Egresos</h3>
-                    <p className="text-xs sm:text-sm lg:text-sm xl:text-base 2xl:text-base font-extrabold text-rose-700 uppercase tracking-wider">Control de Gastos</p>
+                  <div className="min-w-0">
+                    <h3 className="text-base xs:text-lg sm:text-2xl lg:text-2xl xl:text-3xl 2xl:text-3xl font-extrabold text-slate-900 mb-0.5">Egresos</h3>
+                    <p className="text-[10px] xs:text-xs sm:text-sm lg:text-sm xl:text-base 2xl:text-base font-extrabold text-rose-700 uppercase tracking-wider break-words">Control de Gastos</p>
                   </div>
                 </div>
                 {/* Indicadores de presupuesto (dot móvil + badge desktop) */}
@@ -263,16 +260,15 @@ export default function FinanzasHome() {
               </div>
 
               {/* Contenido principal */}
-              <div className="relative z-10 flex-1 mb-1 sm:mb-4 lg:mb-6 xl:mb-7 2xl:mb-8">
+              <div className="relative z-10 flex-1 min-h-0 mb-3 xs:mb-4 sm:mb-4 lg:mb-6 xl:mb-7 2xl:mb-8 flex flex-col">
                 {/* Descripción: resumida en móvil */}
                 <p className="hidden sm:block text-gray-600 leading-relaxed mb-6 lg:mb-6 xl:mb-7 2xl:text-base 2xl:mb-8">
                   Controla gastos, proveedores y recibos. Administración completa de todos los egresos operativos de la academia.
                 </p>
-                <p className="hidden sm:hidden text-[11px] text-gray-600 mb-3">Gastos operativos y control de presupuestos</p>
+                <p className="block sm:hidden text-[10px] xs:text-[11px] text-gray-600 mb-2">Gastos y presupuesto</p>
 
-                {/* Estadísticas en línea */}
-                {/* Compacto en móvil */}
-                <div className="grid sm:hidden grid-cols-3 gap-1.5 bg-gray-50 rounded-lg p-1.5">
+                {/* Estadísticas en línea: compacto en móvil */}
+                <div className="grid sm:hidden grid-cols-3 gap-2 xs:gap-3 bg-gray-50 rounded-lg p-2.5 xs:p-3 mb-0">
                   <div className="text-center">
                     <div className="text-[13px] font-bold text-rose-600">{fmtMoney(egresosSnap.spent)}</div>
                     <div className="text-[9px] text-gray-500">Gastos</div>
@@ -287,7 +283,7 @@ export default function FinanzasHome() {
                   </div>
                 </div>
                 {/* Barra de progreso compacta (solo móvil) */}
-                <div className="sm:hidden mt-1">
+                <div className="sm:hidden mt-2">
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${egresosSnap.budget > 0
@@ -346,16 +342,16 @@ export default function FinanzasHome() {
               </div>
 
               {/* Footer: igual que Ingresos */}
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center text-rose-700 font-extrabold group-hover:text-rose-800 transition-colors xl:text-base 2xl:text-lg">
+              <div className="relative z-10 flex items-center justify-between gap-2 mt-auto pt-3 xs:pt-4 sm:pt-0">
+                <div className="flex items-center text-rose-700 font-extrabold group-hover:text-rose-800 transition-colors text-xs xs:text-sm xl:text-base 2xl:text-lg">
                   <span className="hidden sm:inline mr-2">Administrar</span>
-                  <svg className="w-4 h-4 sm:w-4 sm:h-4 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4 sm:h-4 xl:w-5 xl:h-5 2xl:w-5 2xl:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                   </svg>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2.5 h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3 bg-rose-500 rounded-full border-2 border-rose-700"></div>
-                  <span className="text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Sistema activo</span>
+                <div className="flex items-center space-x-1.5 xs:space-x-2 shrink-0">
+                  <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3 bg-rose-500 rounded-full border-2 border-rose-700"></div>
+                  <span className="text-[10px] xs:text-xs xl:text-sm 2xl:text-sm text-slate-600 font-semibold">Activo</span>
                 </div>
               </div>
 

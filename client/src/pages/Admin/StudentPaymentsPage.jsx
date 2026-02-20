@@ -158,10 +158,10 @@ export default function StudentPaymentsPage() {
   }
 
   return (
-    <div className="pt-6 sm:pt-8 pb-4 sm:pb-6 px-3 sm:px-4 md:px-6">
-      <div className="max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-5 sm:space-y-6">
-        {/* Header mejorado con fondo destacado */}
-        <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-xl sm:rounded-2xl border-2 border-slate-200 shadow-lg p-4 sm:p-6">
+    <div className="w-full pt-4 xs:pt-6 sm:pt-8 pb-3 xs:pb-4 sm:pb-6 px-0 sm:px-4 md:px-6">
+      <div className="w-full max-w-6xl xl:max-w-screen-2xl 2xl:max-w-[1700px] mx-auto space-y-4 sm:space-y-5 lg:space-y-6">
+        {/* Header: móvil a ancho completo, sin márgenes laterales */}
+        <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 rounded-none sm:rounded-xl lg:rounded-2xl border-0 sm:border-2 border-slate-200 shadow-lg p-3 xs:p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <button
@@ -169,10 +169,10 @@ export default function StudentPaymentsPage() {
                   const canGoBack = window.history.length > 2;
                   if (canGoBack) navigate(-1); else navigate('/administrativo/lista-alumnos');
                 }}
-                className="flex items-center px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all duration-200 self-start border border-slate-200 hover:border-slate-300 shadow-sm font-medium"
+                className="flex items-center min-h-[44px] touch-manipulation px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all duration-200 self-start border border-slate-200 hover:border-slate-300 shadow-sm font-medium"
                 title="Regresar a la lista de alumnos"
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 Regresar
@@ -190,10 +190,10 @@ export default function StudentPaymentsPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/administrativo/student/${student?.folio}`)}
-                className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg bg-slate-600 text-white hover:bg-slate-700 shadow-sm border border-slate-700 transition-all duration-200"
+                className="inline-flex items-center min-h-[44px] touch-manipulation px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg bg-slate-600 text-white hover:bg-slate-700 shadow-sm border border-slate-700 transition-all duration-200"
                 title="Ver perfil del estudiante"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 Ver Perfil
@@ -204,7 +204,7 @@ export default function StudentPaymentsPage() {
 
         {/* Alertas de estado */}
         {(isLocked || withinTolerancePayment) && (
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 shadow-lg ${isLocked
+          <div className={`rounded-none sm:rounded-xl lg:rounded-2xl p-4 sm:p-5 border-0 sm:border-2 shadow-lg ${isLocked
               ? 'bg-red-50 border-red-300'
               : 'bg-amber-50 border-amber-300'
             }`}>
@@ -237,7 +237,7 @@ export default function StudentPaymentsPage() {
         )}
 
         {/* Próximo pago */}
-        <div className="bg-gradient-to-r from-slate-600 via-slate-700 to-slate-600 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 text-white shadow-2xl border-2 border-slate-500">
+        <div className="bg-gradient-to-r from-slate-600 via-slate-700 to-slate-600 rounded-none sm:rounded-xl lg:rounded-2xl p-3 xs:p-4 sm:p-6 md:p-8 text-white shadow-2xl border-0 sm:border-2 border-slate-500">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h3 className="text-xl sm:text-2xl font-extrabold mb-2">Próximo Pago</h3>
@@ -259,9 +259,9 @@ export default function StudentPaymentsPage() {
           </div>
         </div>
 
-        {/* Plan info + tabla */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 md:p-8 border-2 border-slate-200">
-          <div className="flex flex-col gap-4 mb-5 sm:mb-6">
+        {/* Plan info + tabla: móvil a ancho completo */}
+        <div className="bg-white rounded-none sm:rounded-xl lg:rounded-2xl shadow-xl p-3 xs:p-4 sm:p-6 md:p-8 border-0 sm:border-2 border-slate-200">
+          <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-5 lg:mb-6">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-slate-600 to-slate-700 shadow-md border-2 border-slate-500">✨ {planConfig.name}</span>
               <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-green-50 text-green-800 border-2 border-green-300 shadow-sm">💰 {formatCurrencyMXN(planConfig.paymentAmount)} {planConfig.frequency}</span>
@@ -273,16 +273,16 @@ export default function StudentPaymentsPage() {
             </div>
             <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">Plan de Pagos</h3>
           </div>
-          <div className="overflow-x-auto rounded-lg border-2 border-slate-200">
-            <table className="w-full">
+          <div className="overflow-x-auto -mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0 rounded-lg border-2 border-slate-200">
+            <table className="w-full min-w-[520px] sm:min-w-0">
               <thead className="bg-gradient-to-r from-slate-100 to-gray-100">
                 <tr className="border-b-2 border-slate-300">
-                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">Pago</th>
-                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">Periodo</th>
-                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">Monto</th>
-                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">Fecha Límite</th>
-                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">Estado</th>
-                  <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-extrabold text-slate-900 text-sm sm:text-base">Acciones</th>
+                  <th className="text-left py-2.5 sm:py-3 lg:py-4 px-2 xs:px-3 sm:px-4 font-extrabold text-slate-900 text-xs sm:text-sm lg:text-base whitespace-nowrap">Pago</th>
+                  <th className="text-left py-2.5 sm:py-3 lg:py-4 px-2 xs:px-3 sm:px-4 font-extrabold text-slate-900 text-xs sm:text-sm lg:text-base whitespace-nowrap">Periodo</th>
+                  <th className="text-left py-2.5 sm:py-3 lg:py-4 px-2 xs:px-3 sm:px-4 font-extrabold text-slate-900 text-xs sm:text-sm lg:text-base whitespace-nowrap">Monto</th>
+                  <th className="text-left py-2.5 sm:py-3 lg:py-4 px-2 xs:px-3 sm:px-4 font-extrabold text-slate-900 text-xs sm:text-sm lg:text-base whitespace-nowrap">Fecha Límite</th>
+                  <th className="text-left py-2.5 sm:py-3 lg:py-4 px-2 xs:px-3 sm:px-4 font-extrabold text-slate-900 text-xs sm:text-sm lg:text-base whitespace-nowrap">Estado</th>
+                  <th className="text-left py-2.5 sm:py-3 lg:py-4 px-2 xs:px-3 sm:px-4 font-extrabold text-slate-900 text-xs sm:text-sm lg:text-base whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,7 +325,7 @@ export default function StudentPaymentsPage() {
         </div>
 
         {/* Próximos pagos list */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 md:p-8 border-2 border-slate-200">
+        <div className="bg-white rounded-none sm:rounded-xl lg:rounded-2xl shadow-xl p-3 xs:p-4 sm:p-6 md:p-8 border-0 sm:border-2 border-slate-200">
           <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-4 sm:mb-5">Próximos pagos</h3>
           <ul className="space-y-3">
             {schedule.filter(p => p.status === 'upcoming' || p.status === 'pending').slice(0, 3).map(p => (

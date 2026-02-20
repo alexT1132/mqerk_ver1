@@ -731,8 +731,8 @@ function ListaAlumnos_Admin_comp() {
 
   return (
     <>
-      {(showLoadingScreen || isLoading || isFetching) && (
-        <LoadingOverlay message={showLoadingScreen ? "Cargando lista de estudiantes..." : "Cargando estudiantes..."} />
+      {(showLoadingScreen || isLoading) && (
+        <LoadingOverlay message={showLoadingScreen ? "Cargando lista de estudiantes..." : "Cargando..."} />
       )}
       {/* Modal de confirmación */}
       <ConfirmationModal
@@ -1123,7 +1123,16 @@ function ListaAlumnos_Admin_comp() {
                   </div>
 
                   {/* Estado vacío */}
-                  {alumnosFiltrados.length === 0 && (
+                  {isFetching && (
+                    <div className="flex justify-center items-center py-12 bg-white">
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mb-3"></div>
+                        <p className="text-gray-500 text-sm font-medium">Cargando estudiantes...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isFetching && alumnosFiltrados.length === 0 && (
                     <div className="text-center py-8 xs:py-12 bg-gray-50">
                       <svg className="mx-auto h-8 xs:h-12 w-8 xs:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4m-4 0H9m11 0a2 2 0 01-2 2M7 13a2 2 0 01-2-2V9a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15a2 2 0 012 2v2a2 2 0 01-2 2H7z" />

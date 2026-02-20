@@ -19,6 +19,7 @@
     "axios": "^1.9.0",
     "browser-image-compression": "^2.0.2",
     "dayjs": "^1.11.13",
+    "driver.js": "^1.4.0",
     "exceljs": "^4.4.0",
     "fflate": "^0.8.2",
     "file-saver": "^2.0.5",

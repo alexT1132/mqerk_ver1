@@ -4,6 +4,589 @@ Este archivo documenta de forma detallada cada cambio realizado en el proyecto, 
 
 ---
 
+## 2025-02-19 – Gastos fijos: iPad (768px+) tabla y botones
+
+### Objetivo
+Ajustar la página Gastos fijos para viewports tipo iPad (desde 768×1024 hasta tablets grandes): que la tabla ocupe el ancho disponible y que los botones del registro estén bien distribuidos.
+
+### Cambios en `client/src/components/admin/FinanzasEgresosFijos.jsx`
+
+- **Tarjetas de resumen (Hoy, 7 días, Mes, Año):** Grid antes `grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4`, lo que en iPad (768px) dejaba 3 columnas y la cuarta sola. Ahora: `grid-cols-2 md:grid-cols-2 lg:grid-cols-4`. En iPad (768–1023px) se muestra 2×2; en lg y superior, 4 en una fila.
+- **Botones del registro (Filtros, Exportar Excel, Plantillas, Nuevo egreso fijo):** Se mantiene **flex flex-wrap** en todos los viewports. Solo en **móvil** los botones son más táctiles: `min-h-[44px]`, `py-2.5`, `rounded-xl`; “Nuevo egreso fijo” con `w-full` en móvil. En **PC (md y superiores)** se revirtió al aspecto original: `md:min-h-0`, `md:py-2`, `md:rounded-lg`, `md:w-auto` para que no se vean más grandes ni largos en pantallas chicas y grandes.
+- **Tabla de gastos fijos:** En **móvil y tablet** (por debajo de 1024px) la tabla mantiene ancho mínimo `min-w-[1020px]` para que las columnas no queden apretadas y el usuario haga scroll horizontal con el dedo. Solo a partir de **lg (1024px)** la tabla usa todo el ancho del contenedor (`lg:min-w-0 lg:w-full`), así en iPad en vertical y móviles la tabla no se “junta”. Contenedor con `overflow-x-auto` y `min-w-0`.
+
+### Resultado esperado
+En iPad (768px y superiores) la tabla llena el ancho del bloque sin scroll horizontal innecesario y los cuatro botones se ven alineados y con peso visual similar. Las tarjetas de resumen en iPad se ven en 2×2.
+
+---
+
+## 2025-02-19 – Gastos fijos: plantillas (comprobación) y botones más discretos
+
+### Objetivo
+Confirmar que la función de **plantillas** de gastos fijos sirve para crear recordatorios/gastos fijos en automático según fecha, frecuencia y día de pago; y ajustar el diseño de los botones del modal de plantillas para todos los dispositivos (menos grandes).
+
+### Comprobación de la función de plantillas
+- **Backend:** En `server/jobs/plantillasAuto.js` un cron diario (por defecto 05:05, TZ México) ejecuta `runPlantillasJob(fecha)`: carga plantillas con `auto_instanciar=1`, `activo=1` y `fecha_inicio <= hoy`; para cada una determina si “hoy” corresponde según frecuencia, día de pago y fecha de inicio (Diario, Semanal, Quincenal, Mensual, Bimestral, Semestral, Anual); si no existe ya un gasto para esa plantilla en esa fecha, inserta el registro en `gastos_fijos`. La plantilla se guarda con `fecha_inicio`, `cadencia_anchor`, `dia_pago`, etc. vía `createPlantilla`/`updatePlantilla`.
+- **Frontend:** Al hacer clic en “Instanciar” (crear registro ahora) se llama a `instanciarDesdePlantilla` y, si la plantilla tiene “Calendario automático” (`auto_evento`), se crea además el evento en el calendario y se vincula al gasto. La auto-creación por fecha la hace el servidor; el calendario automático en instanciado manual se hace desde el cliente.
+- **Ajuste:** Se corrigió el uso de `saveExpenses('fijos', rows)` en el callback de instanciar manual: ahora se actualiza el backup con la lista resultante dentro del `setRows(prev => { const next = ...; saveExpenses('fijos', next); return next; })` para no usar estado desactualizado.
+
+### Cambios de diseño (botones) en `client/src/components/admin/FinanzasEgresosFijos.jsx`
+- **Modal Plantillas de gastos fijos:**
+  - **“Agregar plantilla”:** De `h-full w-full rounded-2xl px-6 py-4` a `px-4 py-2.5 text-sm font-bold rounded-xl`, sin ocupar toda la celda; `min-h-[44px]` y `touch-manipulation` para tacto.
+  - **“Cerrar gestión”:** De `px-8 py-2.5 rounded-2xl` a `px-5 py-2 text-sm font-bold rounded-xl`; pie del modal `py-4` → `py-3`, `px-6` → `px-4 sm:px-6`.
+- **Modal Editar plantilla:**
+  - **Cancelar / Guardar cambios:** Tamaño reducido (`px-4 py-2` / `px-5 py-2`), `text-sm`, `min-h-[40px]`, `touch-manipulation`; pie `py-4` → `py-3`, `gap-3` → `gap-2 sm:gap-3`.
+- **Nota en el formulario de nueva plantilla:** Bajo los checkboxes “Calendario automático” y “Auto-instanciar” se añadió el texto: “Con Auto-instanciar y Fecha de inicio, el servidor crea los gastos automáticamente según la frecuencia y día de pago.”
+
+### Resultado esperado
+La función de plantillas queda verificada (auto-creación por el job en servidor; instanciado manual con opción de evento en calendario). Los botones del modal de plantillas y de edición se ven más proporcionados en PC, tablet y móvil.
+
+---
+
+## 2025-02-19 – Calendario Admin: tour guiado con Driver.js
+
+### Objetivo
+Añadir un **tour guiado** por la agenda usando la librería **Driver.js**: un icono discreto (interrogación en círculo) que al pulsarlo inicia un recorrido por las funciones principales: crear recordatorios, calendario y meses, tipos y prioridades, pendientes, recordatorios de Finanzas (no eliminables desde aquí), y próximos recordatorios.
+
+### Cambios realizados
+
+- **Dependencia:** En `client` se instaló **driver.js** (`npm install driver.js`).
+- **`client/src/components/admin/Calendario_Admin_comp.jsx`:**
+  - **Import:** `import { driver } from 'driver.js'` e `import 'driver.js/dist/driver.css'`.
+  - **Botón del tour:** Icono discreto (círculo con “?”) junto al botón «Nuevo Recordatorio» en el header. Atributos `title="Tour guiado por la agenda"` y `aria-label="Iniciar tour guiado"`. Al hacer clic se llama a `startTour()`.
+  - **Función `startTour()`:** Crea una instancia de Driver con `showProgress: true`, textos en español (Siguiente, Anterior, Listo, «{{current}} de {{total}}») y los siguientes pasos:
+    1. **Crear recordatorio** (`#tour-nuevo-recordatorio`): desde aquí solo se crean recordatorios de tipo trabajo, personal o académico; los de tipo finanzas solo se crean en la sección Finanzas.
+    2. **Calendario y meses** (`#tour-calendario-mes`): uso de flechas para cambiar de mes; en cada día se ven los recordatorios (en PC tipo y título, en móvil un número); tocar día o número para lista y detalles.
+    3. **Tipos y prioridades** (`#tour-tipos-prioridades`): tipos Trabajo, Personal, Académico y Finanzas (estos últimos solo se crean en Finanzas: gastos variables, fijos, pago asesores); prioridades Alta, Media, Baja.
+    4. **Pendientes** (`#tour-resumen-pendientes`): clic para ver no completados; al tocar uno se abre el modal de detalles.
+    5. **Recordatorios de Finanzas** (`#tour-header`): los de tipo finanzas solo se crean en Finanzas; si aparecen aquí es por vinculación desde allí; no se pueden eliminar desde el calendario, solo desde Finanzas.
+    6. **Próximos recordatorios** (`#tour-proximos`): lista de siguientes pendientes; tocar uno para detalles.
+  - **Ids para el tour:** Se añadieron `id="tour-nuevo-recordatorio"` (botón), `id="tour-header"` (banner superior), `id="tour-calendario-mes"` (contenedor del calendario), `id="tour-proximos"` (card Próximos Recordatorios), `id="tour-tipos-prioridades"` (card Tipos + Prioridades), `id="tour-resumen-pendientes"` (card Resumen).
+
+### Resultado esperado
+En PC, móvil y tablet, el usuario ve un icono de ayuda discreto; al pulsarlo se inicia un tour que explica crear recordatorios, tipos, prioridades, pendientes, limitación de eliminación en Finanzas y próximos recordatorios.
+
+---
+
+## 2025-02-19 – Calendario Admin: clic en Pendientes abre modal con lista; clic en uno abre Detalles
+
+### Objetivo
+En PC, móvil y tablet, al hacer **clic en "Pendientes"** en el resumen del calendario se abre un **modal** con la lista de recordatorios no completados. Al hacer **clic en uno** de ellos se cierra ese modal y se abre el modal **"Detalles del Recordatorio"** (el mismo que en el resto de la app), para ver y usar Eliminar, Completar Tarea, Cerrar.
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+
+- **Estado:** `showPendientesModal` para controlar la visibilidad del modal de pendientes.
+- **Resumen – fila Pendientes:** La fila "Pendientes" + número es ahora un **botón** (solo hace algo si hay al menos un recordatorio pendiente). Al hacer clic se abre el modal de pendientes.
+- **Modal "Recordatorios pendientes":** Lista de recordatorios con `!r.completado`, ordenados por fecha y hora. Cada ítem es un botón que muestra tipo (color y etiqueta corta), título, fecha, hora; al hacer clic se asigna `selectedReminder`, se cierra el modal de pendientes y se abre el modal de Detalles. Diseño responsive (móvil: sale desde abajo, `rounded-t-2xl`; escritorio: centrado). Texto de ayuda: "Toca uno para ver detalles".
+
+### Resultado esperado
+En cualquier dispositivo, clic en Pendientes (cuando haya pendientes) → modal con la lista; clic en un recordatorio → modal Detalles del Recordatorio.
+
+---
+
+## 2025-02-19 – Calendario Admin: abreviaturas de tipo (G. variable, Fijos, P. asesor, Trab., etc.)
+
+### Objetivo
+Mostrar en celdas y en el modal del día **etiquetas cortas** del tipo de recordatorio para ahorrar espacio y mejorar lectura: gastos variables → «G. variable», gastos fijos → «Fijos», pago asesor → «P. asesor», trabajo → «Trab.», personal → «Pers.», académico → «Acad.», finanzas genérico → «Finanz.».
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+
+- **getTipoShortLabel(tipo, titulo):** Nueva función que devuelve la etiqueta abreviada según `tipo` y, si es «finanzas», según el `titulo`: si el título contiene «gasto variable» → «G. variable»; «gasto fijo» → «Fijos»; «pago» y «asesor» → «P. asesor»; en otro caso «Finanz.». Para trabajo/personal/académico devuelve «Trab.» / «Pers.» / «Acad.».
+- **Celda del día (escritorio):** El texto del tipo en cada recordatorio pasa a ser `getTipoShortLabel(recordatorio.tipo, recordatorio.titulo)` en lugar del tipo completo.
+- **Modal del día – resumen:** El resumen por tipo ahora agrupa por etiqueta corta (p. ej. «2 Trab., 1 G. variable») usando `getTipoShortLabel` para cada recordatorio.
+- **Modal del día – fila:** En cada fila, la línea de hora y tipo muestra `r.hora · getTipoShortLabel(r.tipo, r.titulo)`.
+
+### Resultado esperado
+En calendario y modal del día se ven abreviaturas claras (G. variable, Fijos, P. asesor, Trab., Pers., Acad., Finanz.) en lugar de textos largos, ganando espacio y legibilidad.
+
+---
+
+## 2025-02-19 – Calendario Admin (PC): celdas sin hora, solo tipo + título; hasta 5 ítems
+
+### Objetivo
+En todas las resoluciones de escritorio (medianas, grandes, extra grandes), cuando hay varios recordatorios en una fecha no se veían completos y la hora ocupaba espacio innecesario, ya que la hora se consulta en el modal de detalles. Se simplifica la celda del día: **no se muestra la hora**; se muestra **tipo** (con punto de color por tipo) y **título** (truncado). Así se libera espacio y se ven más recordatorios sin truncar tanto.
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+
+- **Vista escritorio (lg y mayor) – contenido de cada recordatorio en la celda:**
+  - **Antes:** Primera línea: punto por prioridad + hora; segunda línea: título (truncado). Máximo 3 ítems, luego «+N más».
+  - **Ahora:** Primera línea: **punto por tipo** (nuevo `getTipoDotColor`: trabajo=azul, personal=verde, académico=morado, finanzas/otros=ámbar) + **tipo** en texto (capitalizado); segunda línea: **título** (truncado). **Sin hora** en la celda.
+  - Se muestran hasta **5** recordatorios por día (antes 3); si hay más, «+N más».
+- **getTipoColor:** Ahora normaliza por `toLowerCase()` y se añade caso **finanzas** (fondo y borde ámbar).
+- **getTipoDotColor (nuevo):** Devuelve la clase del punto por tipo (bg-blue-500, bg-green-500, bg-purple-500, bg-amber-500) para que el punto en la celda indique el tipo de recordatorio.
+
+### Resultado esperado
+En PC (todas las tallas), cada recordatorio en la celda muestra solo tipo + título; la hora se ve en el modal «Detalles del Recordatorio» al hacer clic. Se muestran hasta 5 ítems por día y el punto de color indica el tipo.
+
+---
+
+## 2025-02-19 – Calendario Admin (móvil/iPad): modal del día como resumen + abrir Detalles al tocar
+
+### Objetivo
+En móvil/iPad, al tocar el indicador numérico del día debe abrirse un **primer modal** que muestre cuántos recordatorios hay, de qué tipo (resumen) y una **lista de filas clicables**. Al tocar **una fila** se cierra ese modal y se abre el modal **"Detalles del Recordatorio"** (el mismo que en PC: título, descripción, fecha, hora, tipo, prioridad, recordar, Eliminar, Completar Tarea, Cerrar), optimizado para móvil. Las acciones Eliminar y Completar quedan solo en el modal de Detalles, no en el modal del día.
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+
+- **Modal del día (primer modal):**
+  - Se mantiene el título con cantidad y fecha (ej. «3 recordatorios — 16 feb»).
+  - **Resumen por tipo:** Se agrupan los recordatorios por `tipo` y se muestra una línea de texto, ej. «2 trabajo, 1 personal» o «1 finanzas». Se usa `typeLabels` para trabajo, personal, académico, finanzas; otros tipos se muestran en minúscula.
+  - Texto de ayuda: «Toca uno para ver detalles».
+  - **Lista clicable:** Cada recordatorio es una **fila clicable** (botón) con: punto de prioridad, título, hora y tipo, e icono de flecha. **Sin** botones Eliminar ni Completar en el modal del día.
+  - **Al tocar una fila:** Se asigna `setSelectedReminder(r)`, se cierra el modal del día (`setShowDayModal(false)`, se limpian `dayModalReminders` y `dayModalDate`) y se abre el modal de edición con `setShowEditModal(true)`.
+
+- **Modal "Detalles del Recordatorio" (optimizado móvil):**
+  - Mismo contenido que en PC (título, descripción, fecha, hora, tipo, prioridad, recordar, botones Eliminar, Completar Tarea, Cerrar).
+  - **Contenedor del backdrop:** En pantallas pequeñas el modal se alinea abajo: `flex items-end sm:items-center` y `p-0 sm:p-4` para que en móvil aparezca desde abajo sin padding y en escritorio centrado.
+  - **Contenedor del modal:** En móvil `rounded-t-2xl`, en sm+ `sm:rounded-2xl`; `max-h-[90vh]` se mantiene.
+  - **Padding:** `p-4 sm:p-6` para más espacio táctil en móvil.
+  - **Título:** `text-base sm:text-xl` para no exceder en pantallas pequeñas.
+  - **Botón cerrar (X):** `p-2`, `min-h-[44px] min-w-[44px]`, `touch-manipulation` y contenido centrado para área táctil adecuada.
+  - **Botones de acción:** Eliminar, Completar Tarea y Cerrar con `min-h-[44px]`, `touch-manipulation` y en móvil `py-3` (sm: `py-1.5`) para mayor altura táctil.
+
+### Resultado esperado
+En móvil/iPad: tocar el número del día → modal con cantidad, resumen por tipo y lista; tocar un recordatorio → se cierra el primer modal y se abre "Detalles del Recordatorio" con todas las acciones (Eliminar, Completar, Cerrar) y diseño optimizado para touch.
+
+---
+
+## 2025-02-19 – Calendario Admin: móvil/iPad con indicador numérico y modal del día
+
+### Objetivo
+En el calendario admin, en móvil e iPad usar la misma vista compacta: mostrar en cada día un **indicador numérico** (1, 2, 3…) de cuántos recordatorios hay y, al tocar, abrir un **modal compacto** con la lista de recordatorios de ese día y acciones: Eliminar, Marcar pendiente, Marcar completado. Así se evita saturar la cuadrícula y se hace más práctico en pantallas pequeñas.
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+
+- **iPad = misma vista que móvil:** La cuadrícula del mes usa ahora el breakpoint **lg** (1024px): la vista con indicador numérico y toque aplica en **`lg:hidden`** (visible en móvil y tablet/iPad); la vista con lista de recordatorios en la celda aplica en **`hidden lg:flex`** (solo escritorio).
+- **Indicador numérico:** En cada día con recordatorios se muestra siempre un **número** (1, 2, 3… o «9+» si hay más de 9) dentro de un badge redondeado (purple), en lugar de puntos o mezcla de puntos y número. El badge es táctil (`touch-manipulation`, `min-w-[20px]`, `h-5`/`h-6`).
+- **Modal del día (nuevo):** Al tocar el indicador se abre un modal que muestra:
+  - Título: «1 recordatorio» o «N recordatorios» y la fecha (día y mes).
+  - Lista compacta de recordatorios del día: título, hora, tipo; cada uno con botones **Eliminar** (rosa) y **Completar** / **Pendiente** (verde/ámbar según estado). Botones con `min-h-[44px]` y `touch-manipulation` para uso táctil.
+  - Al eliminar un recordatorio se actualiza la lista en el modal y se cierra el modal si ya no queda ninguno.
+- **Estado nuevo:** `showDayModal`, `dayModalReminders`, `dayModalDate` para controlar la visibilidad y el contenido del modal del día.
+
+### Resultado esperado
+En móvil e iPad cada día del calendario muestra un número (1, 2, 3…) de recordatorios; al tocarlo se abre un modal compacto con la lista del día y las acciones Eliminar, Marcar pendiente y Marcar completado. En escritorio (lg+) se mantiene la vista con lista de recordatorios en la celda.
+
+---
+
+## 2025-02-19 – HeaderAdmin: con poco espacio solo nombre de la academia
+
+### Objetivo
+En iPad mini y tablets el título largo («Asesores Especializados en Educación de Ciencia y Tecnología») se superponía al icono de notificaciones aunque se pusiera en varias líneas. Se decidió que **cuando hay poco espacio** se muestre solo el **nombre de la academia** («MQerK Academy») en el centro del header; el título largo solo en escritorio.
+
+### Cambios en `client/src/components/layouts/HeaderAdmin.jsx`
+
+- **Bloque central:** Dos variantes según ancho de pantalla:
+  - **Poco espacio (por debajo de lg, &lt; 1024px):** Se muestra solo **«MQerK Academy»** y el subtítulo de sección (Panel Principal, etc.). Clases: `flex lg:hidden` para este bloque. Título en una línea, sin invadir iconos.
+  - **Escritorio (lg y superior, ≥ 1024px):** Se muestra el título largo «Asesores Especializados en Educación de Ciencia y Tecnología» y el subtítulo. Clases: `hidden lg:flex` para este bloque. `whitespace-nowrap` para mantener una sola línea.
+- **Contenedor:** `max-w-[calc(100vw-14rem)]` en viewports pequeños y `lg:max-w-3xl xl:max-w-4xl` en escritorio; padding `px-4 sm:px-6 md:px-8 lg:px-12`.
+
+### Resultado esperado
+En móvil, tablet e iPad el header muestra en el centro «MQerK Academy» + subtítulo, sin solapar los iconos. En pantallas grandes (lg+) se muestra el título largo completo.
+
+---
+
+## 2025-02-19 – SideBarAdmin (drawer): ajustes para iPad/tablet
+
+### Objetivo
+En iPad el drawer del menú admin presentaba: opciones poco distribuidas con mucho espacio vacío abajo, altura que parecía excesiva y un borde que casi tapaba parte del header. Ajustar posición, altura y distribución.
+
+### Cambios en `client/src/components/layouts/SideBarAdmin.jsx` (SideBarsm)
+
+- **Posición y altura del drawer:**
+  - **Móvil:** `top-16` (4rem) y `h-[calc(100vh-4rem)]` para alinear con el header `h-16`.
+  - **Tablet/iPad (sm+):** `sm:top-20` (5rem) y `sm:h-[calc(100vh-5rem)]` para alinear con el header `sm:h-20`, evitando que el drawer invada el header.
+- **Borde y sombra:** Añadido `rounded-br-2xl` para suavizar la esquina inferior derecha y que no se vea un corte sobre el header; sombra de `shadow-2xl` a `shadow-xl`.
+- **Distribución de opciones:**
+  - Lista principal: `py-4 px-2 space-y-1` → `py-5 px-3 pb-10 space-y-2` para más padding, más espacio entre ítems y margen inferior dentro del scroll.
+  - Bloque inferior (Cerrar sesión): `pb-4 pt-2 px-2` → `pb-5 pt-3 px-3` y `space-y-1` → `space-y-2`.
+
+### Resultado esperado
+En iPad el drawer arranca justo bajo el header sin solaparlo, la altura es la correcta y las opciones del menú se ven mejor repartidas, con menos hueco vacío abajo.
+
+### Ajuste posterior: distribución y descendentes (g, j, p, y)
+
+- **Distribución:** Más espacio entre ítems para aprovechar la altura y reducir el hueco debajo: `space-y-2` → `space-y-3` en lista principal y en bloque «Cerrar sesión»; `py-5 pb-10` → `py-4 pb-6`; `pt-3` → `pt-4` en el bloque inferior.
+- **Descendentes visibles:** Las letras con descendentes (g, j, p, y) se cortaban por `leading-none` y `truncate` en el texto móvil. En `ElementoSideBar` (estilo móvil): el `<span>` del nombre pasó de `leading-none font-medium ... truncate` a **`leading-relaxed font-medium ... break-words`** para que la línea tenga altura suficiente y no se corte el texto; el enlace tiene **`py-3.5`** y **`min-h-[2.75rem]`** para dar cabida a los descendentes.
+- **Sin truncate:** Se eliminó `truncate` para no recortar; etiquetas largas pueden pasar a dos líneas con `break-words`.
+
+---
+
+## 2025-02-19 – Sidebar escritorio admin (PC/laptop): opciones más compactas
+
+### Objetivo
+En pantallas grandes, extra grandes y en laptops, las opciones del sidebar de escritorio (admin) tenían demasiado espacio entre sí; en monitores con poca altura eso hacía que hubiera que hacer mucho scroll o que el sidebar se viera demasiado “abierto”. Compactar el sidebar para que las opciones estén más juntas en todos los tamaños de escritorio.
+
+### Cambios en `client/src/components/layouts/SidebarBase.jsx`
+
+- **Espacio entre ítems (lista principal admin):** De `space-y-1.5 xl:space-y-3 2xl:space-y-5` a **`space-y-0.5 xl:space-y-1 2xl:space-y-1.5`**, para reducir el hueco entre opciones en todos los breakpoints (especialmente en xl y 2xl).
+- **Espacio en bloque inferior (Cerrar sesión, admin):** De `space-y-1` con `xl:space-y-2` a **`space-y-0.5`** con **`xl:space-y-1`**.
+- **Altura mínima por ítem (admin, desktop):** Reducida para que quepan más opciones sin scroll en pantallas bajas:
+  - Sidebar abierto: de `min-h-[44px] xl:min-h-[54px] 2xl:min-h-[62px]` a **`min-h-[40px] xl:min-h-[42px] 2xl:min-h-[44px]`**.
+  - Sidebar colapsado: de `min-h-[48px] xl:min-h-[58px] 2xl:min-h-[66px]` a **`min-h-[42px] xl:min-h-[44px] 2xl:min-h-[46px]`**.
+- **Padding vertical del enlace (desktop, expandido):** De `py-2.5` a **`py-2`**.
+- **Padding superior de la lista principal:** De `pt-4` a **`pt-3`** (solo en el `ul` de opciones principales).
+
+### Resultado esperado
+En PC/laptop (pantallas normales, grandes y extra grandes) el sidebar admin muestra las opciones más compactas, con menos espacio entre ellas; en monitores con poca altura se reduce el scroll y se evita que el menú se vea excesivamente abierto.
+
+### Ajuste fino: equilibrio por tamaño de pantalla
+
+- **Pantallas pequeñas y xl (base, lg, xl):** Ítems más juntos para laptops como Huawei 13.6" (p. ej. 1440px): **`space-y-1 lg:space-y-1.5 xl:space-y-1.5`**, **`min-h-[40px] lg:min-h-[42px] xl:min-h-[42px]`** (abierto) y **`min-h-[42px] lg:min-h-[44px] xl:min-h-[44px]`** (colapsado); bloque inferior **`xl:space-y-1`**. En xl no se aplica `py-3` (solo en 2xl).
+- **Solo pantallas 2xl (1536px+):** Espaciado amplio para monitores como 15.6" 1920×1080: **`2xl:space-y-3`**, **`2xl:min-h-[50px]`** (abierto), **`2xl:min-h-[54px]`** (colapsado), **`2xl:py-3`**; bloque inferior **`2xl:space-y-2.5`**. En viewports muy altos (p. ej. 2160px en laptop pequeña), usar zoom del navegador (~125–150%) para que el sidebar use el estilo compacto (xl).
+
+---
+
+## 2025-02-19 – Layout admin: menú tipo móvil en tablet/iPad (botón flotante)
+
+### Objetivo
+En iPad (y tablets en general) el menú se mostraba como en PC (sidebar fijo a la izquierda), ocupando espacio y dejando algunas páginas poco cómodas. Se pidió que en vista iPad también se use el menú tipo móvil (botón flotante abajo + drawer) para que el contenido “encaje” mejor, sin optimizar aún todas las páginas para iPad.
+
+### Cambios en `client/src/components/layouts/Layout.jsx`
+
+- **Sidebar de escritorio:** El contenedor del sidebar pasa de `hidden sm:block` a **`hidden lg:block`**. El sidebar lateral solo se muestra a partir de **1024px (lg)**.
+- **Overlay del menú drawer:** De `sm:hidden` a **`lg:hidden`**, de modo que el overlay (y por tanto el uso del drawer) se aplique en todo viewport &lt; 1024px.
+- **Botón hamburguesa flotante:** De `sm:hidden` a **`lg:hidden`**, de modo que el botón se vea en móvil y tablet/iPad (todo &lt; 1024px).
+- **Margen del contenido principal:** Se eliminó **`sm:ml-20`**; se mantienen solo **`lg:ml-20`** y **`lg:ml-64`** (según sidebar expandido o no). Por debajo de 1024px el contenido ya no tiene margen izquierdo para el sidebar.
+- **Bloqueo de scroll (body):** La condición para fijar el scroll cuando el menú móvil está abierto pasa de `window.innerWidth < 768` a **`window.innerWidth < 1024`**, de modo que también se bloquee en tablet/iPad al abrir el drawer.
+
+### Cambios en `client/src/components/layouts/SideBarAdmin.jsx`
+
+- **SideBarsm (drawer móvil):** El overlay y el `<aside>` del drawer pasan de **`sm:hidden`** a **`lg:hidden`**, para que el drawer sea visible cuando el menú está abierto en viewports &lt; 1024px (incluido iPad).
+
+### Resultado esperado
+En viewports &lt; 1024px (móvil y tablet/iPad) se muestra el botón flotante de menú y, al pulsarlo, el drawer lateral; no hay sidebar fijo a la izquierda, por lo que el contenido usa todo el ancho y “encaja” mejor. A partir de 1024px se mantiene el comportamiento de escritorio con sidebar lateral.
+
+---
+
+## 2025-02-19 – BienvenidaAdmin: luces de fondo en la sección de tarjetas
+
+### Objetivo
+Suavizar la transición entre el hero (con video) y la zona de tarjetas, añadiendo luces o reflejos muy suaves y con movimiento sutil en el fondo para que no se vea tan plano y contrastar con el hero. Debe verse bien en móvil, tablet y cualquier dispositivo.
+
+### Cambios en `client/src/components/admin/BienvenidaAdmin.jsx`
+
+- **Contenedor de la sección de tarjetas:** Se añadió `relative` y `overflow-hidden` para contener la capa de luces.
+- **Capa de luces/reflejos (fondo):** Nueva capa absoluta (`absolute inset-0`, `pointer-events-none`, `z-0`) con `aria-hidden="true"` que contiene cinco orbes difuminados:
+  - Cuatro orbes con animación de flotación suave (`animate-lights-float`): posiciones superior izquierda, superior derecha, inferior izquierda e inferior derecha; colores indigo, purple, blue y violet con opacidad baja (`/20`, `/15`); tamaños responsive (`w-40` a `md:w-80`, etc.); duraciones 22s, 28s, 25s y 30s con delays distintos para desfasar el movimiento.
+  - Un orbe central con animación de pulso suave (`animate-lights-pulse`), indigo muy suave, escala responsive.
+- **Keyframes CSS (en el mismo componente):**
+  - `lightsFloat`: desplazamiento y escala muy suaves (translate 1–1.5%, scale 0.99–1.02) y variación de opacidad (0.45–0.65) en ciclo largo.
+  - `lightsPulse`: opacidad 0.35–0.55 y escala 1–1.05 en el centro, manteniendo `translate(-50%, -50%)` para no descentrar.
+- **Contenido:** La rejilla de tarjetas y la cita diaria se envuelven en un `div` con `relative z-10` para quedar por encima de las luces.
+
+### Resultado esperado
+En la zona donde están las tarjetas (Fecha, Hora, Notificaciones) y la cita diaria se ve un fondo con luces/reflejos muy suaves en movimiento lento, sin interferir con la lectura ni con el uso en móvil o tablet.
+
+---
+
+## 2025-02-19 – Menús desplegables del header (HeaderAdmin): más compactos en móvil
+
+### Objetivo
+Los menús que se despliegan al hacer clic en el icono de notificaciones y en el icono de perfil del administrador (esquina superior derecha) en vista móvil debían verse más compactos, no tan anchos.
+
+### Cambios en `client/src/components/layouts/HeaderAdmin.jsx`
+
+- **Menú desplegable de perfil (dropdown):** En móvil (`max-sm`) el panel es más estrecho y alineado al borde derecho:
+  - `max-sm:right-0 max-sm:left-auto` para que quede anclado a la derecha (junto al icono de perfil).
+  - `max-sm:w-56 max-sm:min-w-0` para un ancho compacto (14rem / 224px) en lugar de centrado con ancho casi total (`calc(100vw-32px)`).
+- **Menú desplegable de notificaciones:** Mismo criterio en móvil:
+  - `max-sm:right-0 max-sm:left-auto` para alineado a la derecha (junto al icono de campana).
+  - `max-sm:w-56 max-sm:min-w-0` para ancho compacto; se eliminó `max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:w-[calc(100vw-32px)]`.
+- En pantallas `sm` y superiores se mantiene en ambos: menú absoluto, alineado a la derecha, ancho fijo (perfil `w-64`, notificaciones `w-80` con `sm:max-w-xs`), bordes redondeados y sombra.
+
+### Resultado esperado
+En móvil, tanto el menú de notificaciones como el de perfil se muestran más compactos (ancho 224px), alineados a la derecha bajo su icono, sin ocupar todo el ancho de la pantalla.
+
+---
+
+## 2025-02-19 – Perfil de alumno y Detalles de pagos: optimización móvil
+
+### Objetivo
+Las páginas accesibles desde **Lista de alumnos → Gestionar** (perfil de alumno y detalles de pagos) no estaban optimizadas para móviles: no aprovechaban el ancho total y en la página de perfil del estudiante había muchos contenedores anidados que restaban espacio. Ajustar ambas páginas para que en móvil usen el espacio disponible, con menos padding y sin contenedores que roben ancho.
+
+### Cambios en `client/src/pages/Admin/StudentProfilePage.jsx`
+
+- **Contenedor principal:** `min-h-screen` con padding vertical reducido en móvil: `pt-8 sm:pt-12` → `pt-4 xs:pt-6 sm:pt-8 md:pt-12`; `pb-4 sm:pb-8` → `pb-3 xs:pb-4 sm:pb-8`.
+- **Wrapper del contenido:** Añadido `w-full`; padding horizontal `px-2 sm:px-4` → `px-2 xs:px-3 sm:px-4 lg:px-8` para usar mejor el ancho en móvil.
+- **Header (nombre, folio, botones):** Padding de la card `p-4 sm:p-6` → `p-3 xs:p-4 sm:p-6`; margen inferior `mb-6 sm:mb-8` → `mb-4 xs:mb-6 sm:mb-8`. Botón "Volver a Lista" con `min-h-[44px]` y `touch-manipulation`.
+- **Sección de tabs:** Área de contenido de cada pestaña con `min-h-[400px] p-3 sm:p-5` → `min-h-[300px] sm:min-h-[400px] p-2 xs:p-3 sm:p-5` para reducir padding en móvil.
+- **Contenido de cada tab (General, Académico, Curso, Salud, Expectativas, Cuenta):** Todos los wrappers internos con `w-full` además de `max-w-*` para no añadir restricción extra; `space-y-6` → `space-y-4 sm:space-y-6`. Cards con cabecera `px-5 sm:px-8 py-4 sm:py-5` → `px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-5`; cuerpo de cards `p-5 sm:p-8` → `p-3 xs:p-4 sm:p-6 lg:p-8` y `p-6 space-y-6` → `p-3 xs:p-4 sm:p-6 space-y-4 sm:space-y-6`. Títulos de sección con iconos más compactos en móvil (`w-8 h-8 sm:w-9`…) y `min-w-0` en el texto para evitar desborde. Grids con `gap-6` → `gap-4 sm:gap-6` donde aplica.
+
+### Cambios en `client/src/pages/Admin/StudentPaymentsPage.jsx`
+
+- **Contenedor principal:** Añadido `w-full`; padding `pt-6 sm:pt-8` → `pt-4 xs:pt-6 sm:pt-8`; `pb-4 sm:pb-6` → `pb-3 xs:pb-4 sm:pb-6`; `px-3 sm:px-4 md:px-6` → `px-2 xs:px-3 sm:px-4 md:px-6`.
+- **Wrapper interno:** `w-full` y `space-y-5 sm:space-y-6` → `space-y-4 sm:space-y-5 lg:space-y-6`.
+- **Header:** Card con `p-4 sm:p-6` → `p-3 xs:p-4 sm:p-6`. Botones "Regresar" y "Ver Perfil" con `min-h-[44px]`, `touch-manipulation` y `shrink-0` en iconos.
+- **Card "Próximo pago":** Padding `p-5 sm:p-6 md:p-8` → `p-3 xs:p-4 sm:p-6 md:p-8`.
+- **Card Plan de pagos + tabla:** Padding `p-5 sm:p-6 md:p-8` → `p-3 xs:p-4 sm:p-6 md:p-8`; tabla con contenedor `overflow-x-auto` y márgenes negativos en móvil (`-mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0`) para scroll horizontal al borde; tabla con `min-w-[520px] sm:min-w-0`; encabezados con `text-xs sm:text-sm lg:text-base`, `whitespace-nowrap` y padding reducido en móvil.
+- **Card "Próximos pagos" (lista):** Padding `p-5 sm:p-6 md:p-8` → `p-3 xs:p-4 sm:p-6 md:p-8`.
+
+### Resultado esperado
+En móvil, la página de perfil del estudiante y la de detalles de pagos usan todo el ancho útil, con menos padding y menos sensación de contenedores anidados; los botones tienen área táctil adecuada y la tabla de pagos hace scroll horizontal sin comprimir texto.
+
+### Ajuste posterior: ancho total en móvil (márgenes laterales a cero)
+
+- **StudentProfilePage:** Contenedor principal con `px-0 sm:px-4 lg:px-8` (en móvil sin padding lateral). Card del header y contenedor de tabs con `rounded-none sm:rounded-xl lg:rounded-2xl` y `border-0 sm:border-2` para que en móvil lleguen al borde de la pantalla y ocupen cada pixel de ancho. (Corrección: se eliminó la clase duplicada `sm:rounded-2xl` y se usa la progresión `rounded-none` → `sm:rounded-xl` → `lg:rounded-2xl`.)
+- **StudentPaymentsPage:** Contenedor principal con `px-0 sm:px-4 md:px-6` (en móvil sin márgenes laterales). Todas las cards (header, alertas bloqueo/tolerancia, próximo pago, plan + tabla, próximos pagos) con `rounded-none sm:rounded-xl lg:rounded-2xl` y `border-0 sm:border-2` en las que tenían borde, para que en móvil el contenido use el ancho total de la pantalla.
+
+---
+
+## 2025-02-19 – Finanzas Ingresos: vista móvil (tabla y tarjetas)
+
+### Objetivo
+Optimizar la vista de **Ingresos** (Registro de ingresos) para móviles: (1) la tabla mostraba letras muy comprimidas o en apariencia vertical; (2) algunas tarjetas (Hoy, 7 días, Mes, Año) no estaban bien asentadas; (3) cabecera y botones del bloque "Registro de ingresos" quedaban apretados. Ajustar **solo para móvil** sin modificar la configuración ya existente para pantallas pequeñas (sm), grandes (lg) y extra grandes (xl / 1920px).
+
+### Cambios en `client/src/components/admin/FinanzasIngresos.jsx`
+
+#### Tarjetas rápidas (Hoy, Últimos 7 días, Mes, Año)
+- **Grid:** `gap-3 sm:gap-4` → `gap-2 xs:gap-3 sm:gap-4` para mejor uso del ancho en móvil.
+- **Cada tarjeta:** Añadido `min-w-0` para evitar desborde; `min-h-[100px] xs:min-h-[108px] sm:min-h-0` para que en móvil tengan altura mínima y se vean asentadas; `flex flex-col justify-between`; padding `p-4 sm:p-5` → `p-3 xs:p-4 sm:p-5`; bordes `rounded-3xl` → `rounded-2xl sm:rounded-3xl`.
+- **Texto:** Etiqueta (Hoy, Mes, etc.) `text-xs` → `text-[11px] xs:text-xs`; monto principal `text-2xl` → `text-lg xs:text-xl sm:text-2xl` y `truncate` + `title` para tooltip; línea Ticket/Ventas `text-[11px]` → `text-[10px] xs:text-[11px]` y en móvil "Ventas" en segunda línea (`block xs:inline`) para evitar compresión; separador " · " solo visible desde `xs` (`hidden xs:inline`).
+
+#### Cabecera "Registro de ingresos"
+- **Contenedor:** De `flex items-center justify-between` a `flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between` para que en móvil título/total y botones se apilen.
+- **Título y total:** Envoltorio `flex flex-wrap items-baseline gap-2`; total móvil junto al título en la misma zona.
+- **Botones:** Añadido `min-h-[44px]` y `touch-manipulation` para área táctil adecuada; `gap-2 sm:gap-3` y `flex-wrap` para que envuelvan en móvil; padding vertical `py-1.5` → `py-2` en móvil.
+
+#### Tabla de ingresos
+- **Ancho mínimo (solo móvil):** `min-w-[900px]` → `min-w-[1020px] sm:min-w-[900px]` para que en viewports &lt; sm la tabla tenga más ancho total y las columnas no se compriman tanto al hacer scroll horizontal; desde sm se mantiene 900px; `min-[1920px]:min-w-[1260px]` sin cambios.
+- **Tipografía:** Tabla `text-sm` → `text-xs sm:text-sm`; todos los `th` y `td` con `text-xs sm:text-sm` para legibilidad en móvil sin reducir tamaño en sm+.
+- **Encabezados:** Añadido `whitespace-nowrap` a todos los `th` para evitar que los textos (Desc., Asistencia, etc.) se muestren comprimidos o en vertical; padding horizontal `px-4 py-3` → `px-2 xs:px-3 sm:px-4 py-2.5 sm:py-3` en móvil.
+- **Celdas:** Mismo padding responsive; en celdas de Fecha, Hora, Pago e Importe añadido `whitespace-nowrap` donde aplica; Asistencia con `text-[11px] sm:text-xs` y `whitespace-nowrap`; botón Ver descripción (ojo) con `min-h-[44px] min-w-[44px]` y `touch-manipulation` para táctil.
+
+### Comportamiento conservado
+- **sm y superiores:** Tabla con `min-w-[900px]`, mismos anchos de columna (%), misma apariencia de tarjetas y cabecera.
+- **min-[1920px]:** `table-auto`, `min-w-[1260px]`, sin cambios.
+
+### Resultado esperado
+En móvil: tarjetas de resumen con altura mínima y texto legible (Ticket y Ventas en dos líneas si hace falta); cabecera del registro apilada con botones que envuelven y área táctil ≥44px; tabla con scroll horizontal y columnas menos comprimidas (min-width 1020px) y encabezados/celdas sin texto en apariencia vertical gracias a `whitespace-nowrap` y tamaño de fuente `text-xs` en móvil.
+
+---
+
+## 2025-02-19 – Modal «Editar ingreso»: optimización móvil
+
+### Objetivo
+La modal «Editar ingreso» en Finanzas Ingresos no estaba optimizada para móvil: el botón «Actualizar» quedaba cortado (solo se veía «Actua») al tener los tres botones del pie (Eliminar, Cancelar, Actualizar) en una sola fila. Ajustar solo para vista móvil sin cambiar el comportamiento en sm y superiores.
+
+### Cambios en `client/src/components/admin/FinanzasIngresos.jsx` (modal Editar ingreso)
+
+- **Overlay:** Padding `p-4` → `p-3 xs:p-4` para ganar espacio en pantallas muy estrechas.
+- **Contenedor de la modal:** `max-w-xl` → `max-w-[min(36rem,92vw)] sm:max-w-xl` para que en móvil no toque los bordes de la pantalla.
+- **Encabezado:** Padding `px-6 py-5` → `px-4 xs:px-5 sm:px-6 py-4 sm:py-5`; título `text-xl` → `text-lg sm:text-xl`; botón cerrar con `min-h-[44px] min-w-[44px]`, `touch-manipulation` y contenido centrado.
+- **Cuerpo del formulario:** Padding `p-6` → `p-4 xs:p-5 sm:p-6`.
+- **Pie (botones):** De una sola fila con `justify-between` a **apilado en móvil**: `flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`; padding `px-6 py-4` → `px-4 xs:px-5 sm:px-6 py-3 sm:py-4`. En móvil: botón «Eliminar» a ancho completo (`w-full sm:w-auto`), debajo una fila con «Cancelar» y «Actualizar» repartiendo espacio (`flex gap-2 w-full sm:w-auto` con `flex-1 sm:flex-initial` en cada uno). Todos los botones con `min-h-[44px]`, `touch-manipulation` y `shrink-0` para que no se corten el texto.
+
+### Resultado esperado
+En móvil la modal deja margen lateral (92vw máx.), el pie muestra primero «Eliminar» y en la fila siguiente «Cancelar» y «Actualizar» completos y visibles; en sm y superiores se mantiene la disposición en una sola fila (Eliminar a la izquierda, Cancelar y Actualizar a la derecha).
+
+---
+
+## 2025-02-19 – Gastos fijos, variables, presupuesto y pagos asesores: vista móvil
+
+### Objetivo
+Aplicar las mismas optimizaciones móviles ya usadas en Finanzas Ingresos a **Gastos fijos**, **Gastos variables**, **Presupuesto** y **Pagos asesores**: tarjetas de resumen bien asentadas, cabecera del registro con botones que no se corten (apilados o envueltos), tabla con encabezados legibles (sin texto comprimido en vertical) y scroll horizontal. Sin modificar el comportamiento en sm, lg, xl ni min-[1920px].
+
+### Cambios por archivo
+
+#### `client/src/components/admin/FinanzasEgresosFijos.jsx`
+- **Tarjetas (Hoy, 7 días, Mes, Año):** gap `gap-2 xs:gap-3` en móvil; cada card con `min-w-0`, `min-h-[100px] xs:min-h-[108px] sm:min-h-0`, `flex flex-col justify-between`, `p-3 xs:p-4 sm:p-5`, `rounded-2xl sm:rounded-3xl`; montos con `text-lg xs:text-xl sm:text-2xl` y `truncate` + `title`.
+- **Cabecera "Registro de gastos fijos":** contenedor `flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`; título y "Total pagado" en un bloque `flex flex-wrap items-baseline gap-2`; botones con `min-h-[44px]`, `touch-manipulation`, `flex-wrap` y `gap-2`; en móvil texto del botón principal "Nuevo egreso fijo" → "Nuevo" (`sm:hidden` / `hidden sm:inline`).
+- **Tabla:** `min-w-[1020px] sm:min-w-[900px]` en móvil; tabla y thead con `text-xs sm:text-sm`; todos los `th` con `whitespace-nowrap`, `px-2 xs:px-3 sm:px-4`, `py-2.5 sm:py-3` y `text-xs sm:text-sm`.
+
+#### `client/src/components/admin/FinanzasEgresosVariables.jsx`
+- **Tarjetas:** mismo patrón (gap, min-h, padding, rounded, truncate).
+- **Cabecera:** apilado en móvil (`flex-col gap-3 sm:flex-row`), botones con área táctil y en móvil "Nuevo gasto variable" → "Nuevo".
+- **Tabla:** `min-w-[1020px] sm:min-w-[900px]`; thead con `whitespace-nowrap`, padding y tamaño de texto responsive; encabezado "Valor unitario" → "Valor unit." y "Método de pago" → "Método" en móvil para reducir compresión.
+
+#### `client/src/components/admin/FinanzasPagosAsesores.jsx`
+- **Tarjetas (5 cards):** mismo patrón de tarjetas; grid ya 2 columnas en base.
+- **Cabecera "Registro de pagos a asesores":** apilado en móvil; botones con `min-h-[44px]`, `touch-manipulation`; "Nuevo pago" → "Nuevo" en móvil.
+- **Tabla:** contenedor con `-mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0` para scroll al borde en móvil; tabla `min-w-[1020px] sm:min-w-0 min-[1920px]:min-w-[1100px]` para scroll horizontal en móvil y comportamiento actual en sm+; thead con `sticky top-0 z-10`, `whitespace-nowrap`, `text-xs sm:text-sm` y encabezados acortados donde aplica (Tipo de servicio → Tipo servicio, Honorarios/Comisión → Honor./Com., Fecha de pago → Fecha pago, Método de pago → Método).
+
+#### `client/src/components/admin/FinanzasEgresosPresupuesto.jsx`
+- **Tarjetas (Mes, Presupuesto, Gastado, Disponible, Excedente):** mismo patrón (gap, min-h, padding, rounded, truncate).
+- **Tabla "Histórico de presupuestos":** contenedor con márgenes/padding para scroll en móvil; tabla `min-w-[640px] sm:min-w-0 min-[1920px]:min-w-[760px]`; thead con `whitespace-nowrap`, `text-xs sm:text-sm` y padding responsive.
+
+### Resultado esperado
+En móvil, en las cuatro vistas (gastos fijos, gastos variables, presupuesto, pagos asesores) las tarjetas de resumen se ven estables y legibles; la cabecera del registro apila título y botones o permite que los botones envuelvan sin cortar "Nuevo egreso fijo" / "Nuevo gasto variable" / "Nuevo pago"; las tablas hacen scroll horizontal con encabezados sin compresión vertical. Comportamiento en sm y pantallas grandes se conserva.
+
+---
+
+## 2025-02-19 – Finanzas: cards principales y tablas responsivas (móvil/tablet)
+
+### Objetivo
+En la sección Finanzas: (1) en la pantalla principal las tarjetas de Ingresos y Egresos se veían muy alargadas en móvil, no ocupaban bien el espacio lateral y el contenido parecía desordenado; (2) en Ingresos, Egresos, Gastos fijos y Gastos variables las tablas se mostraban como cards en móvil y el usuario quería ver siempre **tablas** (responsivas, con scroll horizontal). Ajustar sin romper el comportamiento en pantallas grandes.
+
+### Cambios en `client/src/components/admin/Finanzas.jsx` (pantalla principal)
+- **Contenedor del grid:** Padding lateral `px-4 sm:px-6` → `px-2 xs:px-3 sm:px-6`; gap `gap-4` → `gap-3 xs:gap-4 sm:gap-6` para mejor uso del ancho en móvil.
+- **Tarjetas Ingresos y Egresos:** En móvil dejar de usar alturas mínimas grandes que alargaban las cards; usar **`aspect-[4/3]`** en móvil y **`sm:aspect-auto`** con `sm:min-h-[220px]` en adelante, de modo que en móvil las tarjetas se vean más cuadradas/organizadas. Padding de las cards: `p-3 xs:p-4 sm:p-6` (igual en ambas).
+- **Header de cada tarjeta:** Más compacto en móvil: icono y título con `gap-2 xs:gap-3`, iconos `w-9 h-9 xs:w-11 xs:h-11`, títulos `text-base xs:text-lg sm:text-2xl`, subtítulo con `truncate`; bloque de totales a la derecha se mantiene `hidden sm:block`.
+- **Contenido y estadísticas:** Descripción corta en móvil (`text-[10px] xs:text-[11px]`); grids de estadísticas con menos gap en móvil (`gap-1.5 xs:gap-2`, `p-1.5 xs:p-2`); `mb-0` en el bloque de stats en móvil para no sumar espacio innecesario.
+- **Footer:** Texto "Sistema activo" → "Activo" en móvil; iconos y espaciado más compactos (`text-xs xs:text-sm`, `mt-auto pt-1 sm:pt-0`).
+- **Egresos:** Corregido el párrafo móvil que tenía `hidden sm:hidden` (nunca se veía) → `block sm:hidden` con texto "Gastos y presupuesto".
+
+### Cambios en tablas (siempre tabla, scroll horizontal en móvil)
+- **FinanzasIngresos.jsx:** Eliminada la "Vista móvil (cards)" (`sm:hidden`). La tabla se muestra en todos los viewports; contenedor con `overflow-x-auto`, `-mx-2 xs:-mx-3 sm:mx-0 px-2 xs:px-3 sm:px-0` para que el scroll use el borde de la pantalla en móvil; tabla con `min-w-[900px]` para forzar scroll horizontal cuando no quepa.
+- **FinanzasEgresos.jsx:** Eliminada la "Vista móvil con cards"; tabla siempre visible con `overflow-x-auto` y mismo patrón de márgenes/padding; tabla `min-w-[720px]`.
+- **FinanzasEgresosFijos.jsx:** Eliminado el bloque "Móvil - cards" completo; contenedor de la tabla de `hidden sm:block` a `w-full` con `overflow-x-auto` y márgenes responsive; tabla `min-w-[900px]`.
+- **FinanzasEgresosVariables.jsx:** Eliminado el bloque "Móvil - cards"; tabla siempre visible con `overflow-x-auto` y `min-w-[900px]`.
+
+### Modales
+- Los modales de Finanzas (Egresos selector, Nuevo gasto variable/fijo, etc.) ya usan `max-h-[90vh]`, `p-4` y `max-w-lg`; se mantienen sin cambios para móvil/tablet.
+
+### Resultado esperado
+En móvil/tablet: la pantalla principal de Finanzas muestra dos tarjetas más proporcionadas (4:3) que usan el ancho lateral; en Ingresos, Egresos, Gastos fijos y Gastos variables se ve siempre la tabla y se desliza horizontalmente para ver todas las columnas. Comportamiento en pantallas grandes (lg, xl, 2xl, min-[1920px]) se conserva.
+
+---
+
+## 2025-02-19 – Comentarios de guía para responsividad móvil (Dashboard Admin)
+
+### Objetivo
+Añadir comentarios en el código del dashboard administrativo (inicio-admin.jsx) que sirvan de guía para futuros ajustes de responsividad en móviles, sin cambiar comportamiento ni lógica.
+
+### Cambios en `client/src/components/admin/inicio-admin.jsx`
+- **Bloque al inicio (tras imports):** Comentario que resume breakpoints, recomendación de 2 columnas o scroll horizontal para las tarjetas en móvil, área táctil mínima (~44px), textos y FAB/safe-area. Incluye referencia a `.cursor/skills/reglas-responsividad/SKILL.md` y `docs/reglas_responsivide.md`.
+- **MetricCard:** Comentario indicando que ya usa touch-manipulation y min-h por breakpoint, y que si el grid pasa a scroll horizontal conviene añadir `min-w-[140px]` o `min-w-[160px]` a cada card.
+- **Grid de tarjetas (grid-cols-6):** Comentario explicando que en móvil 6 columnas deja las tarjetas muy estrechas; opciones (1) `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6` o (2) contenedor con `overflow-x-auto` + `flex` + `min-w` en cada card para scroll horizontal tipo carrusel.
+- **Indicador “Toca las tarjetas para más detalles”:** Comentario recordando asegurar en móvil que el mensaje no quede cortado por teclado o barra del navegador.
+
+### Resultado esperado
+Quien retoque después la vista móvil del dashboard tiene en el propio archivo una guía clara de qué cambiar (grid vs scroll horizontal, anchos mínimos, referencias a reglas de responsividad).
+
+---
+
+## 2025-02-19 – Dashboard Admin: 2 tarjetas por fila en móvil
+
+### Objetivo
+En móviles no hay espacio horizontal para mostrar las 6 tarjetas de métricas en una sola fila; deben verse **solo 2 tarjetas por columna (por fila)** en vista móvil.
+
+### Cambio en `client/src/components/admin/inicio-admin.jsx`
+- **Grid de tarjetas:** `grid-cols-6` → `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`.
+  - **Móvil (base, &lt; 640px):** 2 columnas (2 tarjetas por fila).
+  - **sm (≥ 640px):** 3 columnas.
+  - **lg (≥ 1024px):** 6 columnas (una fila como antes).
+
+### Resultado esperado
+En móvil se muestran 2 tarjetas por fila; en tablet 3; en desktop las 6 en una fila.
+
+---
+
+## 2025-02-19 – Bienvenida Admin: 2 tarjetas por fila en móvil
+
+### Objetivo
+Aplicar el mismo criterio que en el dashboard de métricas: en móvil solo 2 tarjetas por fila (Fecha, Hora, Notificaciones) por falta de espacio horizontal.
+
+### Cambio en `client/src/components/admin/BienvenidaAdmin.jsx`
+- **Grid de tarjetas (Fecha, Hora, Notificaciones):** `grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3` → `grid-cols-2 md:grid-cols-3`.
+  - **Móvil (base, &lt; 768px):** 2 columnas (2 tarjetas por fila).
+  - **md (≥ 768px):** 3 columnas (las 3 en una fila).
+
+### Resultado esperado
+En móvil se ven 2 tarjetas por fila; en desktop las 3 en una fila.
+
+---
+
+## 2025-02-19 – Bienvenida Admin: saludo más abajo y más grande
+
+### Objetivo
+El bloque de texto del saludo (¡Buenas tardes, Admin Jessica, etc.) quedaba muy arriba; el saludo debía verse más grande y todo el bloque más abajo.
+
+### Cambios en `client/src/components/admin/BienvenidaAdmin.jsx` (GreetingHeader)
+- **Contenedor del hero:** Padding unificado `py-*` sustituido por `pt-*` y `pb-*` con más espacio arriba: `pt-20 pb-10`, `xs:pt-24 xs:pb-12`, `sm:pt-28 sm:pb-16`, `md:pt-32 md:pb-20`, `lg:pt-36 lg:pb-24`, `xl:pt-40 xl:pb-28`, `2xl:pt-44 2xl:pb-32`. El contenido del saludo queda más abajo.
+- **Título del saludo (h1 “¡Buenas tardes”):** Clamp de tamaño aumentado en todos los breakpoints y añadido `xl`: `text-[clamp(2rem,8vw,4rem)]`, `xs:clamp(2.5rem,7.5vw,4.5rem)`, `sm:clamp(3.5rem,6.5vw,5.5rem)`, `md:clamp(4rem,6vw,6rem)`, `lg:clamp(4.5rem,5vw,7rem)`, `xl:clamp(5rem,5vw,8rem)`.
+
+### Resultado esperado
+El saludo se ve más grande y el bloque de texto (saludo, nombre, bienvenida, mensaje del día) queda más abajo en la sección hero.
+
+---
+
+## 2025-02-19 – Generar contrato (Validación Pagos): solo tabla, sin tarjetas en móvil
+
+### Objetivo
+En el componente de generar contrato (ValidacionPagos_Admin_comp) la lista de pagos y contratos debía verse como **tabla** en todos los viewports (como en Finanzas y Solicitudes), no como tarjetas en móvil.
+
+### Cambios en `client/src/components/admin/ValidacionPagos_Admin_comp.jsx`
+- **Vista única:** Se eliminó la “Vista móvil - Cards” (lg:hidden). La tabla se muestra en todos los tamaños de pantalla.
+- **Contenedor de la tabla:** De `hidden lg:block overflow-hidden` a `overflow-x-auto w-full` para que la tabla sea visible siempre y en móvil tenga scroll horizontal.
+- **Tabla:** Se añadió `min-w-[900px]` y `min-[1920px]:table-auto` para que en pantallas estrechas la tabla no se comprima y se desplace horizontalmente; en ≥1920px se mantiene table-auto.
+
+### Resultado esperado
+En generar contrato, pagos y contratos se ven siempre en formato tabla (cabeceras, filas, columnas); en móvil la tabla hace scroll horizontal si no cabe.
+
+---
+
+## 2025-02-19 – Reportes de Pagos: uso del espacio y tabla en móviles
+
+### Objetivo
+En Reportes de Pagos la vista se veía mal en móviles y no aprovechaba el ancho; unificar con el criterio de Finanzas/Generar contrato: menos padding lateral, grids de 2 columnas en móvil y tabla con scroll horizontal.
+
+### Cambios en `client/src/components/admin/ReportesPagos_Admin_comp.jsx`
+- **Contenedor principal:** `px-6` → `px-2 xs:px-3 sm:px-6`; añadido `w-full`. Contenedor interno con `w-full`.
+- **Header y filtros:** Padding reducido en móvil: `p-5 sm:p-6` → `p-3 xs:p-4 sm:p-6`.
+- **Métricas (4 tarjetas):** `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` → `grid-cols-2 lg:grid-cols-4` con `gap-3 xs:gap-4 sm:gap-6` para 2 columnas en móvil.
+- **Gráficas principales (3):** `grid-cols-1 xl:grid-cols-3` → `grid-cols-2 xl:grid-cols-3` y gap reducido en móvil.
+- **Gráficas temporales (2):** `grid-cols-1 lg:grid-cols-2` → `grid-cols-2` y gap responsive.
+- **Tabla Pagos Detallados:** Card con `p-3 xs:p-4` y `w-full`; contenedor `overflow-x-auto w-full`; tabla `w-full min-w-[900px] table-fixed min-[1920px]:table-auto` con anchos % en thead hasta 1920px (Folio 7%, Alumno 12%, Curso 10%, Grupo 8%, Estado 8%, Importe 8%, Método 8%, Motivo Rechazo 12%, Creado 12%, Actualizado 15%).
+
+### Resultado esperado
+En móvil se usa todo el ancho disponible, las métricas y gráficas van en 2 columnas y la tabla de pagos detallados hace scroll horizontal como en Finanzas.
+
+---
+
+## 2025-02-19 – Reportes de Pagos: gráficas completas y bien escaladas en móvil
+
+### Objetivo
+En Reportes de Pagos, en móvil algunas gráficas no se veían completas (donut cortado) o con escala rara (ejes 0 / 0.25 / 250). Ajustar contenedores y Recharts para que todas las gráficas se rendericen bien y ocupen el espacio disponible.
+
+### Cambios en `client/src/components/admin/ReportesPagos_Admin_comp.jsx`
+- **Contenedores de gráficas:** Sustituido `flex-1 min-h-[240px]` (o `min-h-[260px]`) por **altura fija** para que `ResponsiveContainer` de Recharts tenga dimensión definida: `h-[220px] xs:h-[240px]` en las 3 gráficas principales; `h-[240px] sm:h-[260px]` en Ingresos por Semana e Ingresos por Año.
+- **Tarjetas de gráficas:** Añadido `min-w-0 overflow-visible` en las cards para evitar recorte en grid y que el contenido no se corte.
+- **BarChart / LineChart:** Añadido `margin={{ top: 8, right: 8, left: 0, bottom: 0 }}` para no pegar al borde; en todos los **YAxis** añadido `domain={[0, 'auto']}` para evitar escalas raras cuando hay pocos datos o vacíos; `tick={{ fontSize: 10 }}` (o 11 donde aplica) para etiquetas más legibles en móvil.
+- **PieChart (Distribución por Método):** Añadido `margin={{ top: 8, right: 8, bottom: 8, left: 8 }}` al `PieChart`; el **Pie** pasa de radios fijos en px a **porcentajes** para que escale con el contenedor y no se corte: `innerRadius="40%" outerRadius="65%"`, y `cx="50%" cy="50%"` para centrado; contenedor con `flex items-center justify-center` para centrar el donut.
+- **Pagos por Curso:** Reducido `height={60}` del XAxis a `50` y leyenda `fontSize: 11` para ganar espacio en alto.
+- **LineChart (Ingresos por Semana):** Ajuste menor en `labelFormatter` del Tooltip para evitar accesos indefinidos.
+
+### Resultado esperado
+En móvil todas las gráficas (barras, líneas, donut) se ven completas, con escala correcta en los ejes y sin recortes; el donut de “Distribución por Método” se adapta al contenedor y se ve entero.
+
+---
+
+## 2025-02-19 – Calendario Admin: uso del espacio y celdas sin estirar
+
+### Objetivo
+En Calendario Admin todo se veía muy estirado y no se ocupaba todo el espacio disponible. Ajustar contenedores, celdas del mes y sidebar para usar el ancho disponible y dar proporciones equilibradas (evitar celdas altas y estrechas).
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+- **Contenedor principal:** Añadido `w-full`; padding lateral `px-4 sm:px-6 lg:px-8` → `px-2 xs:px-3 sm:px-6 lg:px-8`; padding vertical reducido en móvil (`pt-4 xs:pt-6 sm:pt-8 md:pt-10`). Contenedor interno con `w-full`.
+- **Header "Mi Agenda":** Padding de la card `p-5 sm:p-6` → `p-3 xs:p-4 sm:p-6`, `mb-6` → `mb-4 sm:mb-6`.
+- **Barra de navegación del mes (flechas + Hoy):** Card con `p-3 xs:p-4 sm:p-6` y `mb-4 sm:mb-6`; título del mes `text-xl sm:text-2xl` → `text-lg sm:text-xl md:text-2xl`; espaciado entre flechas y botón más compacto en móvil (`space-x-2 sm:space-x-4`).
+- **Grid principal (calendario + sidebar):** `gap-6` → `gap-4 sm:gap-6`; columna del calendario con `w-full min-w-0`; card del calendario con `w-full`.
+- **Cabecera de días de la semana:** Padding reducido en móvil `px-1 sm:px-2 md:px-4`, `py-2 sm:py-3`; texto `text-[10px] xs:text-xs sm:text-sm`.
+- **Celdas del mes:** Sustituido `min-h-28 sm:min-h-32` por **`aspect-square min-h-0`** con `flex flex-col overflow-hidden` para que cada celda tenga proporción 1:1 y no se estire en vertical; padding `p-1 sm:p-1.5 md:p-2`; grid de días con `auto-rows-fr`. Número del día con `shrink-0` y tamaño `text-[10px] xs:text-xs sm:text-sm`; lista de recordatorios con `flex-1 min-h-0 overflow-hidden` y `space-y-0.5 sm:space-y-1`; texto "+N más" con `text-[9px] xs:text-[10px]`.
+- **Sidebar (Próximos, Tipos, Resumen):** De `space-y-6` a **grid** `grid-cols-1 sm:grid-cols-2 lg:grid-cols-1` con `gap-4 sm:gap-6`, para que en tablet (sm) las tres tarjetas se muestren en 2 columnas; en lg una columna junto al calendario. Cards del sidebar con `p-3 xs:p-4 sm:p-6` y títulos con `mb-3 sm:mb-4`.
+
+### Resultado esperado
+El calendario usa todo el ancho disponible; las celdas del mes son cuadradas (no estiradas); en tablet el sidebar muestra las tarjetas en 2 columnas; en móvil el contenido es más compacto y legible.
+
+---
+
+## 2025-02-19 – Calendario Admin: indicador simple en móvil (puntos o número)
+
+### Objetivo
+En móvil el diseño de los recordatorios dentro de cada día (tarjetas con hora y título) no se veía bien. Sustituir en vista móvil por un indicador simple: puntos de colores (por prioridad) o un número que indique cuántos avisos/recordatorios hay ese día.
+
+### Cambios en `client/src/components/admin/Calendario_Admin_comp.jsx`
+- **Vista móvil (por debajo de `sm`):** En cada celda del mes, en lugar de la lista de recordatorios con hora y título se muestra:
+  - **1 a 4 recordatorios:** una fila de puntos pequeños (1,5px) con el color de prioridad (rojo/amarillo/verde); si está completado el punto va con opacidad 50%.
+  - **5 o más:** un badge pequeño con el número (ej. «5» o «9+» si hay más de 9), estilo `bg-slate-300 text-slate-800 rounded-full`, tamaño de fuente 9–10px.
+- Al tocar el indicador (puntos o número) se abre el modal de edición del **primer** recordatorio del día. Se usa `touch-manipulation` en el botón para mejor respuesta táctil.
+- **Vista sm y mayor:** se mantiene la lista de recordatorios con hora y título (hasta 3 + «+N más») como antes (`hidden sm:flex`).
+
+### Resultado esperado
+En móvil cada día muestra solo puntos o un número, de forma clara y sin saturar la celda; al tocar se abre el primer recordatorio. En tablet y desktop se sigue viendo la lista con hora y título.
+
+---
+
 ## 2025-02-19 – Gastos variables: tabla a ancho completo en monitores chicos (p. ej. Huawei 13.6" 2160×1440)
 
 ### Objetivo
