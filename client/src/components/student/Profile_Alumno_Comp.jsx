@@ -327,7 +327,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
-      className={`fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden overscroll-none ${isExiting ? 'pointer-events-none' : ''}`}
+      className={`fixed inset-0 z-999 flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden overscroll-none ${isExiting ? 'pointer-events-none' : ''}`}
     >
       {/* Backdrop: clic aquí cierra el modal (blur estilo ReciboModal) */}
       <div
@@ -341,7 +341,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
       >
 
           {/* Header visual mejorado */}
-          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-center shadow-lg flex-shrink-0">
+          <div className="bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-center shadow-lg shrink-0">
             <div className="flex items-center justify-center gap-2">
               <span className="inline-flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/30 shadow-xl border border-white/50 text-sm xs:text-base ring-1 ring-white/30">✏️</span>
               <h2 id="modal-title" className="text-xs xs:text-sm sm:text-base font-extrabold text-white drop-shadow-lg tracking-wide">Editar Perfil</h2>
@@ -495,7 +495,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
             )}
 
             {/* Botones mejorados para móviles - Compactos */}
-            <div className="flex gap-1.5 xs:gap-2 mt-1.5 xs:mt-2 pt-1.5 xs:pt-2 border-t border-gray-200/50 flex-shrink-0">
+            <div className="flex gap-1.5 xs:gap-2 mt-1.5 xs:mt-2 pt-1.5 xs:pt-2 border-t border-gray-200/50 shrink-0">
               <button
                 type="button"
                 onClick={handleClose}
@@ -512,7 +512,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
                   setErrors({});
                 }}
                 disabled={isSubmitting}
-                className="px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gradient-to-r from-blue-400 to-indigo-400 text-white font-bold hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all duration-200 text-sm disabled:opacity-50 touch-manipulation shadow-sm"
+                className="px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-linear-to-r from-blue-400 to-indigo-400 text-white font-bold hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all duration-200 text-sm disabled:opacity-50 touch-manipulation shadow-sm"
                 title="Restaurar valores originales"
               >
                 🔄
@@ -521,7 +521,7 @@ function ProfileEditModal({ isOpen, onClose, initialData, onSave }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-bold hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 active:scale-95 transition-all duration-200 text-xs xs:text-sm disabled:opacity-50 flex items-center justify-center gap-1 touch-manipulation shadow-sm ring-1 ring-violet-200/50"
+                className="flex-1 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-bold hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 active:scale-95 transition-all duration-200 text-xs xs:text-sm disabled:opacity-50 flex items-center justify-center gap-1 touch-manipulation shadow-sm ring-1 ring-violet-200/50"
               >
                 {isSubmitting ? (
                   <>
@@ -790,17 +790,17 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
       <div className="flex flex-col items-center md:flex-row md:items-center md:justify-between mb-4 sm:mb-6 pb-4 border-b-2 border-gray-200/50 w-full">
         <div className="flex-1 hidden md:block" aria-hidden="true" />
         <div className="flex items-center justify-center gap-2 sm:gap-3 w-full md:w-auto mb-2 md:mb-0 md:flex-1 md:justify-center">
-          <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
             <UserRound className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent text-center tracking-tight">
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent text-center tracking-tight">
             MI PERFIL
           </h2>
         </div>
         <div className="flex-1 flex justify-center md:justify-end w-full md:w-auto">
           <button
             onClick={handleEditClick}
-            className="w-full md:w-auto px-5 xs:px-6 py-2.5 xs:py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-violet-300/50 text-sm xs:text-base flex items-center justify-center gap-2 touch-manipulation"
+            className="w-full md:w-auto px-5 xs:px-6 py-2.5 xs:py-3 bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-extrabold rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-violet-300/50 text-sm xs:text-base flex items-center justify-center gap-2 touch-manipulation"
           >
             <span className="text-base xs:text-lg">✏️</span>
             <span>Editar perfil</span>
@@ -820,12 +820,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
               onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/160x160/A0AEC0/FFFFFF?text=Foto"; }}
             />
             {/* Badge de verificación mejorado */}
-            <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 via-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg border-3 border-white ring-2 ring-emerald-200/50">
+            <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-8 h-8 sm:w-10 sm:h-10 bg-linear-to-br from-emerald-400 via-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg border-3 border-white ring-2 ring-emerald-200/50">
               <span className="text-white text-sm sm:text-base font-extrabold">✓</span>
             </div>
           </div>
-          <div className="text-center bg-gradient-to-br from-white to-gray-50 rounded-xl sm:rounded-2xl px-4 xs:px-5 py-3 sm:py-4 shadow-lg border-2 border-gray-200/50 w-full">
-            <p className="text-lg xs:text-xl sm:text-2xl font-extrabold text-gray-900 mb-2 break-words">{currentProfileData.name}</p>
+          <div className="text-center bg-linear-to-br from-white to-gray-50 rounded-xl sm:rounded-2xl px-4 xs:px-5 py-3 sm:py-4 shadow-lg border-2 border-gray-200/50 w-full">
+            <p className="text-lg xs:text-xl sm:text-2xl font-extrabold text-gray-900 mb-2 wrap-break-word">{currentProfileData.name}</p>
             <div className="flex items-center justify-center text-xs sm:text-sm text-emerald-600 font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
               <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></div>
               Estudiante Activo
@@ -837,7 +837,7 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full">
           {/* Sección: DATOS PERSONALES - Mejorada */}
           <div className="sm:col-span-2 w-full">
-            <div className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 mb-4 sm:mb-6 shadow-xl w-full ring-2 ring-violet-200/50">
+            <div className="bg-linear-to-r from-violet-500 via-indigo-500 to-purple-500 rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 mb-4 sm:mb-6 shadow-xl w-full ring-2 ring-violet-200/50">
               <h3 className="text-base xs:text-lg sm:text-xl font-extrabold text-white flex items-center justify-center gap-2 tracking-wide">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 13a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 DATOS PERSONALES
@@ -846,7 +846,7 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border-2 border-gray-200/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full ring-1 ring-gray-100/50">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-violet-100 via-indigo-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-violet-200/50 shadow-md">
+                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-violet-100 via-indigo-100 to-purple-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-violet-200/50 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 13H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -862,12 +862,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border-2 border-gray-200/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full ring-1 ring-gray-100/50">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-pink-100 via-rose-100 to-pink-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-pink-200/50 shadow-md">
+                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-pink-100 via-rose-100 to-pink-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-pink-200/50 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Mi número de teléfono</p>
-                    <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                    <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                       {currentProfileData.personal.phoneNumber ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
@@ -878,12 +878,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border-2 border-gray-200/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full ring-1 ring-gray-100/50">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-blue-100 via-indigo-100 to-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200/50 shadow-md">
+                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-blue-100 via-indigo-100 to-blue-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-blue-200/50 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Municipio o comunidad</p>
-                    <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                    <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                       {currentProfileData.personal.municipio ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
@@ -894,12 +894,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border-2 border-gray-200/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full ring-1 ring-gray-100/50">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-pink-100 via-rose-100 to-pink-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-pink-200/50 shadow-md">
+                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-pink-100 via-rose-100 to-pink-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-pink-200/50 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Teléfono de mi tutor</p>
-                    <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                    <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                       {currentProfileData.personal.tutorPhoneNumber ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
@@ -910,12 +910,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 shadow-lg border-2 border-gray-200/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 sm:col-span-2 w-full ring-1 ring-gray-100/50">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-purple-100 via-violet-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-purple-200/50 shadow-md">
+                  <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-purple-100 via-violet-100 to-purple-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-purple-200/50 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 xs:h-6 xs:w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 15v2m-2 2h4M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Nombre de mi tutor</p>
-                    <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                    <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                       {currentProfileData.personal.tutorName ||
                         <span className="text-gray-400 italic">No configurado</span>
                       }
@@ -933,7 +933,7 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
         {/* Sección: DATOS ACADÉMICOS - Mejorada para móviles */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border-2 border-emerald-200/50 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1 w-full ring-2 ring-emerald-100/50">
-          <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-3 xs:p-4 sm:p-5 shadow-lg">
+          <div className="bg-linear-to-r from-emerald-500 via-green-500 to-teal-500 p-3 xs:p-4 sm:p-5 shadow-lg">
             <h3 className="text-base xs:text-lg sm:text-xl font-extrabold text-white flex items-center justify-center gap-2 tracking-wide">
               <span className="text-xl xs:text-2xl sm:text-3xl">🎓</span>
               DATOS ACADÉMICOS
@@ -941,12 +941,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
           </div>
           <div className="p-3 xs:p-4 sm:p-5 space-y-3 xs:space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-emerald-200/50 shadow-md">
                 <span className="text-emerald-600 text-lg xs:text-xl">🏫</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Academia</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.academic.academy ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -955,12 +955,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-emerald-200/50 shadow-md">
                 <span className="text-emerald-600 text-lg xs:text-xl">📚</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Bachillerato actual</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.academic.bachillerato ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -969,12 +969,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-emerald-200/50 shadow-md">
                 <span className="text-emerald-600 text-lg xs:text-xl">🎯</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Opción de licenciatura</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.academic.licenciaturaOption ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -983,12 +983,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-emerald-100 via-green-100 to-teal-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-emerald-200/50 shadow-md">
                 <span className="text-emerald-600 text-lg xs:text-xl">🏛️</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Opción de universidad</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.academic.universityOption ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -1000,7 +1000,7 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
 
         {/* Sección: DATOS DEL CURSO - Mejorada para móviles */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border-2 border-orange-200/50 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 lg:col-span-1 w-full ring-2 ring-orange-100/50">
-          <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 p-3 xs:p-4 sm:p-5 shadow-lg">
+          <div className="bg-linear-to-r from-orange-500 via-amber-500 to-red-500 p-3 xs:p-4 sm:p-5 shadow-lg">
             <h3 className="text-base xs:text-lg sm:text-xl font-extrabold text-white flex items-center justify-center gap-2 tracking-wide">
               <span className="text-xl xs:text-2xl sm:text-3xl">📖</span>
               DATOS DEL CURSO
@@ -1008,12 +1008,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
           </div>
           <div className="p-3 xs:p-4 sm:p-5 space-y-3 xs:space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-orange-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-orange-200/50 shadow-md">
                 <span className="text-orange-600 text-lg xs:text-xl">📝</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Curso activo</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.course.activeCourse ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -1022,12 +1022,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-orange-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-orange-200/50 shadow-md">
                 <span className="text-orange-600 text-lg xs:text-xl">👨‍🏫</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Asesor a cargo</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.course.advisor ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -1036,12 +1036,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-orange-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-orange-200/50 shadow-md">
                 <span className="text-orange-600 text-lg xs:text-xl">👥</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Grupo</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.course.group ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }
@@ -1050,12 +1050,12 @@ function Profile_Alumno_comp({ profileData: initialProfileDataProp, isLoading = 
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-gradient-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 ring-2 ring-orange-200/50 shadow-md">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 bg-linear-to-br from-orange-100 via-amber-100 to-orange-100 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-orange-200/50 shadow-md">
                 <span className="text-orange-600 text-lg xs:text-xl">💻</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wide mb-1.5">Modalidad</p>
-                <p className="text-sm xs:text-base font-extrabold text-gray-800 break-words">
+                <p className="text-sm xs:text-base font-extrabold text-gray-800 wrap-break-word">
                   {currentProfileData.course.modality ||
                     <span className="text-gray-400 italic">No configurado</span>
                   }

@@ -49,7 +49,7 @@ function EEAU23() {
   }, [])
 
   return (
-    <div ref={topRef} className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
+    <div ref={topRef} className='min-h-screen flex flex-col bg-linear-to-b from-purple-50 to-white'>
       {/* Ancla para scroll al inicio (evita que quede "hasta abajo" al navegar desde /online) */}
       <div id="eeau23-top" className="absolute -top-px left-0 w-px h-px pointer-events-none" aria-hidden="true" />
       <Navbar />
@@ -98,7 +98,7 @@ function EEAU23() {
             {/* Resumen */}
             <section className="bg-white rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up">
               <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4 flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+                <div className="w-1 h-8 bg-linear-to-b from-purple-600 to-indigo-600 rounded-full"></div>
                 Resumen
               </h2>
               <p className="text-gray-700 leading-relaxed text-justify">
@@ -114,7 +114,7 @@ function EEAU23() {
             {/* Objetivos */}
             <section className="bg-white rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
               <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-6 flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+                <div className="w-1 h-8 bg-linear-to-b from-purple-600 to-indigo-600 rounded-full"></div>
                 Objetivos
               </h2>
               <ul className="space-y-4">
@@ -134,9 +134,9 @@ function EEAU23() {
             </section>
 
             {/* Special Note - Testimonios */}
-            <section className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up border-l-4 border-blue-600" style={{ animationDelay: '200ms' }}>
+            <section className="bg-linear-to-r from-blue-100 to-indigo-100 rounded-2xl shadow-md p-6 sm:p-8 animate-slide-up border-l-4 border-blue-600" style={{ animationDelay: '200ms' }}>
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <svg className="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
@@ -188,7 +188,7 @@ function ObjectiveItem({ text, delay = "0" }) {
       className="flex items-start gap-3 group animate-fade-in-up"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex-shrink-0 mt-1.5">
+      <div className="shrink-0 mt-1.5">
         <div className="w-2 h-2 rounded-full bg-purple-600 group-hover:scale-125 transition-transform duration-300"></div>
       </div>
       <span className="text-gray-700 leading-relaxed">{text}</span>
@@ -204,7 +204,7 @@ function InfoItem({ icon, text, special = false, short = false }) {
 
   return (
     <div className="flex items-start gap-3 group hover:translate-x-1 transition-transform duration-300">
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <img src={icon} alt="" className="w-7 h-7 object-contain" />
       </div>
       <p className={`leading-relaxed text-sm ${colorClass}`}>

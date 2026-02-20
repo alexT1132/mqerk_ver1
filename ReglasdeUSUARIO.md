@@ -284,7 +284,7 @@ En la página Calendario, centrar solo el título "EVENTOS PRÓXIMOS" (igual que
 **ANTES:**
 ```jsx
 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-end gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6 shrink-0">
-  <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight order-2 sm:order-1">
+  <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight order-2 sm:order-1">
     EVENTOS PRÓXIMOS
   </h2>
   <span className="inline-flex items-center justify-self-start sm:justify-self-end px-2.5 sm:px-3 py-1 sm:py-1.5 ... order-1 sm:order-2">
@@ -296,7 +296,7 @@ En la página Calendario, centrar solo el título "EVENTOS PRÓXIMOS" (igual que
 **DESPUÉS:**
 ```jsx
 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6 shrink-0 relative">
-  <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex justify-center order-2 sm:order-1">
+  <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex justify-center order-2 sm:order-1">
     EVENTOS PRÓXIMOS
   </h2>
   <span className="inline-flex items-center justify-center sm:justify-end px-2.5 sm:px-3 py-1 sm:py-1.5 ... order-1 sm:order-2 sm:ml-auto">
@@ -341,7 +341,7 @@ En la página Mis Pagos, el usuario solicitó que solo el icono y el título "MI
 ```jsx
 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
   <div className="flex items-center justify-center gap-2 sm:gap-3">
-    <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 ...">
+    <div className="p-2 sm:p-2.5 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 ...">
       <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
     </div>
     <h1 className="text-xl xs:text-2xl ...">MIS PAGOS</h1>
@@ -356,7 +356,7 @@ En la página Mis Pagos, el usuario solicitó que solo el icono y el título "MI
 ```jsx
 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
   <div className="flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-    <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 ...">
+    <div className="p-2 sm:p-2.5 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 ...">
       <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
     </div>
     <h1 className="text-xl xs:text-2xl ...">MIS PAGOS</h1>
@@ -392,12 +392,12 @@ El modal PaymentModal en `Calendar_Alumno_Comp.jsx` (información de pago pendie
 
 **ANTES:**
 ```jsx
-<div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[95vw] sm:max-w-sm lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
+<div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[95vw] sm:max-w-sm lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 shrink-0 my-auto payment-modal-content">
 ```
 
 **DESPUÉS:**
 ```jsx
-<div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
+<div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 shrink-0 my-auto payment-modal-content">
 ```
 
 #### Tabla comparativa de anchos
@@ -605,7 +605,7 @@ useEffect(() => {
 
 **e) JSX**: Ref en el contenedor principal y ancla invisible:
 ```javascript
-<div ref={topRef} className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
+<div ref={topRef} className='min-h-screen flex flex-col bg-linear-to-b from-purple-50 to-white'>
   {/* Ancla para scroll al inicio (evita que quede "hasta abajo" al navegar desde /online) */}
   <div id="eeau23-top" className="absolute -top-px left-0 w-px h-px pointer-events-none" aria-hidden="true" />
   <Navbar />
@@ -1080,5 +1080,35 @@ Al hacer clic en la tarjeta "Testimonios: ACREDITA EL EXAMEN DE ADMISIÓN A LA U
 - **Cuándo se aplica**: Al modificar layouts, componentes UI, páginas o cualquier elemento visual.
 - **Documentación**: Este registro en ReglasdeUSUARIO.md.
 
+### 20/02/2026 - Migración a clases canónicas de Tailwind CSS v4
+- **Objetivo**: Corregir las sugerencias de Tailwind IntelliSense (`suggestCanonicalClasses`) para usar la sintaxis canónica de Tailwind v4.
+- **Archivos modificados**:
+  - `client/src/components/layouts/SidebarBase.jsx`
+  - `client/src/components/mqerk/online/EEAU23.jsx`
+  - `client/src/components/mqerk/online/Online.jsx`
+  - `client/src/components/student/Calendar_Alumno_Comp.jsx`
+  - `client/src/components/student/Feedback_Alumno_Comp.jsx`
+  - `client/src/components/student/MisPagos_Alumno_Comp.jsx`
+  - `client/src/components/student/Profile_Alumno_Comp.jsx`
+  - `ReglasdeUSUARIO.md`
+- **Reemplazos aplicados**:
+  | Clase antigua | Clase canónica (Tailwind v4) |
+  |---------------|------------------------------|
+  | `flex-shrink-0` | `shrink-0` |
+  | `z-[999]`, `z-[1000]`, `z-[2000]`, `z-[9999]`, `z-[99999]` | `z-999`, `z-1000`, `z-2000`, `z-9999`, `z-99999` |
+  | `bg-gradient-to-b` | `bg-linear-to-b` |
+  | `bg-gradient-to-r` | `bg-linear-to-r` |
+  | `bg-gradient-to-l` | `bg-linear-to-l` |
+  | `bg-gradient-to-t` | `bg-linear-to-t` |
+  | `bg-gradient-to-br` | `bg-linear-to-br` |
+  | `bg-gradient-to-tr` | `bg-linear-to-tr` |
+  | `hover:bg-gradient-to-r` | `hover:bg-linear-to-r` |
+  | `file:bg-gradient-to-r` | `file:bg-linear-to-r` |
+  | `min-h-[4rem]` | `min-h-16` |
+  | `break-words` | `wrap-break-word` |
+  | `supports-[backdrop-filter]:bg-white/80` | `supports-backdrop-filter:bg-white/80` |
+- **Motivo**: Tailwind v4 introduce nombres canónicos más cortos y alineados con la especificación CSS. Las clases antiguas siguen funcionando pero generan advertencias de IntelliSense.
+- **Documentación**: Este registro en ReglasdeUSUARIO.md.
+
 ### Última actualización
-20/02/2026 (creación skill diseño-responsivo-multidispositivo)
+20/02/2026 (migración clases canónicas Tailwind v4)

@@ -164,7 +164,7 @@ function Modal({ isOpen, onClose, children, title }) {
 
   if (!isOpen) return null;
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-[9999] flex flex-col sm:items-center sm:justify-center sm:p-4">
+    <div className="fixed inset-0 z-9999 flex flex-col sm:items-center sm:justify-center sm:p-4">
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
@@ -173,10 +173,10 @@ function Modal({ isOpen, onClose, children, title }) {
       <div className="relative bg-white w-full h-full sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl sm:w-full mx-auto sm:my-auto sm:max-h-[calc(100vh-10rem)] overflow-y-auto border-0 sm:border-2 sm:border-violet-200/50 ring-0 sm:ring-2 sm:ring-violet-100/50 flex flex-col">
         {/* Header - Fixed at top */}
         <div className="flex items-center justify-between p-4 pt-10 sm:p-5 sm:pt-5 md:p-6 border-b-2 border-violet-200/50 bg-white sm:rounded-t-2xl z-20 shrink-0 shadow-sm sm:shadow-none">
-          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 truncate mr-2">{title}</h2>
+          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 truncate mr-2">{title}</h2>
           <button
             onClick={onClose}
-            className="flex-shrink-0 p-2.5 bg-violet-50 hover:bg-violet-100 rounded-full transition-all duration-200 active:scale-95 touch-manipulation border-2 border-violet-200/50 shadow-sm"
+            className="shrink-0 p-2.5 bg-violet-50 hover:bg-violet-100 rounded-full transition-all duration-200 active:scale-95 touch-manipulation border-2 border-violet-200/50 shadow-sm"
           >
             <X className="w-5 h-5 sm:w-5 sm:h-5 text-violet-600" />
           </button>
@@ -212,7 +212,7 @@ function PaymentMethodCard({ method, onClick }) {
   return (
     <div
       onClick={handleClick}
-      className={`relative cursor-pointer bg-gradient-to-br ${methodColors[method.id]} 
+      className={`relative cursor-pointer bg-linear-to-br ${methodColors[method.id]} 
       rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out touch-manipulation
       p-3 sm:p-5 md:p-6 flex flex-col items-center justify-center text-center min-h-[110px] sm:min-h-[140px] md:min-h-[160px] group border-2 border-white/20 ring-2 ring-white/10`}
     >
@@ -226,7 +226,7 @@ function PaymentMethodCard({ method, onClick }) {
       </p>
       {method.id === 'card' && showComingSoon && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-700/95 to-violet-900/95 rounded-xl sm:rounded-2xl z-30 border-2 sm:border-4 border-yellow-400 shadow-2xl p-2 sm:p-5 gap-1 sm:gap-2"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-linear-to-br from-purple-700/95 to-violet-900/95 rounded-xl sm:rounded-2xl z-30 border-2 sm:border-4 border-yellow-400 shadow-2xl p-2 sm:p-5 gap-1 sm:gap-2"
           role="status" aria-live="polite"
         >
           <span className="text-yellow-300 text-xs sm:text-xl font-extrabold mb-0.5 sm:mb-2 drop-shadow-lg text-center leading-tight px-1">
@@ -273,19 +273,19 @@ function CardPaymentModal({ onReceiptUpload }) {
         </p>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
             <p className="text-gray-700">Haz clic en el botón "Pagar con Tarjeta"</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
             <p className="text-gray-700">Ingresa los datos de tu tarjeta en la plataforma segura</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
             <p className="text-gray-700">Confirma el pago</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
+            <div className="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">4</div>
             <p className="text-gray-700">Sube tu comprobante de pago para validación</p>
           </div>
         </div>
@@ -295,7 +295,7 @@ function CardPaymentModal({ onReceiptUpload }) {
         <div>
           <a
             href="#"
-            className="block w-full text-center py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200 text-lg"
+            className="block w-full text-center py-4 bg-linear-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200 text-lg"
           >
             💳 Pagar con Tarjeta - $XXX MXN
           </a>
@@ -320,7 +320,7 @@ function CardPaymentModal({ onReceiptUpload }) {
             <div className="space-y-3">
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-gray-800 truncate">{uploadedFile.name}</p>
                     <p className="text-sm text-gray-600">
@@ -465,15 +465,15 @@ function TransferPaymentModal({ onReceiptUpload }) {
           <h4 className="font-bold text-gray-800 mb-4">📋 Instrucciones</h4>
           <ol className="space-y-2 sm:space-y-3 text-gray-700 text-xs sm:text-base">
             <li className="flex items-start gap-2 sm:gap-3">
-              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">1</span>
+              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0">1</span>
               <span>Realiza una transferencia SPEI o depósito al número de cuenta/CLABE indicado.</span>
             </li>
             <li className="flex items-start gap-2 sm:gap-3">
-              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">2</span>
+              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0">2</span>
               <span>Asegúrate de incluir tu nombre completo en la referencia o concepto de pago.</span>
             </li>
             <li className="flex items-start gap-2 sm:gap-3">
-              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">3</span>
+              <span className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0">3</span>
               <span>Sube tu comprobante de transferencia para validación rápida.</span>
             </li>
           </ol>
@@ -495,7 +495,7 @@ function TransferPaymentModal({ onReceiptUpload }) {
             <div className="space-y-3">
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-gray-800 truncate">{uploadedFile.name}</p>
                     <p className="text-sm text-gray-600">
@@ -577,7 +577,7 @@ function CashPaymentModal({ onReceiptUpload }) {
                 title="Abrir en Google Maps"
               >
                 <span className="mt-0.5">📍</span>
-                <span className="break-words">{locationInfo.address}</span>
+                <span className="wrap-break-word">{locationInfo.address}</span>
               </a>
             </div>
             <div>
@@ -622,15 +622,15 @@ function CashPaymentModal({ onReceiptUpload }) {
           <h4 className="font-bold text-gray-800 mb-4">📋 Instrucciones</h4>
           <ol className="space-y-3 text-gray-700">
             <li className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+              <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</span>
               <span>Acude a nuestra dirección en los horarios establecidos.</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+              <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</span>
               <span>Presenta tu ID o folio de estudiante para registrar el pago.</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+              <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</span>
               <span>Sube tu recibo físico para mantener el registro actualizado.</span>
             </li>
           </ol>
@@ -652,7 +652,7 @@ function CashPaymentModal({ onReceiptUpload }) {
             <div className="space-y-3">
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-gray-800 truncate">{uploadedFile.name}</p>
                     <p className="text-sm text-gray-600">
@@ -1165,7 +1165,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
         <div>
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">📋 Plan Elegido</h3>
           <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-            <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold shadow-md">
+            <span className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold shadow-md">
               ✨ {currentPlan.name}
             </span>
             <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded-full font-medium">
@@ -1185,7 +1185,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
       <div className="overflow-x-auto">
         {/* Header especial cuando el plan está completado */}
         {allPaymentsPaid && (
-          <div className="mb-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-lg text-center">
+          <div className="mb-4 bg-linear-to-r from-green-500 to-emerald-600 text-white p-3 rounded-lg text-center">
             <div className="flex items-center justify-center gap-2">
               <CheckCircle className="w-5 h-5" />
               <span className="font-bold">🎊 TODOS LOS PAGOS COMPLETADOS 🎊</span>
@@ -1288,8 +1288,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
 
       {/* Resumen del plan - MEJORADO */}
       <div className={`mt-5 sm:mt-6 p-3.5 sm:p-4 rounded-xl border-2 ${allPaymentsPaid
-        ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
-        : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+        ? 'bg-linear-to-r from-green-50 to-emerald-50 border-green-300'
+        : 'bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200'
         }`}>
         {/* Header del resumen */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -1367,8 +1367,8 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
           <div className="bg-white rounded-full h-3 overflow-hidden shadow-inner">
             <div
               className={`h-full transition-all duration-1000 ease-out ${allPaymentsPaid
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-                : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                ? 'bg-linear-to-r from-green-500 to-emerald-600'
+                : 'bg-linear-to-r from-blue-500 to-purple-600'
                 }`}
               style={{
                 width: `${(paymentSchedule.filter(p => p.status === 'paid').length / currentPlan.totalPayments) * 100}%`
@@ -1409,14 +1409,14 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
       {allPaymentsPaid && (
         <div className="mt-6 relative overflow-hidden">
           {/* Fondo animado */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 opacity-10 animate-pulse"></div>
+          <div className="absolute inset-0 bg-linear-to-r from-green-400 via-emerald-500 to-teal-600 opacity-10 animate-pulse"></div>
 
-          <div className="relative bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-6 shadow-xl">
+          <div className="relative bg-linear-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-6 shadow-xl">
             {/* Header del plan completado */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
               <div className="flex items-center gap-4 mb-4 md:mb-0">
                 <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 bg-linear-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
                     <CheckCircle className="w-10 h-10 text-white" />
                   </div>
                   <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -1435,7 +1435,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
               </div>
 
               {/* Badge de logro */}
-              <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full shadow-lg">
+              <div className="bg-linear-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full shadow-lg">
                 <div className="text-center">
                   <div className="text-lg font-bold">🏆</div>
                   <div className="text-xs font-medium">COMPLETADO</div>
@@ -1511,7 +1511,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
 
             {/* Mensajes y acciones específicas por plan */}
             {selectedPlan === 'premium' ? (
-              <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6 rounded-xl shadow-lg">
+              <div className="bg-linear-to-r from-purple-600 to-indigo-700 text-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-2xl">🌟</span>
                   <h5 className="font-bold text-xl">Plan Premium - Pago único</h5>
@@ -1530,7 +1530,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                 </div>
               </div>
             ) : isPlanActive ? (
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white p-6 rounded-xl shadow-lg">
+              <div className="bg-linear-to-r from-blue-600 to-cyan-700 text-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-2xl">⏰</span>
                   <h5 className="font-bold text-xl">Tu Acceso Está Activo</h5>
@@ -1549,7 +1549,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                 </div>
               </div>
             ) : (
-              <div className="bg-gradient-to-r from-orange-600 to-red-700 text-white p-6 rounded-xl shadow-lg">
+              <div className="bg-linear-to-r from-orange-600 to-red-700 text-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-2xl">⚠️</span>
                   <h5 className="font-bold text-xl">Plan Expirado</h5>
@@ -1571,7 +1571,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
 
             {/* Opción de upgrade para planes no premium que están activos */}
             {selectedPlan !== 'premium' && isPlanActive && (
-              <div className="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6">
+              <div className="mt-6 bg-linear-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                   <div className="mb-4 md:mb-0">
                     <h5 className="font-bold text-blue-800 text-lg mb-2 flex items-center gap-2">
@@ -1588,7 +1588,7 @@ function PaymentPlanTable({ onViewScheduleReceipt, activationDate, planType = 'm
                     </ul>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <button className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2">
+                    <button className="bg-linear-to-r from-purple-600 to-indigo-700 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2">
                       ⭐ Actualizar a Premium (Pago único)
                       <span className="text-xs bg-white/20 px-2 py-1 rounded">
                         -{Math.round(((currentPlan.totalAmount / 10500) * 100))}%
@@ -1950,7 +1950,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-violet-50 via-indigo-50 to-purple-50">
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 text-center border-2 border-violet-200/50 ring-2 ring-violet-100/50">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
           <p className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700">Cargando métodos de pago...</p>
@@ -1961,9 +1961,9 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-rose-50 to-red-50">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-red-50 via-rose-50 to-red-50">
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 text-center border-2 border-red-200 ring-2 ring-red-100/50">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-linear-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
@@ -1981,10 +1981,10 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
           {/* Icono + título centrados */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-            <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0 text-white">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0 text-white">
               <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
+            <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
               MIS PAGOS
             </h1>
           </div>
@@ -1994,7 +1994,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             <button
               onClick={() => setActiveTab('current')}
               className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'current'
-                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
+                ? 'bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
                 }`}
             >
@@ -2003,7 +2003,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             <button
               onClick={() => setActiveTab('history')}
               className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-extrabold transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation ${activeTab === 'history'
-                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
+                ? 'bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 text-white shadow-lg ring-2 ring-violet-200/50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-violet-50'
                 }`}
             >
@@ -2016,7 +2016,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
         {activeTab === 'current' ? (
           <div className="space-y-6">
             {/* Información del próximo pago (dinámica) */}
-            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-white shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
+            <div className="bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-white shadow-xl border-2 border-violet-200/50 ring-2 ring-violet-100/50">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
                 <div>
                   <h3 className="text-base sm:text-lg md:text-xl font-extrabold mb-1 sm:mb-2">Próximo Pago</h3>
@@ -2041,12 +2041,12 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             {/* Opciones de métodos de pago */}
             <div>
               <h3 className="text-base sm:text-lg md:text-xl font-extrabold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200/50">
+                <div className="p-1.5 sm:p-2 rounded-xl bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200/50">
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
                 </div>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600">
                   Métodos de pago
                 </span>
               </h3>
@@ -2091,7 +2091,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             <div>
               <h4 className="font-extrabold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
-                <div className="p-1 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                <div className="p-1 rounded-lg bg-linear-to-br from-violet-500 to-indigo-600 text-white">
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -2107,7 +2107,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             </div>
             <div>
               <h4 className="font-extrabold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
-                <div className="p-1 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                <div className="p-1 rounded-lg bg-linear-to-br from-violet-500 to-indigo-600 text-white">
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -2123,7 +2123,7 @@ export function MisPagos_Alumno_comp({ isLoading: propIsLoading, error: propErro
             </div>
             <div className="hidden xl:block">
               <h4 className="font-extrabold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
-                <div className="p-1 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                <div className="p-1 rounded-lg bg-linear-to-br from-violet-500 to-indigo-600 text-white">
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />

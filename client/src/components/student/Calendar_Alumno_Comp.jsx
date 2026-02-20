@@ -21,16 +21,16 @@ function PaymentModal({ isOpen, onClose, paymentDetails }) {
 
   // Renderizamos la modal usando createPortal para que esté directamente bajo #modal-root
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-1 sm:p-4 lg:p-6 xl:p-8 z-[999]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-1 sm:p-4 lg:p-6 xl:p-8 z-999">
       <style dangerouslySetInnerHTML={{
         __html: `
         .payment-modal-content::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
         .payment-modal-content::-webkit-scrollbar-thumb { background-color: transparent; }
         .payment-modal-content { scrollbar-width: none; }
       `}} />
-      <div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 flex-shrink-0 my-auto payment-modal-content">
+      <div className="bg-white rounded-md sm:rounded-2xl lg:rounded-3xl shadow-2xl p-1 sm:p-4 lg:p-6 xl:p-8 w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto border border-gray-100 shrink-0 my-auto payment-modal-content">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-md sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-5 xl:p-6 mb-2 sm:mb-4 lg:mb-6 -mx-2 sm:-mx-4 lg:-mx-6 xl:-mx-8 -mt-2 sm:-mt-4 lg:-mt-6 xl:-mt-8">
+        <div className="bg-linear-to-r from-blue-600 to-purple-600 rounded-md sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-5 xl:p-6 mb-2 sm:mb-4 lg:mb-6 -mx-2 sm:-mx-4 lg:-mx-6 xl:-mx-8 -mt-2 sm:-mt-4 lg:-mt-6 xl:-mt-8">
           <h2 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-white text-center">Pago pendiente</h2>
         </div>
 
@@ -110,9 +110,9 @@ function ReminderCreationModal({ isOpen, onClose, onSaveReminder }) {
   if (!target) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 z-[1000]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 z-1000">
       <div className="bg-white rounded-2xl lg:rounded-3xl shadow-2xl w-full max-w-sm lg:max-w-md xl:max-w-lg 2xl:max-w-xl max-h-[80vh] lg:max-h-[85vh] overflow-hidden border border-gray-100 flex flex-col">
-        <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-t-2xl lg:rounded-t-3xl p-4 lg:p-5 xl:p-6 flex-shrink-0 relative overflow-hidden">
+        <div className="bg-linear-to-r from-teal-500 to-cyan-600 rounded-t-2xl lg:rounded-t-3xl p-4 lg:p-5 xl:p-6 shrink-0 relative overflow-hidden">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
           <h2 className="text-lg lg:text-xl xl:text-2xl font-bold text-white text-center flex items-center justify-center relative z-10">
             <svg className="w-5 h-5 lg:w-6 lg:h-6 xl:w-7 xl:h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +189,7 @@ function ReminderCreationModal({ isOpen, onClose, onSaveReminder }) {
           </form>
         </div>
 
-        <div className="flex-shrink-0 px-5 py-4 lg:px-6 lg:py-5 xl:px-8 xl:py-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl lg:rounded-b-3xl">
+        <div className="shrink-0 px-5 py-4 lg:px-6 lg:py-5 xl:px-8 xl:py-6 border-t border-gray-200 bg-linear-to-r from-gray-50 to-gray-100 rounded-b-2xl lg:rounded-b-3xl">
           <div className="flex gap-3 lg:gap-4">
             <button
               type="button"
@@ -200,7 +200,7 @@ function ReminderCreationModal({ isOpen, onClose, onSaveReminder }) {
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 px-4 py-2 lg:px-5 lg:py-3 xl:px-6 xl:py-3 text-sm lg:text-base bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold rounded-lg lg:rounded-xl shadow-lg hover:shadow-xl hover:from-teal-600 hover:to-cyan-700 transition-all duration-200"
+              className="flex-1 px-4 py-2 lg:px-5 lg:py-3 xl:px-6 xl:py-3 text-sm lg:text-base bg-linear-to-r from-teal-500 to-cyan-600 text-white font-bold rounded-lg lg:rounded-xl shadow-lg hover:shadow-xl hover:from-teal-600 hover:to-cyan-700 transition-all duration-200"
             >
               Guardar
             </button>
@@ -230,7 +230,7 @@ function ReminderNotificationModal({ isOpen, onClose, reminder, onDismissReminde
   const textColor = getTextColorForBackground(reminder.priorityColor);
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 z-[1000]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 z-1000">
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes bell-ring {
@@ -259,9 +259,9 @@ function ReminderNotificationModal({ isOpen, onClose, reminder, onDismissReminde
             </svg>
           </div>
           <h3 className={`text-xl lg:text-2xl xl:text-3xl font-bold mb-3 lg:mb-4 ${textColor}`}>¡Recordatorio!</h3>
-          <p className={`text-lg lg:text-xl xl:text-2xl font-semibold mb-2 lg:mb-3 ${textColor} line-clamp-2 break-words`} title={reminder.name}>{reminder.name}</p>
+          <p className={`text-lg lg:text-xl xl:text-2xl font-semibold mb-2 lg:mb-3 ${textColor} line-clamp-2 wrap-break-word`} title={reminder.name}>{reminder.name}</p>
           {reminder.description && (
-            <div className={`text-sm lg:text-base xl:text-lg leading-relaxed mb-4 lg:mb-5 ${textColor} opacity-90 max-h-20 lg:max-h-24 xl:max-h-28 overflow-y-auto break-words`}>
+            <div className={`text-sm lg:text-base xl:text-lg leading-relaxed mb-4 lg:mb-5 ${textColor} opacity-90 max-h-20 lg:max-h-24 xl:max-h-28 overflow-y-auto wrap-break-word`}>
               <p className="pr-1">{reminder.description}</p>
             </div>
           )}
@@ -303,10 +303,10 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
   if (!target) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 z-[1000]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 z-1000">
       <div className="bg-white rounded-2xl lg:rounded-3xl shadow-2xl w-full max-w-sm lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl max-h-[80vh] lg:max-h-[85vh] overflow-hidden border border-gray-100 flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-t-2xl lg:rounded-t-3xl p-4 lg:p-5 xl:p-6 flex-shrink-0">
+        <div className="bg-linear-to-r from-blue-500 to-purple-500 rounded-t-2xl lg:rounded-t-3xl p-4 lg:p-5 xl:p-6 shrink-0">
           <h2 className="text-lg lg:text-xl xl:text-2xl font-bold text-white text-center flex items-center justify-center">
             <svg className="w-5 h-5 lg:w-6 lg:h-6 xl:w-7 xl:h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
@@ -326,12 +326,12 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
               <div key={eventIdx} className="bg-gray-50 rounded-xl lg:rounded-2xl p-4 lg:p-5 xl:p-5 border border-gray-200">
                 <div className="flex items-start space-x-3">
                   {/* Icono del evento */}
-                  <div className={`w-4 h-4 rounded-full flex-shrink-0 mt-1 ${event.isReminder ? event.priorityColor : legendDotColors[event.type]}`}></div>
+                  <div className={`w-4 h-4 rounded-full shrink-0 mt-1 ${event.isReminder ? event.priorityColor : legendDotColors[event.type]}`}></div>
 
                   {/* Contenido del evento */}
                   <div className="flex-1 min-w-0">
                     {/* Encabezado: nombre/título del evento */}
-                    <div className="font-semibold text-gray-900 text-sm lg:text-base xl:text-lg mb-2 line-clamp-2 break-words">
+                    <div className="font-semibold text-gray-900 text-sm lg:text-base xl:text-lg mb-2 line-clamp-2 wrap-break-word">
                       {event.name || event.description}
                     </div>
 
@@ -352,7 +352,7 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
 
                     {/* Descripción (solo si existe y es distinta del nombre) */}
                     {event.description && event.description !== (event.name || '') && (
-                      <div className="text-xs text-gray-500 mb-2 line-clamp-3 break-words">
+                      <div className="text-xs text-gray-500 mb-2 line-clamp-3 wrap-break-word">
                         {event.description}
                       </div>
                     )}
@@ -405,10 +405,10 @@ function MobileEventsModal({ isOpen, onClose, dayData, legendDotColors }) {
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 p-4 lg:p-5 xl:p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl lg:rounded-b-3xl">
+        <div className="shrink-0 p-4 lg:p-5 xl:p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl lg:rounded-b-3xl">
           <button
             onClick={onClose}
-            className="w-full px-4 py-3 lg:px-5 lg:py-3.5 xl:px-6 xl:py-4 text-sm lg:text-base bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold rounded-xl lg:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full px-4 py-3 lg:px-5 lg:py-3.5 xl:px-6 xl:py-4 text-sm lg:text-base bg-linear-to-r from-blue-500 to-purple-500 text-white font-bold rounded-xl lg:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
           >
             Cerrar
           </button>
@@ -797,7 +797,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   if (effectiveLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-violet-50 via-indigo-50 to-purple-50">
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-violet-200/50 text-center ring-2 ring-violet-100/50">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
           <p className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700">Cargando calendario...</p>
@@ -808,9 +808,9 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
   if (effectiveError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-rose-50 to-red-50">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-red-50 via-rose-50 to-red-50">
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-red-200 text-center ring-2 ring-red-100/50">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-linear-to-br from-red-100 to-rose-100 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
@@ -833,10 +833,10 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
           <div className="xl:order-1 min-w-0 flex flex-col xl:min-h-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6 shrink-0 relative">
               {/* Título centrado */}
-              <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex justify-center order-2 sm:order-1">
+              <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight w-full sm:w-auto sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex justify-center order-2 sm:order-1">
                 EVENTOS PRÓXIMOS
               </h2>
-              <span className="inline-flex items-center justify-center sm:justify-end px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700 text-xs sm:text-sm font-extrabold rounded-full w-fit whitespace-nowrap border-2 border-violet-200 shadow-md ring-1 ring-violet-100/50 order-1 sm:order-2 sm:ml-auto">
+              <span className="inline-flex items-center justify-center sm:justify-end px-2.5 sm:px-3 py-1 sm:py-1.5 bg-linear-to-r from-violet-100 to-indigo-100 text-violet-700 text-xs sm:text-sm font-extrabold rounded-full w-fit whitespace-nowrap border-2 border-violet-200 shadow-md ring-1 ring-violet-100/50 order-1 sm:order-2 sm:ml-auto">
                 {importantEvents.length} pendiente{importantEvents.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -854,14 +854,14 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               {importantEvents.length > 0 ? (
                 <div className="max-h-[320px] sm:max-h-[420px] xl:min-h-0 xl:flex-1 xl:max-h-none overflow-y-auto divide-y divide-violet-100/50 events-scroll-container">
                   {importantEvents.map((event, index) => (
-                    <div key={event.id} className="p-3 sm:p-4 hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-200">
+                    <div key={event.id} className="p-3 sm:p-4 hover:bg-linear-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-200">
                       <div className="flex items-start gap-2.5 sm:gap-3 md:gap-4">
-                        <div className="flex-shrink-0">
+                        <div className="shrink-0">
                           <div className={`text-center min-w-[50px] sm:min-w-[60px] md:min-w-[70px] p-1.5 sm:p-2 md:p-3 rounded-xl sm:rounded-2xl border-2 shadow-md ${event.isPayment && !event.paid
-                              ? 'bg-gradient-to-br from-red-50 to-rose-50 border-red-300'
+                              ? 'bg-linear-to-br from-red-50 to-rose-50 border-red-300'
                               : event.isReminder
-                                ? 'bg-gradient-to-br from-cyan-50 to-teal-50 border-cyan-300'
-                                : 'bg-gradient-to-br from-violet-50 to-indigo-50 border-violet-300'}`}>
+                                ? 'bg-linear-to-br from-cyan-50 to-teal-50 border-cyan-300'
+                                : 'bg-linear-to-br from-violet-50 to-indigo-50 border-violet-300'}`}>
                             <div className="text-[10px] sm:text-xs font-extrabold text-violet-700 uppercase leading-tight">
                               {event.date ? new Date(event.date + 'T12:00:00').toLocaleDateString('es-ES', { month: 'short' }) : '-'}
                             </div>
@@ -898,7 +898,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                         {event.isPayment && !event.paid && (
                           <button
                             onClick={() => handleOpenPaymentModal(event)}
-                            className="flex-shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs sm:text-sm font-bold rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all flex items-center gap-1.5"
+                            className="shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 bg-linear-to-r from-violet-600 to-indigo-600 text-white text-xs sm:text-sm font-bold rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all flex items-center gap-1.5"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -912,7 +912,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                 </div>
               ) : (
                 <div className="p-8 sm:p-10 text-center xl:flex-1 xl:flex xl:flex-col xl:items-center xl:justify-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 bg-linear-to-br from-violet-100 to-indigo-100 rounded-2xl flex items-center justify-center">
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -926,17 +926,17 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
           {/* COLUMNA 2: Calendario - misma estructura flex para emparejar altura */}
           <div className="xl:order-2 min-w-0 flex flex-col xl:min-h-0">
             <div className="flex items-center justify-center xl:justify-start gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6 shrink-0">
-              <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0 text-white">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0 text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
+              <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 tracking-tight">
                 AGENDA / CALENDARIO
               </h2>
             </div>
 
-            <div className="w-full max-w-md md:max-w-lg xl:max-w-none mx-auto xl:flex-1 xl:min-h-0 xl:flex xl:flex-col bg-gradient-to-br from-violet-50/30 via-white to-indigo-50/30 border-2 border-violet-200/50 rounded-2xl sm:rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-visible ring-2 ring-violet-100/50">
+            <div className="w-full max-w-md md:max-w-lg xl:max-w-none mx-auto xl:flex-1 xl:min-h-0 xl:flex xl:flex-col bg-linear-to-br from-violet-50/30 via-white to-indigo-50/30 border-2 border-violet-200/50 rounded-2xl sm:rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-visible ring-2 ring-violet-100/50">
               {/* Barra de navegación - estilo pill */}
               <div className="flex items-center justify-between gap-2 p-3 sm:p-4">
                 <button onClick={goToPrevMonth} className="p-2 sm:p-2.5 rounded-2xl bg-violet-100/80 hover:bg-violet-200/80 text-violet-700 transition-all duration-200 active:scale-95 touch-manipulation">
@@ -944,7 +944,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <h4 className="text-sm sm:text-base md:text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+                <h4 className="text-sm sm:text-base md:text-lg font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600">
                   {currentMonthName} {currentYear}
                 </h4>
                 <button onClick={goToNextMonth} className="p-2 sm:p-2.5 rounded-2xl bg-violet-100/80 hover:bg-violet-200/80 text-violet-700 transition-all duration-200 active:scale-95 touch-manipulation">
@@ -1011,7 +1011,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                     }
 
                     if (isToday && !hasEventColor) {
-                      dayClasses += ' bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-500 font-bold text-white shadow-md ring-2 ring-violet-300/50';
+                      dayClasses += ' bg-linear-to-br from-violet-500 via-indigo-500 to-purple-500 font-bold text-white shadow-md ring-2 ring-violet-300/50';
                     } else if (isToday && hasEventColor) {
                       dayClasses += ' font-bold ring-2 ring-violet-400 ring-offset-2 ring-offset-white';
                     } else if (!hasEventColor) {
@@ -1039,7 +1039,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
 
                       {/* Tooltip Premium con diseño mejorado - SOLO para desktop */}
                       {eventsOnDay.length > 0 && !isMobile() && (
-                        <div className="absolute opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 z-[99999]"
+                        <div className="absolute opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 z-99999"
                           style={{
                             bottom: '100%',
                             left: '50%',
@@ -1047,7 +1047,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                             ...(index % 7 === 0 && { left: '0', transform: 'translateY(-8px)' }),
                             ...(index % 7 === 6 && { right: '0', left: 'auto', transform: 'translateY(-8px)' })
                           }}>
-                          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white text-xs rounded-xl shadow-2xl border border-gray-600 backdrop-blur-sm max-w-[280px]">
+                          <div className="bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 text-white text-xs rounded-xl shadow-2xl border border-gray-600 backdrop-blur-sm max-w-[280px]">
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2"
                               style={{
                                 ...(index % 7 === 0 && { left: '16px', transform: 'none' }),
@@ -1070,10 +1070,10 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                               <div className="space-y-2">
                                 {eventsOnDay.map((event, eventIdx) => (
                                   <div key={eventIdx} className="flex items-start space-x-3 p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
-                                    <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${event.isReminder ? event.priorityColor : legendDotColors[event.type]} shadow-sm`}></div>
+                                    <div className={`w-3 h-3 rounded-full shrink-0 mt-1 ${event.isReminder ? event.priorityColor : legendDotColors[event.type]} shadow-sm`}></div>
 
                                     <div className="flex-1 min-w-0 overflow-hidden">
-                                      <div className="font-medium text-white line-clamp-2 break-words">
+                                      <div className="font-medium text-white line-clamp-2 wrap-break-word">
                                         {event.description || event.name}
                                       </div>
                                       <div className="text-xs text-gray-300 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -1140,7 +1140,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                             eventsOnDay.slice(0, 3).map((event, eventIdx) => (
                               <span
                                 key={eventIdx}
-                                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ring-1 ring-white shadow-sm flex-shrink-0 ${event.isReminder ? event.priorityColor : legendDotColors[event.type] || 'bg-gray-500'}`}
+                                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ring-1 ring-white shadow-sm shrink-0 ${event.isReminder ? event.priorityColor : legendDotColors[event.type] || 'bg-gray-500'}`}
                                 title={event.description || event.name}
                               />
                             ))
@@ -1159,7 +1159,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
               <div className="p-3 sm:p-4 flex justify-center">
                 <button
                   onClick={() => setIsReminderCreationModalOpen(true)}
-                  className="px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-xl hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 active:scale-95 touch-manipulation"
+                  className="px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-xl hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 active:scale-95 touch-manipulation"
                 >
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
@@ -1180,12 +1180,12 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                 className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 text-left hover:bg-violet-50/50 transition-colors duration-200 active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200/50 shrink-0">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-md ring-2 ring-violet-200/50 shrink-0">
                     <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                     </svg>
                   </div>
-                  <span className="text-sm sm:text-base md:text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600">
+                  <span className="text-sm sm:text-base md:text-lg font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600">
                     Leyenda de Eventos
                   </span>
                 </div>
@@ -1199,7 +1199,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                     <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 justify-items-start gap-y-2 sm:gap-y-2.5 gap-x-3 sm:gap-x-4 text-xs sm:text-sm text-gray-700">
                       {Object.entries(legendDotColors).map(([type, colorClass]) => (
                         <li key={type} className="flex items-center justify-start gap-2 sm:gap-3 group w-full text-left">
-                          <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${colorClass} ring-2 ring-white shadow-md group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}></span>
+                          <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${colorClass} ring-2 ring-white shadow-md group-hover:scale-110 transition-transform duration-200 shrink-0`}></span>
                           <span className="font-extrabold text-gray-800">{type}</span>
                         </li>
                       ))}
@@ -1208,7 +1208,7 @@ export function Calendar_Alumno_comp({ eventsData, isLoading = false, error = nu
                     {isMobile() && (
                       <div className="mt-4 pt-3 border-t-2 border-violet-200/50">
                         <p className="text-[10px] sm:text-xs text-violet-600 font-semibold flex items-center gap-1.5 bg-violet-50 px-2 py-1.5 rounded-lg border border-violet-200">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                           </svg>
                           Toca los días con eventos para ver detalles

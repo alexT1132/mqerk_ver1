@@ -14,7 +14,7 @@ import Footer from "../../../components/layout/footer";
 
 function Talleres() {
   return (
-    <div className='min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white'>
+    <div className='min-h-screen flex flex-col bg-linear-to-b from-purple-50 to-white'>
       <Navbar />
       
       {/* Hero Section - relative z-10 para que no quede por debajo del contenido */}
@@ -154,11 +154,11 @@ function YearSection({ year }) {
   return (
     <div className="mb-12 text-center">
       <div className="inline-flex items-center gap-4">
-        <div className="h-px w-12 sm:w-24 bg-gradient-to-r from-transparent to-purple-300"></div>
+        <div className="h-px w-12 sm:w-24 bg-linear-to-r from-transparent to-purple-300"></div>
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-700 animate-slide-up">
           {year}
         </h2>
-        <div className="h-px w-12 sm:w-24 bg-gradient-to-l from-transparent to-purple-300"></div>
+        <div className="h-px w-12 sm:w-24 bg-linear-to-l from-transparent to-purple-300"></div>
       </div>
     </div>
   );
@@ -177,7 +177,7 @@ function OnlineCard({ to, image, title, description, date, delay = "0" }) {
     >
       {/* Imagen con efecto zoom */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+        <div className="absolute inset-0 bg-linear-to-t from-purple-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
         <img 
           src={image} 
           alt={title}
@@ -188,7 +188,7 @@ function OnlineCard({ to, image, title, description, date, delay = "0" }) {
       {/* Contenido */}
       <div className="flex flex-col flex-1 p-6">
         {/* Título */}
-        <h3 className="text-lg font-bold text-purple-800 mb-3 group-hover:text-purple-600 transition-colors duration-300 min-h-[4rem] line-clamp-3">
+        <h3 className="text-lg font-bold text-purple-800 mb-3 group-hover:text-purple-600 transition-colors duration-300 min-h-16 line-clamp-3">
           {title}
         </h3>
 
@@ -236,7 +236,7 @@ function OnlineCard({ to, image, title, description, date, delay = "0" }) {
       </div>
 
       {/* Borde animado en hover */}
-      <div className="h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+      <div className="h-1 bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </CardWrapper>
   );
 }

@@ -656,27 +656,27 @@ const Feedback_Alumno_Comp = () => {
       {/* Título responsivo - Mejorado */}
       <div className="w-full max-w-full mx-auto mb-6 sm:mb-8">
         <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-4">
-          <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 shadow-lg ring-2 ring-violet-200/60 shrink-0">
             <MessageSquareText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl tracking-tight">
+          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 drop-shadow-2xl tracking-tight">
             FEEDBACK
           </h1>
         </div>
       </div>
 
       {/* Puntos + Progreso - Mejorado */}
-      <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-full ring-2 ring-violet-100/50">
+      <div className="bg-linear-to-r from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 mb-6 sm:mb-8 flex flex-col sm:flex-row gap-5 sm:items-center w-full max-w-full ring-2 ring-violet-100/50">
         <div className="flex items-center gap-4">
           <div className="relative">
             <Star className="w-12 h-12 sm:w-14 sm:h-14 text-amber-400 drop-shadow-xl" fill="currentColor" />
-            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-linear-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
               <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
             </div>
           </div>
           <div>
             <p className="text-base sm:text-lg md:text-xl font-extrabold text-violet-700">Puntos Totales</p>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600 drop-shadow-lg">{totalPoints} pts</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-violet-600 to-indigo-600 drop-shadow-lg">{totalPoints} pts</p>
           </div>
         </div>
         <div className="flex-1">
@@ -685,7 +685,7 @@ const Feedback_Alumno_Comp = () => {
             <span className="text-xs sm:text-sm font-extrabold text-violet-800 bg-violet-100 px-2.5 py-1 rounded-lg border border-violet-200">{monthProgress}%</span>
           </div>
           <div className="w-full h-4 bg-violet-200/50 rounded-full overflow-hidden shadow-inner border border-violet-200/50">
-            <div className="h-full bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500 transition-all duration-500 shadow-lg" style={{ width: `${monthProgress}%` }} />
+            <div className="h-full bg-linear-to-r from-violet-500 via-indigo-500 to-purple-500 transition-all duration-500 shadow-lg" style={{ width: `${monthProgress}%` }} />
           </div>
           <p className="mt-2 text-xs sm:text-sm text-violet-600 font-semibold text-right">{monthSubmitted}/{monthTotal} entregadas</p>
         </div>
@@ -749,7 +749,7 @@ const Feedback_Alumno_Comp = () => {
               <div className="relative flex items-center justify-center">
                 <Sparkles className="w-28 h-28 sm:w-44 sm:h-44 text-yellow-300 animate-pulse drop-shadow-xl" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-2xl sm:text-5xl px-7 py-4 sm:px-12 sm:py-6 rounded-2xl shadow-2xl border-4 border-yellow-200 animate-bounce">
+                  <div className="bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold text-2xl sm:text-5xl px-7 py-4 sm:px-12 sm:py-6 rounded-2xl shadow-2xl border-4 border-yellow-200 animate-bounce">
                     +{confettiScore} puntos
                   </div>
                 </div>
@@ -772,11 +772,11 @@ const Feedback_Alumno_Comp = () => {
         <div className="fixed inset-0 pointer-events-none z-50 flex items-start justify-center pt-24">
           <div className="relative flex flex-col items-center animate-fade-in">
             <div className="relative">
-              <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-orange-400 blur-xl opacity-60 animate-pulse"></div>
+              <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-full bg-linear-to-tr from-amber-400 via-yellow-300 to-orange-400 blur-xl opacity-60 animate-pulse"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
                   <span className="text-xs sm:text-sm font-semibold tracking-widest text-amber-700 bg-white/70 px-3 py-1 rounded-full backdrop-blur border border-amber-300 shadow">RACHA</span>
-                  <span className="text-4xl sm:text-6xl font-black bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent drop-shadow">x3</span>
+                  <span className="text-4xl sm:text-6xl font-black bg-linear-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent drop-shadow">x3</span>
                   <span className="text-sm sm:text-base font-bold text-amber-700">¡Triple Entrega!</span>
                 </div>
               </div>
@@ -795,7 +795,7 @@ const Feedback_Alumno_Comp = () => {
       )}
 
       {/* Filtros: Mes + Búsqueda - Mejorado */}
-      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-full lg:static sticky top-0 z-30 bg-white/95 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80 px-3 sm:px-4 pt-3 pb-2 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg">
+      <div className="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full max-w-full lg:static sticky top-0 z-30 bg-white/95 backdrop-blur-sm supports-backdrop-filter:bg-white/80 px-3 sm:px-4 pt-3 pb-2 rounded-xl sm:rounded-2xl border-2 border-violet-200/50 shadow-lg">
         <label className="text-sm sm:text-base md:text-lg font-extrabold text-violet-700 flex items-center gap-2 text-center sm:text-left">
           <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Feedback del mes:</span>
@@ -851,7 +851,7 @@ const Feedback_Alumno_Comp = () => {
           <button
             onClick={openCreateTask}
             disabled={studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth}
-            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm font-extrabold shadow-lg border-2 transition-all active:scale-95 touch-manipulation ${(studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white border-violet-700 hover:shadow-xl'}`}
+            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm font-extrabold shadow-lg border-2 transition-all active:scale-95 touch-manipulation ${(studentOwnedCountThisMonth >= perMonthCap || isPastSelectedMonth) ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white border-violet-700 hover:shadow-xl'}`}
             title={studentOwnedCountThisMonth >= perMonthCap ? `Has alcanzado el límite mensual de ${perMonthCap} actividades creadas` : (isPastSelectedMonth ? 'No puedes crear actividades en meses pasados' : 'Crear nueva actividad')}
           >
             <PlusCircle className="w-5 h-5" />
@@ -875,7 +875,7 @@ const Feedback_Alumno_Comp = () => {
               <col style={{ width: '6%' }} />
               <col style={{ width: '6%' }} />
             </colgroup>
-            <thead className="bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-500">
+            <thead className="bg-linear-to-r from-violet-500 via-indigo-500 to-purple-500">
               <tr>
                 <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">No.</th>
                 <th scope="col" className="px-4 2xl:px-3 py-3 2xl:py-2 text-left text-xs 2xl:text-[11px] font-extrabold text-white uppercase tracking-widest">Nombre de la tarea</th>
@@ -901,8 +901,8 @@ const Feedback_Alumno_Comp = () => {
                           className={`flex items-center px-4 2xl:px-3 py-2 2xl:py-1.5 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 text-sm 2xl:text-xs font-extrabold border-2 touch-manipulation ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
                             ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                             : (task.isSubmitted
-                              ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white focus:ring-violet-300 border-violet-700'
-                              : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white focus:ring-blue-300 border-blue-600')
+                              ? 'bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white focus:ring-violet-300 border-violet-700'
+                              : 'bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white focus:ring-blue-300 border-blue-600')
                             }`}
                         >
                           <Upload className="w-4 h-4 mr-1.5" />
@@ -930,7 +930,7 @@ const Feedback_Alumno_Comp = () => {
                           onClick={() => openViewTaskModal(task)}
                           disabled={!task.submittedPdf}
                           className={`p-3 2xl:p-2.5 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 border-2 touch-manipulation ${task.submittedPdf
-                            ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white focus:ring-emerald-300 border-emerald-600'
+                            ? 'bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white focus:ring-emerald-300 border-emerald-600'
                             : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                             }`}
                         >
@@ -944,7 +944,7 @@ const Feedback_Alumno_Comp = () => {
                           (notesBySubmission[task._subId] ? (
                             <button
                               onClick={() => openNoteModal(task)}
-                              className="inline-flex items-center gap-1.5 px-3 2xl:px-2.5 py-1.5 2xl:py-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg text-sm 2xl:text-xs font-extrabold border-2 border-violet-700 transition-all active:scale-95 touch-manipulation"
+                              className="inline-flex items-center gap-1.5 px-3 2xl:px-2.5 py-1.5 2xl:py-1 rounded-xl bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg text-sm 2xl:text-xs font-extrabold border-2 border-violet-700 transition-all active:scale-95 touch-manipulation"
                               title="Ver nota del asesor"
                             >
                               <MessageSquareText className="w-4 h-4" /> Nota
@@ -967,7 +967,7 @@ const Feedback_Alumno_Comp = () => {
                       </div>
                     </td>
                     <td className="px-4 2xl:px-3 py-3 2xl:py-2 whitespace-nowrap text-[13px] 2xl:text-[12px]">
-                      <div className="text-violet-700 font-extrabold text-center bg-gradient-to-r from-violet-100 to-indigo-100 px-2.5 py-1 rounded-lg border border-violet-200">{task.score !== null ? `${task.score} pts` : '-'}</div>
+                      <div className="text-violet-700 font-extrabold text-center bg-linear-to-r from-violet-100 to-indigo-100 px-2.5 py-1 rounded-lg border border-violet-200">{task.score !== null ? `${task.score} pts` : '-'}</div>
                     </td>
                   </tr>
                 ))
@@ -998,7 +998,7 @@ const Feedback_Alumno_Comp = () => {
                   : <button
                     key={p}
                     onClick={() => goToPage(p)}
-                    className={`w-9 h-9 rounded-xl text-sm font-extrabold border-2 flex items-center justify-center transition-all active:scale-95 touch-manipulation shadow-sm ${p === currentPage ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-700 shadow-lg' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400'}`}
+                    className={`w-9 h-9 rounded-xl text-sm font-extrabold border-2 flex items-center justify-center transition-all active:scale-95 touch-manipulation shadow-sm ${p === currentPage ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white border-violet-700 shadow-lg' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400'}`}
                   >{p}</button>
               ))}
             </div>
@@ -1020,14 +1020,14 @@ const Feedback_Alumno_Comp = () => {
             {paginatedTasks.map((task, index) => (
               <div
                 key={task.id}
-                className="relative bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-5 flex flex-col gap-2.5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-300/60 ring-1 ring-violet-100/50"
+                className="relative bg-linear-to-br from-violet-50 via-indigo-50 to-purple-50 border-2 border-violet-200/50 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-5 flex flex-col gap-2.5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-300/60 ring-1 ring-violet-100/50"
               >
                 {/* Header con badge alineado (sin superponer) */}
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-extrabold px-2.5 py-1 rounded-full shadow-md shrink-0 border-2 border-white">#{indexOfFirst + index + 1}</span>
+                    <span className="bg-linear-to-r from-violet-600 to-indigo-600 text-white text-xs font-extrabold px-2.5 py-1 rounded-full shadow-md shrink-0 border-2 border-white">#{indexOfFirst + index + 1}</span>
                     <h3
-                      className="font-extrabold text-violet-800 text-xs sm:text-sm leading-snug break-words line-clamp-2 min-w-0"
+                      className="font-extrabold text-violet-800 text-xs sm:text-sm leading-snug wrap-break-word line-clamp-2 min-w-0"
                       title={task.name}
                     >
                       {task.name}
@@ -1048,14 +1048,14 @@ const Feedback_Alumno_Comp = () => {
                 </div>
                 {/* Overlay con nombre completo (solo móvil) */}
                 {showFullNameId === task.id && (
-                  <div className="lg:hidden absolute left-2 right-2 top-10 z-20 bg-white/95 border-2 border-violet-200 rounded-xl shadow-xl p-2 text-[13px] text-violet-800 break-words font-semibold">
+                  <div className="lg:hidden absolute left-2 right-2 top-10 z-20 bg-white/95 border-2 border-violet-200 rounded-xl shadow-xl p-2 text-[13px] text-violet-800 wrap-break-word font-semibold">
                     {task.name}
                   </div>
                 )}
                 {/* Puntaje */}
                 <div className="flex items-center gap-1.5 mb-1">
                   <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 drop-shadow" fill="currentColor" />
-                  <span className="text-sm sm:text-base font-extrabold text-violet-700 bg-gradient-to-r from-violet-100 to-indigo-100 px-2 py-0.5 rounded-lg border border-violet-200">{task.score !== null ? `${task.score} pts` : '-'}</span>
+                  <span className="text-sm sm:text-base font-extrabold text-violet-700 bg-linear-to-r from-violet-100 to-indigo-100 px-2 py-0.5 rounded-lg border border-violet-200">{task.score !== null ? `${task.score} pts` : '-'}</span>
                 </div>
                 {/* Fecha de entrega + urgencia */}
                 <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-semibold mb-2 flex-wrap">
@@ -1087,7 +1087,7 @@ const Feedback_Alumno_Comp = () => {
                     disabled={!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted)}
                     className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold gap-1 border-2 active:scale-95 touch-manipulation ${(!canActOnTask(task) || (monthlyCapReached && !task.isSubmitted))
                       ? 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
-                      : (task.isSubmitted ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-violet-700' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-blue-600')
+                      : (task.isSubmitted ? 'bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-violet-700' : 'bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-blue-600')
                       }`}
                     aria-label={task.isSubmitted ? 'Gestionar entrega' : 'Subir tarea'}
                     title={task.isSubmitted ? 'Gestionar entrega' : (monthlyCapReached ? 'Límite mensual' : 'Subir tarea')}
@@ -1101,7 +1101,7 @@ const Feedback_Alumno_Comp = () => {
                     onClick={() => openViewTaskModal(task)}
                     disabled={!task.submittedPdf}
                     className={`w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold border-2 active:scale-95 touch-manipulation ${task.submittedPdf
-                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-emerald-600'
+                      ? 'bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-emerald-600'
                       : 'bg-gray-400 cursor-not-allowed text-white border-gray-500'
                       }`}
                     aria-label="Ver tarea"
@@ -1113,7 +1113,7 @@ const Feedback_Alumno_Comp = () => {
                   {notesBySubmission[task._subId] && (
                     <button
                       onClick={() => openNoteModal(task)}
-                      className="w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-2 border-violet-700 active:scale-95 touch-manipulation"
+                      className="w-full flex items-center justify-center h-9 sm:h-auto px-2 sm:px-3 py-2 rounded-xl shadow-md transition-all duration-200 text-xs font-extrabold bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-2 border-violet-700 active:scale-95 touch-manipulation"
                       aria-label="Ver nota"
                       title="Ver nota del asesor"
                     >
@@ -1147,7 +1147,7 @@ const Feedback_Alumno_Comp = () => {
                   : <button
                     key={p}
                     onClick={() => goToPage(p)}
-                    className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all active:scale-95 touch-manipulation shadow-sm ${p === currentPage ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-700 shadow-lg' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400'}`}
+                    className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all active:scale-95 touch-manipulation shadow-sm ${p === currentPage ? 'bg-linear-to-r from-violet-600 to-indigo-600 text-white border-violet-700 shadow-lg' : 'text-violet-700 border-violet-300 hover:bg-violet-50 hover:border-violet-400'}`}
                   >{p}</button>
               ))}
             </div>
@@ -1172,7 +1172,7 @@ const Feedback_Alumno_Comp = () => {
             className={`bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl border-2 border-violet-200/50 ring-2 ring-violet-100/50 ${modalExiting === 'upload' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
+            <div className="bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
               <h2 className="text-xl sm:text-2xl font-extrabold text-white">
                 {selectedTask.isSubmitted ? 'Gestionar Entrega' : 'Subir Tarea'}
               </h2>
@@ -1200,11 +1200,11 @@ const Feedback_Alumno_Comp = () => {
                 <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={() => handleCancelSubmission(selectedTask.id)}
-                    className="px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm font-extrabold border-2 border-red-600 touch-manipulation"
+                    className="px-4 py-2.5 bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm font-extrabold border-2 border-red-600 touch-manipulation"
                   >
                     Cancelar Entrega
                   </button>
-                  <label className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm cursor-pointer font-extrabold border-2 border-blue-600 touch-manipulation text-center">
+                  <label className="px-4 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm cursor-pointer font-extrabold border-2 border-blue-600 touch-manipulation text-center">
                     {loadingUpload ? 'Subiendo...' : 'Subir Nuevo PDF'}
                     <input
                       type="file"
@@ -1247,7 +1247,7 @@ const Feedback_Alumno_Comp = () => {
                       handleFileUpload(selectedTask.id, f);
                     }
                   }}
-                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-2 file:text-sm file:font-extrabold file:bg-gradient-to-r file:from-violet-100 file:to-indigo-100 file:text-violet-700 hover:file:from-violet-200 hover:file:to-indigo-200 file:shadow-md file:border-violet-300 mb-2"
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-2 file:text-sm file:font-extrabold file:bg-linear-to-r file:from-violet-100 file:to-indigo-100 file:text-violet-700 hover:file:from-violet-200 hover:file:to-indigo-200 file:shadow-md file:border-violet-300 mb-2"
                   disabled={loadingUpload}
                 />
                 <div className="mb-4 text-[11px] sm:text-xs text-gray-600 leading-snug font-medium">
@@ -1271,12 +1271,12 @@ const Feedback_Alumno_Comp = () => {
       {/* Modal de visualización de tarea - Mejorado */}
       {showViewTaskModal && (
         <div
-          className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-99999 flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={closeViewTaskModal}
         >
           <div className="bg-white w-full h-full sm:w-auto sm:h-[75vh] sm:max-w-7xl sm:min-w-[800px] sm:rounded-2xl shadow-2xl flex flex-col border-0 sm:border-2 border-slate-200 ring-0 sm:ring-2 ring-violet-100 animate-in zoom-in-95 duration-200 relative overflow-hidden sm:translate-y-12" onClick={(e) => e.stopPropagation()}>
             {/* Header con gradiente */}
-            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-lg">
+            <div className="bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 shadow-lg">
               <div className="flex-1 min-w-0 pr-2">
                 <h2 className="text-lg sm:text-2xl font-extrabold text-white mb-0.5 sm:mb-1">Visualizar Tarea</h2>
                 <p className="text-violet-100 text-xs sm:text-sm truncate font-medium">
@@ -1285,7 +1285,7 @@ const Feedback_Alumno_Comp = () => {
               </div>
               <button
                 onClick={closeViewTaskModal}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-xl p-1.5 sm:p-2 transition-all duration-200 hover:scale-110 active:scale-95 flex-shrink-0 border border-white/30"
+                className="bg-white/20 hover:bg-white/30 text-white rounded-xl p-1.5 sm:p-2 transition-all duration-200 hover:scale-110 active:scale-95 shrink-0 border border-white/30"
                 aria-label="Cerrar modal"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1322,11 +1322,11 @@ const Feedback_Alumno_Comp = () => {
               )}
 
               {/* Botones de acción - Mejorados */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4 shrink-0">
                 {viewingTaskPdf && (
                   <button
                     onClick={handleOpenPdfInNewTab}
-                    className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 border-2 border-blue-700 touch-manipulation"
+                    className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 border-2 border-blue-700 touch-manipulation"
                   >
                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -1359,7 +1359,7 @@ const Feedback_Alumno_Comp = () => {
             className={`bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl overflow-hidden border-2 border-violet-200/50 ring-2 ring-violet-100/50 ${modalExiting === 'note' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-lg">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-lg">
               <div className="font-extrabold text-sm sm:text-base truncate flex items-center gap-2">
                 <MessageSquareText className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Nota del asesor · {noteView.taskName}</span>
@@ -1370,7 +1370,7 @@ const Feedback_Alumno_Comp = () => {
             </div>
             <div className="p-4 sm:p-5">
               {noteView.text ? (
-                <p className="text-sm sm:text-base text-slate-800 whitespace-pre-wrap break-words font-medium leading-relaxed">{noteView.text}</p>
+                <p className="text-sm sm:text-base text-slate-800 whitespace-pre-wrap wrap-break-word font-medium leading-relaxed">{noteView.text}</p>
               ) : (
                 <p className="text-sm sm:text-base text-slate-500 font-medium">No hay nota disponible para esta entrega.</p>
               )}
@@ -1399,7 +1399,7 @@ const Feedback_Alumno_Comp = () => {
             className={`bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[min(28rem,95vw)] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl border-2 border-violet-200/50 ring-2 ring-violet-100/50 ${modalExiting === 'create' ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
+            <div className="bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 -m-6 sm:-m-8 mb-6 sm:mb-8 p-5 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
               <h2 className="text-xl sm:text-2xl font-extrabold text-white">Nueva actividad</h2>
             </div>
             <p className="text-sm text-gray-700 mb-4 font-medium">Crea una actividad con el nombre que prefieras. La fecha de entrega se generará cuando subas tu PDF.</p>
@@ -1418,7 +1418,7 @@ const Feedback_Alumno_Comp = () => {
             {newTaskError && <div className="mt-3 text-xs text-red-600 bg-red-50 border-2 border-red-200 rounded-xl p-3 font-extrabold">{newTaskError}</div>}
             <div className="mt-6 flex justify-end gap-3">
               <button onClick={closeCreateTaskWithAnimation} className="px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-gray-600 touch-manipulation">Cancelar</button>
-              <button onClick={confirmCreateTask} className="px-4 py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-violet-700 touch-manipulation">Crear</button>
+              <button onClick={confirmCreateTask} className="px-4 py-2.5 bg-linear-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm font-extrabold border-2 border-violet-700 touch-manipulation">Crear</button>
             </div>
           </div>
         </div>

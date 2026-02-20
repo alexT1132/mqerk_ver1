@@ -193,7 +193,7 @@ const SidebarItem = React.memo(function SidebarItem({
           />
         )}
 
-        <div className="flex-shrink-0 relative flex items-center justify-center">
+        <div className="shrink-0 relative flex items-center justify-center">
           {React.cloneElement(icon, {
             stroke: currentIconColor,
             color: currentIconColor,
@@ -478,7 +478,7 @@ export function DesktopSidebarBase({
   return (
     <aside
       ref={sidebarRef}
-      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-md'} z-[2000] bg-white border-r border-gray-200/50 overflow-hidden transition-[width] duration-150 ease-out`}
+      className={`hidden sm:flex flex-col fixed ${sidebarWidth} ${isTablet ? 'shadow-md' : 'shadow-md'} z-2000 bg-white border-r border-gray-200/50 overflow-hidden transition-[width] duration-150 ease-out`}
       style={{
         top: topOffset,
         height: `calc(100vh - ${heightOffset})`,
@@ -552,7 +552,7 @@ export function DesktopSidebarBase({
             ))}
           </ul>
         </div>
-        <div className="flex-shrink-0 px-4 lg:px-5 xl:px-5 pt-2 pb-4 lg:pt-3 lg:pb-5 border-t border-gray-200/60 bg-white/50">
+        <div className="shrink-0 px-4 lg:px-5 xl:px-5 pt-2 pb-4 lg:pt-3 lg:pb-5 border-t border-gray-200/60 bg-white/50">
           <ul className="space-y-1 list-none">
             {bottomItems.map((item) => (
               <SidebarItem
