@@ -111,10 +111,10 @@ export default function SidebarIconOnly({ onLogout = () => { }, active, counts =
           {renderNavItem(NAV_ITEMS[0])}
         </div>
 
-        {/* Scrollable Navigation (Rest of items) */}
+        {/* Scrollable Navigation (Rest of items): espaciado fijo desde arriba para que en pantallas muy altas (ej. 2560x1600) no quede hueco mal distribuido */}
         <nav
           ref={navRef}
-          className="mt-0 w-full flex-1 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar p-0.5 pt-1 flex flex-col justify-evenly"
+          className="mt-0 w-full flex-1 min-h-0 overflow-y-auto overflow-x-visible overscroll-contain no-scrollbar p-0.5 pt-1 flex flex-col justify-start gap-2"
         >
           {NAV_ITEMS.slice(1).map(renderNavItem)}
         </nav>

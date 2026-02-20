@@ -423,6 +423,8 @@ export function DesktopSidebarBase({
   const isTablet = viewport.width >= 640 && viewport.width < 1024;
   const isSmallScreen = viewport.height < 600;
   const isLargeScreen = viewport.height > 900;
+  // Pantallas muy altas (ej. 2560x1600): distribuir ítems del sidebar admin para no dejar hueco debajo
+  const isTallViewport = viewport.height > 1000;
 
   // Altura y anchos consistentes con Layout.jsx
   const sidebarWidth = effectiveOpen
@@ -514,9 +516,9 @@ export function DesktopSidebarBase({
         <div
           ref={scrollableRef}
           data-sidebar-scroll
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar"
+          className={`flex-1 min-h-0 overflow-y-auto overflow-x-visible no-scrollbar ${userRole === 'admin' && isTallViewport ? 'flex flex-col' : ''}`}
         >
-          <ul className={`px-3 pt-3 pb-2 list-none ${userRole === 'admin' ? 'space-y-1 lg:space-y-1.5 xl:space-y-1.5 2xl:space-y-3' : 'space-y-0.5'}`}>
+          <ul className={`px-3 pt-3 pb-2 list-none ${userRole === 'admin' && isTallViewport ? 'flex flex-col justify-evenly min-h-full gap-2' : userRole === 'admin' ? 'space-y-1 lg:space-y-1.5 xl:space-y-1.5 2xl:space-y-3' : 'space-y-0.5'}`}>
             {mainItems.map((item) => (
               <SidebarItem
                 key={item.path || item.label}

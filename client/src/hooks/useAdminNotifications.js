@@ -132,7 +132,7 @@ export function useAdminNotifications() {
     const unlockAudio = () => {
       try {
         if (!notificationAudio) {
-          notificationAudio = new Audio('/public/notification-sound-for-whatsapp.mp3');
+          notificationAudio = new Audio('/notification-sound-for-whatsapp.mp3');
         }
         notificationAudio.play().then(() => {
           notificationAudio.pause();

@@ -4,6 +4,151 @@ Este archivo documenta de forma detallada cada cambio realizado en el proyecto, 
 
 ---
 
+## 2025-02-19 – Login: imagen más grande solo en pantallas grandes (xl/2xl)
+
+### Objetivo
+En PC grandes (xl) y extra grandes (2xl) **únicamente**, aumentar el tamaño de la imagen de la izquierda para aprovechar el espacio, sin modificar card, padding ni ningún otro elemento en el resto de dispositivos.
+
+### Archivo modificado
+`client/src/components/common/auth/Login.jsx`
+
+### Cambios realizados
+
+- **Desktop xl (≥ 1280px):** solo `.illus-wrap img { max-height: 85vh; }`. Card y padding sin cambios.
+- **Desktop 2xl (≥ 1536px):** solo `.illus-wrap img { max-height: 95vh; }` para que en monitores 1920×1080 (15.6") la ilustración aproveche casi todo el alto del panel izquierdo. Contenedor y card sin cambios.
+
+Ningún otro breakpoint (móvil, tablet, lg) se ve afectado; solo la imagen escala en pantallas grandes.
+
+### Resultado esperado
+En pantallas grandes y extra grandes la ilustración se ve más grande y llena mejor el panel izquierdo; en el resto de dispositivos todo permanece igual.
+
+---
+
+## 2025-02-19 – Login responsivo para todos los tipos de dispositivos
+
+### Objetivo
+Hacer la página de login totalmente responsiva siguiendo las reglas del proyecto (viewport lógico, mobile-first, áreas táctiles ≥44px, tipografía fluida con `clamp()`, breakpoints sm/md/lg/xl/2xl).
+
+### Archivo modificado
+`client/src/components/common/auth/Login.jsx`
+
+### Cambios realizados
+
+1. **Breakpoints y layout**
+   - **Base (móvil &lt; 480px):** Card con `margin: 1rem`, `padding: 1.5rem 1.25rem`, `border-radius: 20px`. `max-width: min(440px, calc(100vw - 2rem))`.
+   - **sm (≥ 480px):** Card `margin: 1.5rem`, `border-radius: 24px`, body `padding: 2rem 1.75rem`.
+   - **md (≥ 768px):** Card `margin: 2rem`, body `padding: 2.5rem 2.25rem`. Grid overlay `background-size: 60px` (en base 48px).
+   - **lg (≥ 1024px):** Se muestra el **layout de dos columnas** (imagen izquierda, formulario derecha). Breakpoint de escritorio cambiado de 900px a 1024px para alinear con Tailwind. Card en desktop `max-width: 400px`, padding 2.5rem 2rem.
+   - **xl (≥ 1280px):** Más padding en columnas (3rem), card `max-width: 420px`, body 3rem 2.5rem, imagen `max-height: 55vh`.
+   - **2xl (≥ 1536px):** Contenedor `max-width: 1536px; margin: 0 auto`, card `max-width: 440px`, imagen `max-height: 60vh`.
+
+2. **Mobile layout**
+   - `.mobile-layout` con `min-height: 100svh` / `100dvh`, `flex-direction: column`, `align-items: center`, `justify-content: center`, `padding` escalado (1rem 0.75rem → 1.5rem 1rem en sm → 2rem en md) para que el formulario quede centrado en todos los móviles y tablets en vertical.
+
+3. **Áreas táctiles (accesibilidad)**
+   - Inputs: `min-height: 44px`.
+   - Botón “Mostrar/ocultar contraseña”: `min-width: 44px`, `min-height: 44px`, `padding: 10px`.
+   - Botón “Iniciar sesión”: `min-height: 44px`, `padding: 13px 16px`.
+
+4. **Tipografía fluida**
+   - `.heading`: ya usaba `clamp(1.5rem, 4vw, 2rem)`.
+   - `.subheading`: `font-size: clamp(0.8rem, 2vw, 0.88rem)`, `margin-bottom: clamp(1.25rem, 4vw, 2rem)`.
+   - `.field-label`: `font-size: clamp(0.72rem, 1.8vw, 0.78rem)`.
+   - `.field-input` y `.submit-btn`: `font-size: clamp(0.9rem, 2.2vw, 0.95rem)`.
+   - Overlay de éxito: `.success-title` `clamp(1.1rem, 3vw, 1.3rem)`, `.success-sub` `clamp(0.8rem, 2vw, 0.85rem)`, `.success-card` padding e icono con `clamp`, `max-width: min(360px, calc(100vw - 2rem))`.
+
+5. **Orbes de fondo**
+   - Tamaños con `min(650px, 95vw)` (y análogos para orb-2 y orb-3) para que no desborden en viewports pequeños.
+
+6. **Otras**
+   - Fila “Recuérdame / Olvidaste contraseña”: `flex-wrap` y en viewports &lt; 380px `flex-direction: column; align-items: flex-start`.
+   - Eliminado import no usado de `ParticlesBackground`.
+   - Añadido `@keyframes spin` para el icono de carga del botón de envío.
+
+### Resultado esperado
+El login se ve y usa bien en móviles pequeños (~320px), móviles estándar (375–480px), tablets (768–1023px), laptops (1024–1279px), escritorio estándar (1280–1535px) y pantallas grandes (≥1536px), con áreas táctiles adecuadas y tipografía que escala sin saltos bruscos.
+
+---
+
+## 2025-02-19 – Rediseño del login: dos columnas en PC e imagen al lado
+
+### Objetivo
+Mejorar la página de login: en **PC** (pantallas chicas y grandes) mostrar la imagen `2-removebg-preview.png` al lado del formulario en un layout de dos columnas; en **móvil** mantener un diseño de una sola columna más pulido.
+
+### Archivo modificado
+`client/src/components/common/auth/Login.jsx`
+
+### Cambios realizados
+
+1. **Contenido del formulario reutilizable**
+   - El contenido del card (mensaje “Inicia sesión para continuar”, aviso de timeout, errores, formulario con usuario, contraseña, recuérdame, olvidé contraseña y botón) se extrajo a una variable **`formContent`** (Fragment `<>...</>`) para usarla tanto en la vista móvil como en la de escritorio, sin duplicar lógica.
+
+2. **Vista móvil (`md:hidden`)**
+   - Una sola columna centrada: título con typewriter “Bienvenido a MQerkAcademy”, luego el card del login.
+   - Card con `rounded-3xl`, borde degradado y `backdrop-blur-xl` para un aspecto más cuidado.
+   - Ancho máximo del card `max-w-[22rem]`, espaciado `px-6 py-7`.
+   - La imagen **no** se muestra en móvil para priorizar el formulario y la velocidad.
+
+3. **Vista escritorio (`hidden md:flex`)**
+   - **Dos columnas** dentro de un contenedor `max-w-7xl` (2xl: `max-w-screen-2xl`) centrado:
+     - **Columna izquierda:** panel con la imagen `client/src/assets/2-removebg-preview.png` (importada como `loginIllustration`). Fondo `bg-white/5 backdrop-blur-sm`, borde derecho `border-white/10`. La imagen con `max-h-[70vh]`, `object-contain` y `drop-shadow-2xl` para que se vea bien en pantallas chicas y grandes.
+     - **Columna derecha:** título typewriter y el mismo card del formulario (`formContent`), con `max-w-[24rem]` (2xl: `max-w-[28rem]`), `rounded-2xl` y mismo estilo glass.
+   - Ambas columnas con `flex-1` para repartir el espacio de forma equilibrada.
+
+4. **Comportamiento y accesibilidad**
+   - Overlay de “Login exitoso”, partículas de fondo, typewriter y toda la lógica de submit, validación, errores, “recuérdame” y redirección por rol se mantienen sin cambios.
+   - El `alt` de la imagen en desktop: `"MQerk Academia"`.
+
+### Resultado esperado
+- **PC:** Se ve la imagen a la izquierda y el formulario a la derecha, con un diseño más claro y profesional.
+- **Móvil:** Una sola columna con el formulario centrado y un card más redondeado y con mejor presencia visual.
+
+---
+
+## 2025-02-19 – Sonido de notificación 404 y gráficas Recharts en Reportes de Pagos
+
+### Objetivo
+Corregir (1) el 404 del archivo de sonido de notificación y (2) los avisos de Recharts "width(-1) and height(-1)" en la página Reportes de Pagos (admin).
+
+### 1. Ruta del sonido de notificación (404)
+- **Causa:** Se usaba la ruta `/public/notification-sound-for-whatsapp.mp3`. En Vite, los archivos en `public/` se sirven en la raíz, por lo que la URL correcta es `/notification-sound-for-whatsapp.mp3`.
+- **Archivos modificados:** Se reemplazó `/public/notification-sound-for-whatsapp.mp3` por `/notification-sound-for-whatsapp.mp3` en:
+  - `client/src/components/shared/ChatFloatingButton.jsx`
+  - `client/src/context/AsesorContext.jsx`
+  - `client/src/hooks/useAdminNotifications.js`
+  - `client/src/components/Asesor/ChatAsesor.jsx`
+  - `client/src/components/admin/ChatAdmin.jsx`
+- **Nota:** El archivo debe estar en `client/public/notification-sound-for-whatsapp.mp3`. Si no existe, seguirá 404 hasta que se añada.
+
+### 2. Gráficas Recharts en ReportesPagos_Admin_comp.jsx
+- **Causa:** Recharts (ResponsiveContainer con width/height 100%) necesita un contenedor con dimensiones definidas. En el primer render el contenedor podía tener ancho/alto -1.
+- **Cambios:** Para cada una de las cinco gráficas (Ingresos por Mes, Pagos por Curso, Distribución por Método, Ingresos por Semana, Ingresos por Año):
+  - El div contenedor pasa a tener `w-full min-w-[180px]` y `style={{ minHeight: 220 }}` o `minHeight: 240` según el caso, para garantizar tamaño mínimo.
+  - Se añadieron a `ResponsiveContainer` las props `minWidth={180}` y `minHeight={200}` o `minHeight={220}` para que el chart tenga siempre dimensiones válidas.
+
+### Resultado esperado
+La petición del sonido usa la ruta correcta (y deja de dar 404 si el archivo está en `public/`). La consola deja de mostrar los avisos de Recharts sobre width/height -1 en Reportes de Pagos.
+
+---
+
+## 2025-02-19 – Sidebar admin: distribución en pantallas muy altas (2560×1600)
+
+### Objetivo
+En resoluciones muy altas (p. ej. 2560×1600), el sidebar de administrador dejaba mucho espacio vacío debajo de los ítems; los enlaces quedaban agrupados arriba y no se distribuían bien en la altura disponible.
+
+### Cambios en `client/src/components/layouts/SidebarBase.jsx`
+
+- **Detección de viewport alto:** Se añade `isTallViewport = viewport.height > 1000` para considerar pantallas con mucha altura (p. ej. 1600px).
+- **Solo rol admin:** En viewports altos y cuando `userRole === 'admin'`:
+  - El contenedor con scroll del menú recibe `flex flex-col` para poder distribuir el contenido.
+  - La lista `<ul>` de opciones principales pasa a usar **`flex flex-col justify-evenly min-h-full gap-2`** en lugar de `space-y-*`, de modo que los ítems se reparten de forma uniforme en la altura disponible y se elimina el hueco grande debajo.
+- En pantallas no altas o en roles distintos de admin se mantiene el comportamiento anterior (espaciado fijo `space-y-1` / `2xl:space-y-3`).
+
+### Resultado esperado
+En resoluciones como 2560×1600, el sidebar admin reparte los ítems del menú a lo largo de la columna, sin dejar un bloque de espacio vacío debajo; en pantallas normales o bajas el aspecto no cambia.
+
+---
+
 ## 2025-02-19 – Gastos fijos: iPad (768px+) tabla y botones
 
 ### Objetivo

@@ -498,8 +498,8 @@ export function ReportesPagos_Admin_comp() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible" data-chart="ingresos-mes">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Mes</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Solo pagos aprobados</div>
-            <div className="h-[220px] xs:h-[240px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full min-w-[180px] h-[220px] xs:h-[240px]" style={{ minHeight: 220 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={180} minHeight={200}>
                 <BarChart data={(reportes.ingresosPorMes || [])} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
@@ -514,8 +514,8 @@ export function ReportesPagos_Admin_comp() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible" data-chart="pagos-curso">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Pagos por Curso</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Cantidad de pagos aprobados</div>
-            <div className="h-[220px] xs:h-[240px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full min-w-[180px] h-[220px] xs:h-[240px]" style={{ minHeight: 220 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={180} minHeight={200}>
                 <BarChart data={(reportes.pagosPorCurso || [])} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="curso" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
@@ -533,8 +533,8 @@ export function ReportesPagos_Admin_comp() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible" data-chart="metodos-pago">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Distribución por Método</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Métodos de pago (aprobados)</div>
-            <div className="h-[220px] xs:h-[240px] min-w-0 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full min-w-[180px] h-[220px] xs:h-[240px] flex items-center justify-center" style={{ minHeight: 220 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={180} minHeight={200}>
                 <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
                   <Tooltip formatter={(v, _, p) => `${v} (${p.payload.porcentaje}%)`} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -555,8 +555,8 @@ export function ReportesPagos_Admin_comp() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Semana</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Semanas en el rango</div>
-            <div className="h-[240px] sm:h-[260px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full min-w-[180px] h-[240px] sm:h-[260px]" style={{ minHeight: 240 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={180} minHeight={220}>
                 <LineChart data={(reportes.ingresosPorSemana || []).slice().reverse()} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="semana" tick={{ fontSize: 10 }} tickFormatter={(v) => `S${v}`} />
@@ -570,8 +570,8 @@ export function ReportesPagos_Admin_comp() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 border-2 border-slate-200 flex flex-col min-w-0 overflow-visible">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">Ingresos por Año</h3>
             <div className="text-xs sm:text-sm text-slate-600 mb-4 font-medium">Visión global</div>
-            <div className="h-[240px] sm:h-[260px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full min-w-[180px] h-[240px] sm:h-[260px]" style={{ minHeight: 240 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={180} minHeight={220}>
                 <BarChart data={(reportes.ingresosPorAnio || [])} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="anio" tick={{ fontSize: 10 }} />

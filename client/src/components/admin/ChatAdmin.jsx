@@ -70,7 +70,7 @@ const ChatAdmin = () => {
     const unlockAudioRef = useCallback(() => {
         if (audioUnlockedRef.current) return;
         try {
-            audioRef.current = new Audio('/public/notification-sound-for-whatsapp.mp3');
+            audioRef.current = new Audio('/notification-sound-for-whatsapp.mp3');
             audioRef.current.volume = 0.5;
             audioRef.current.play().then(() => {
                 audioRef.current.pause();
