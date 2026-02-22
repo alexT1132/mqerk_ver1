@@ -5,28 +5,28 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import loginIllustration from "../../../assets/2-removebg-preview.png";
 
 /* ─── Typewriter hook ───────────────────────────────────────────── */
-function useTypewriter(text, { typeSpeed=80, deleteSpeed=40, startDelay=300, pauseAfterWrite=1300, pauseAfterDelete=600, loop=true } = {}) {
+function useTypewriter(text, { typeSpeed = 80, deleteSpeed = 40, startDelay = 300, pauseAfterWrite = 1300, pauseAfterDelete = 600, loop = true } = {}) {
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState("idle");
   const [caretOn, setCaretOn] = useState(true);
-  useEffect(() => { const iv = setInterval(() => setCaretOn(v=>!v), 520); return () => clearInterval(iv); }, []);
+  useEffect(() => { const iv = setInterval(() => setCaretOn(v => !v), 520); return () => clearInterval(iv); }, []);
   useEffect(() => {
     let t;
-    if (phase==="idle") { t=setTimeout(()=>setPhase("typing"),startDelay); return ()=>clearTimeout(t); }
-    if (phase==="typing") {
-      if (idx<text.length) { const isPause=" .,".includes(text[idx]); t=setTimeout(()=>setIdx(idx+1),isPause?typeSpeed*1.9:typeSpeed); }
-      else t=setTimeout(()=>setPhase("pausingAfterWrite"),pauseAfterWrite);
-      return ()=>clearTimeout(t);
+    if (phase === "idle") { t = setTimeout(() => setPhase("typing"), startDelay); return () => clearTimeout(t); }
+    if (phase === "typing") {
+      if (idx < text.length) { const isPause = " .,".includes(text[idx]); t = setTimeout(() => setIdx(idx + 1), isPause ? typeSpeed * 1.9 : typeSpeed); }
+      else t = setTimeout(() => setPhase("pausingAfterWrite"), pauseAfterWrite);
+      return () => clearTimeout(t);
     }
-    if (phase==="pausingAfterWrite") { t=setTimeout(()=>{ if(loop) setPhase("deleting"); },0); return ()=>clearTimeout(t); }
-    if (phase==="deleting") {
-      if (idx>0) t=setTimeout(()=>setIdx(idx-1),deleteSpeed);
-      else t=setTimeout(()=>setPhase("pausingAfterDelete"),pauseAfterDelete);
-      return ()=>clearTimeout(t);
+    if (phase === "pausingAfterWrite") { t = setTimeout(() => { if (loop) setPhase("deleting"); }, 0); return () => clearTimeout(t); }
+    if (phase === "deleting") {
+      if (idx > 0) t = setTimeout(() => setIdx(idx - 1), deleteSpeed);
+      else t = setTimeout(() => setPhase("pausingAfterDelete"), pauseAfterDelete);
+      return () => clearTimeout(t);
     }
-    if (phase==="pausingAfterDelete") { t=setTimeout(()=>setPhase("typing"),0); return ()=>clearTimeout(t); }
-  }, [text,idx,phase,typeSpeed,deleteSpeed,startDelay,pauseAfterWrite,pauseAfterDelete,loop]);
-  return { text: text.slice(0,idx), caretOn };
+    if (phase === "pausingAfterDelete") { t = setTimeout(() => setPhase("typing"), 0); return () => clearTimeout(t); }
+  }, [text, idx, phase, typeSpeed, deleteSpeed, startDelay, pauseAfterWrite, pauseAfterDelete, loop]);
+  return { text: text.slice(0, idx), caretOn };
 }
 
 /* ─── Main Component ───────────────────────────────────────────── */
@@ -42,45 +42,45 @@ export default function LoginResponsive() {
   const [focused, setFocused] = useState(null);
   const justLoggedInRef = useRef(false);
 
-  const typew = useTypewriter("Bienvenido a MQerkAcademy", { typeSpeed:110, deleteSpeed:55, pauseAfterWrite:1600, pauseAfterDelete:500 });
+  const typew = useTypewriter("Bienvenido a MQerkAcademy", { typeSpeed: 110, deleteSpeed: 55, pauseAfterWrite: 1600, pauseAfterDelete: 500 });
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    if (urlParams.get('reason')==='timeout') { setShowTimeoutMessage(true); navigate('/login',{replace:true}); }
+    if (urlParams.get('reason') === 'timeout') { setShowTimeoutMessage(true); navigate('/login', { replace: true }); }
   }, [location.search, navigate]);
 
   useEffect(() => {
-    try { const s=localStorage.getItem('rememberedUsername'); if(s) setValue('usuario',s); } catch {}
+    try { const s = localStorage.getItem('rememberedUsername'); if (s) setValue('usuario', s); } catch { }
   }, [setValue]);
 
   const onSubmit = handleSubmit(async (data) => {
     if (submitting) return;
-    setSubmitting(true); justLoggedInRef.current=false;
+    setSubmitting(true); justLoggedInRef.current = false;
     try {
-      if(data.rememberMe) localStorage.setItem('rememberedUsername',(data.usuario||'').trim());
+      if (data.rememberMe) localStorage.setItem('rememberedUsername', (data.usuario || '').trim());
       else localStorage.removeItem('rememberedUsername');
-      await signin({ ...data, usuario:(data.usuario||"").trim(), contraseña:(data.contraseña||"").trim(), rememberMe:Boolean(data.rememberMe) });
-      justLoggedInRef.current=true;
-    } catch { justLoggedInRef.current=false; } finally { setSubmitting(false); }
+      await signin({ ...data, usuario: (data.usuario || "").trim(), contraseña: (data.contraseña || "").trim(), rememberMe: Boolean(data.rememberMe) });
+      justLoggedInRef.current = true;
+    } catch { justLoggedInRef.current = false; } finally { setSubmitting(false); }
   });
 
   useEffect(() => {
-    if (!isAuthenticated||!user||location.pathname!=='/login'||!justLoggedInRef.current) return;
-    setLoginSuccess(true); justLoggedInRef.current=false;
-    const timer=setTimeout(()=>{
-      const role=(user?.role||"").toLowerCase();
-      if(["admin","administrador","administrativo"].includes(role)) return navigate("/administrativo",{replace:true});
-      if(role==="estudiante") return navigate("/alumno",{replace:true});
-      if(role==="asesor") { try{localStorage.removeItem("cursoSeleccionado")}catch{} return navigate("/asesor/inicio",{replace:true}); }
-      navigate("/",{replace:true});
-    },1200);
-    return ()=>clearTimeout(timer);
-  }, [isAuthenticated,user,navigate,location.pathname]);
+    if (!isAuthenticated || !user || location.pathname !== '/login' || !justLoggedInRef.current) return;
+    setLoginSuccess(true); justLoggedInRef.current = false;
+    const timer = setTimeout(() => {
+      const role = (user?.role || "").toLowerCase();
+      if (["admin", "administrador", "administrativo"].includes(role)) return navigate("/administrativo", { replace: true });
+      if (role === "estudiante") return navigate("/alumno", { replace: true });
+      if (role === "asesor") { try { localStorage.removeItem("cursoSeleccionado") } catch { } return navigate("/asesor/inicio", { replace: true }); }
+      navigate("/", { replace: true });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, user, navigate, location.pathname]);
 
   useEffect(() => {
-    if(!loginSuccess) return;
-    const t=setTimeout(()=>setLoginSuccess(false),1200);
-    return ()=>clearTimeout(t);
+    if (!loginSuccess) return;
+    const t = setTimeout(() => setLoginSuccess(false), 1200);
+    return () => clearTimeout(t);
   }, [loginSuccess]);
 
   return (
@@ -98,6 +98,14 @@ export default function LoginResponsive() {
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+        /* 14" (escala 150% → altura ~720px): subir fuerte */
+        @media (min-width: 1024px) and (max-height: 950px) {
+          .login-root { align-items: flex-start; padding-top: 0.25rem; }
+        }
+        /* 15.6" (1080p → altura 1080px): subir solo un poco, quede un poco más bajo */
+        @media (min-width: 1024px) and (min-height: 951px) and (max-height: 1100px) {
+          .login-root { align-items: flex-start; padding-top: 1.25rem; }
         }
 
         /* Animated gradient orbs — pastel, escalan por viewport */
@@ -352,7 +360,8 @@ export default function LoginResponsive() {
             color: #fdf2f8;
           }
           .illus-wrap { position:relative; width: 100%; max-width: 100%; display: flex; justify-content: center; align-items: center; }
-          .illus-wrap img { max-height: 40vh; width: 100%; max-width: 100%; object-fit: contain; object-position: center; filter: drop-shadow(0 0 60px rgba(168,85,247,0.3)) drop-shadow(0 0 20px rgba(236,72,153,0.2)); }
+          /* 14" hacia abajo: imagen más grande (solo hasta <1536px) */
+          .illus-wrap img { max-height: 55vh; width: 100%; max-width: 100%; object-fit: contain; object-position: center; filter: drop-shadow(0 0 60px rgba(168,85,247,0.3)) drop-shadow(0 0 20px rgba(236,72,153,0.2)); }
           .illus-ring {
             position:absolute; inset:-40px; border-radius:50%;
             border:1px solid rgba(192,132,252,0.12);
@@ -367,26 +376,96 @@ export default function LoginResponsive() {
 
           .desktop-right {
             flex:1; display:flex; align-items:center; justify-content:center; padding: 2rem 1.5rem;
+            min-height: 0;
           }
-          .desktop-right .card-shell { margin: 0; max-width: 400px; }
+          .desktop-right .card-shell { margin: 0; max-width: 400px; max-height: 90vh; overflow-y: auto; }
           .desktop-right .card-body { padding: 2.5rem 2rem; }
         }
 
-        @media (min-width: 1280px) {
-          .desktop-left { padding: 3rem 2rem; }
-          .desktop-right { padding: 3rem 2rem; }
-          .desktop-right .card-shell { max-width: 420px; }
-          .desktop-right .card-body { padding: 3rem 2.75rem; }
-          .illus-wrap img { max-height: 60vh; width: 100%; max-width: 100%; }
+        /* 14" (altura ≤950px, ej. escala 150%): subir fuerte */
+        @media (min-width: 1024px) and (max-height: 950px) {
+          .desktop-layout { align-items: flex-start; justify-content: flex-start; padding-top: 0.5rem; transform: translateY(-1.5rem); }
+          .desktop-left { padding: 1.25rem 2rem 2.5rem; justify-content: flex-start; }
+          .desktop-right { padding: 1.25rem 2rem 2.5rem; align-items: flex-start; }
+          .desktop-right .card-shell { max-width: 400px; }
+          .desktop-right .card-body { padding: 2.75rem 2.25rem; }
+          .illus-wrap img { max-height: 72vh; width: 100%; max-width: 100%; }
+        }
+        /* 15.6" (altura 951–1100px, ej. 1080p): subir solo un poco, un poco más bajo */
+        @media (min-width: 1024px) and (min-height: 951px) and (max-height: 1100px) {
+          .desktop-layout { align-items: flex-start; justify-content: flex-start; padding-top: 1.5rem; transform: translateY(-0.5rem); }
+          .desktop-left { padding: 2rem 2rem 2.5rem; justify-content: flex-start; }
+          .desktop-right { padding: 2rem 2rem 2.5rem; align-items: flex-start; }
+          .desktop-right .card-shell { max-width: 400px; }
+          .desktop-right .card-body { padding: 2.5rem 2.25rem; }
+          .illus-wrap img { max-height: 72vh; width: 100%; max-width: 100%; }
         }
 
+        /* 14" hacia abajo: imagen aún más grande */
+        @media (min-width: 1400px) {
+          .desktop-right .card-shell { max-width: 400px; }
+          .desktop-right .card-body { padding: 2.75rem 2.25rem; }
+          .illus-wrap img { max-height: 80vh; width: 100%; max-width: 100%; }
+        }
+
+        /* Pantallas GRANDES (≥1536px): card grande y contenido centrado (no subir) */
         @media (min-width: 1536px) {
-          .desktop-layout { max-width: 1536px; margin: 0 auto; }
-          .desktop-left { padding: 3rem 2.5rem; }
-          .desktop-right { padding: 3rem 2.5rem; }
-          .desktop-right .card-shell { max-width: 440px; }
-          .desktop-right .card-body { padding: 3rem 2.75rem; }
-          .illus-wrap img { max-height: 72vh; width: 100%; max-width: 100%; }
+          .login-root { align-items: center; padding-top: 0; }
+          .desktop-layout { max-width: 1536px; margin: 0 auto; align-items: center; justify-content: center; padding-top: 0; }
+          .desktop-left { padding: 3rem 2.5rem; justify-content: center; }
+          .desktop-right { padding: 3rem 2.5rem; align-items: center; }
+          .desktop-right .card-shell { max-width: 600px; min-width: 520px; }
+          .desktop-right .card-body { padding: 3.5rem 3.25rem; }
+          .illus-wrap img { max-height: 80vh; width: 100%; max-width: 100%; }
+        }
+
+        /* Solo pantallas EXTRA GRANDES (≥1800px): contenedor aún más grande */
+        @media (min-width: 1800px) {
+          .illus-wrap img { max-height: 85vh; width: 100%; max-width: 100%; }
+          .desktop-right .card-shell { max-width: 680px; min-width: 600px; }
+          .desktop-right .card-body { padding: 3.75rem 3.5rem; }
+        }
+
+        @media (min-width: 1920px) {
+          .desktop-right .card-shell { max-width: 740px; min-width: 660px; }
+          .desktop-right .card-body { padding: 4rem 3.75rem; }
+        }
+
+        /* Pantallas con poca altura (ej. 14" 1080p): card más compacto para que quepa entero sin cortarse */
+        @media (min-width: 1024px) and (max-height: 1000px) {
+          .desktop-right .card-shell { max-height: 88vh; }
+          .desktop-right .card-body { padding: 2rem 1.75rem; }
+        }
+        @media (min-width: 1024px) and (max-height: 900px) {
+          .desktop-right .card-body { padding: 1.5rem 1.5rem; }
+        }
+
+        /* Ajuste Específico: 14" 1920x1080 a 150% de escala (Ancho lógico ~1280px, altura disponible ~600-720px) 
+           Disminuimos el tamaño de los elementos sin afectar resoluciones más amplias */
+        @media (min-width: 1200px) and (max-width: 1280px) and (max-height: 720px) {
+          .desktop-layout { padding-top: 2.5rem; transform: translateY(0.5rem); }
+          .desktop-left { padding: 0.5rem 1.5rem; justify-content: center; }
+          .desktop-right { padding: 0.5rem 1.5rem; justify-content: center; transform: translateY(0); }
+          .desktop-right .card-shell { max-width: 350px; }
+          .desktop-right .card-body { padding: 1.5rem 1.5rem; }
+          .illus-wrap img { max-height: 55vh; }
+          .heading.illus-heading { font-size: 1.25rem; margin-bottom: 0.75rem; }
+          .brand-badge { margin-bottom: 1rem; padding: 4px 12px 4px 6px; }
+          .brand-dot { width: 22px; height: 22px; }
+          .brand-text { font-size: 0.7rem; }
+          .field { margin-bottom: 0.85rem; }
+          .field-label { font-size: 0.7rem; margin-bottom: 0.35rem; }
+          .field-input { min-height: 38px; padding: 10px 12px 10px 38px; font-size: 0.85rem; border-radius: 10px; }
+          .field-input.has-toggle { padding-right: 38px; }
+          .field-icon { left: 10px; }
+          .field-icon svg { width: 14px; height: 14px; }
+          .pwd-toggle { min-width: 38px; min-height: 38px; }
+          .pwd-toggle svg { width: 15px; height: 15px; }
+          .options-row { margin-bottom: 1rem; }
+          .remember-label { font-size: 0.75rem; }
+          .forgot-link { font-size: 0.75rem; }
+          .submit-btn { min-height: 40px; padding: 10px 16px; font-size: 0.85rem; border-radius: 10px; }
+          .desktop-tagline { margin-top: 1rem; }
         }
       `}</style>
 
@@ -402,7 +481,7 @@ export default function LoginResponsive() {
           <div className="success-overlay">
             <div className="success-card">
               <div className="success-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div className="success-title">¡Login exitoso!</div>
               <div className="success-sub">Redirigiendo a tu panel…</div>
@@ -412,13 +491,13 @@ export default function LoginResponsive() {
         )}
 
         {/* MOBILE */}
-        <div className="mobile-layout" style={{position:'relative',zIndex:10,width:'100%',alignItems:'center',justifyContent:'center'}}>
-          <h1 className="heading" aria-live="polite" style={{textAlign:'center',marginBottom:'0.5rem',color:'#fdf2f8'}}>
+        <div className="mobile-layout" style={{ position: 'relative', zIndex: 10, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+          <h1 className="heading" aria-live="polite" style={{ textAlign: 'center', marginBottom: '0.5rem', color: '#fdf2f8' }}>
             {typew.text || <span>&nbsp;</span>}
-            <span className="heading-caret" style={{opacity: typew.caretOn ? 1 : 0}}>|</span>
+            <span className="heading-caret" style={{ opacity: typew.caretOn ? 1 : 0 }}>|</span>
           </h1>
-          <p className="subheading" style={{textAlign:'center',marginBottom:'1.25rem',color:'rgba(196,181,253,0.55)'}}>Inicia sesión para continuar</p>
-          <FormCard {...{register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMessage,errors,focused,setFocused}} />
+          <p className="subheading" style={{ textAlign: 'center', marginBottom: '1.25rem', color: 'rgba(196,181,253,0.55)' }}>Inicia sesión para continuar</p>
+          <FormCard {...{ register, onSubmit, submitting, showPwd, setShowPwd, showTimeoutMessage, errors, focused, setFocused }} />
         </div>
 
         {/* DESKTOP */}
@@ -426,7 +505,7 @@ export default function LoginResponsive() {
           <div className="desktop-left">
             <h1 className="heading illus-heading" aria-live="polite">
               {typew.text || <span>&nbsp;</span>}
-              <span className="heading-caret" style={{opacity: typew.caretOn ? 1 : 0}}>|</span>
+              <span className="heading-caret" style={{ opacity: typew.caretOn ? 1 : 0 }}>|</span>
             </h1>
             <div className="illus-wrap">
               <div className="illus-ring" />
@@ -438,7 +517,7 @@ export default function LoginResponsive() {
             </div>
           </div>
           <div className="desktop-right">
-            <FormCard {...{register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMessage,errors,focused,setFocused}} />
+            <FormCard {...{ register, onSubmit, submitting, showPwd, setShowPwd, showTimeoutMessage, errors, focused, setFocused }} />
           </div>
         </div>
       </div>
@@ -447,14 +526,14 @@ export default function LoginResponsive() {
 }
 
 /* ─── Form Card (shared) ──────────────────────────────────────── */
-function FormCard({register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMessage,errors,focused,setFocused}) {
+function FormCard({ register, onSubmit, submitting, showPwd, setShowPwd, showTimeoutMessage, errors, focused, setFocused }) {
   return (
     <div className="card-shell">
       <div className="card-body">
         {/* Brand */}
         <div className="brand-badge">
           <div className="brand-dot">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
           </div>
           <span className="brand-text">MQerkAcademy</span>
         </div>
@@ -462,13 +541,13 @@ function FormCard({register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMe
         {/* Timeout */}
         {showTimeoutMessage && (
           <div className="alert-timeout">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             Tu sesión expiró por inactividad.
           </div>
         )}
 
         {/* Errors */}
-        {Array.isArray(errors) && errors.map((err,i)=>(
+        {Array.isArray(errors) && errors.map((err, i) => (
           <div key={i} className="alert-error">{err}</div>
         ))}
 
@@ -477,16 +556,16 @@ function FormCard({register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMe
           {/* Usuario */}
           <div className="field">
             <label className="field-label" htmlFor="login-usuario">Usuario</label>
-            <div className={`field-wrap ${focused==='usuario'?'focused':''}`}>
+            <div className={`field-wrap ${focused === 'usuario' ? 'focused' : ''}`}>
               <span className="field-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M20 21a8 8 0 1 0-16 0" /><circle cx="12" cy="7" r="4" /></svg>
               </span>
               <input id="login-usuario" type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off"
                 className="field-input"
                 placeholder="tu.usuario"
-                onFocus={()=>setFocused('usuario')}
-                onBlur={()=>setFocused(null)}
-                {...register("usuario",{required:true})}
+                onFocus={() => setFocused('usuario')}
+                onBlur={() => setFocused(null)}
+                {...register("usuario", { required: true })}
               />
             </div>
           </div>
@@ -494,21 +573,21 @@ function FormCard({register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMe
           {/* Contraseña */}
           <div className="field">
             <label className="field-label" htmlFor="login-password">Contraseña</label>
-            <div className={`field-wrap ${focused==='pwd'?'focused':''}`}>
+            <div className={`field-wrap ${focused === 'pwd' ? 'focused' : ''}`}>
               <span className="field-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
               </span>
-              <input id="login-password" type={showPwd?"text":"password"} autoComplete="current-password" autoCapitalize="none"
+              <input id="login-password" type={showPwd ? "text" : "password"} autoComplete="current-password" autoCapitalize="none"
                 className="field-input has-toggle"
                 placeholder="••••••••"
-                onFocus={()=>setFocused('pwd')}
-                onBlur={()=>setFocused(null)}
-                {...register("contraseña",{required:true})}
+                onFocus={() => setFocused('pwd')}
+                onBlur={() => setFocused(null)}
+                {...register("contraseña", { required: true })}
               />
-              <button type="button" className="pwd-toggle" onClick={()=>setShowPwd(v=>!v)} aria-label={showPwd?"Ocultar":"Mostrar"}>
+              <button type="button" className="pwd-toggle" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? "Ocultar" : "Mostrar"}>
                 {showPwd
-                  ? <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3-11-8 1.04-2.71 2.98-4.94 5.41-6.31"/><path d="M1 1l22 22"/><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M6.1 6.1A10.94 10.94 0 0 1 12 4c5 0 9.27 3 11 8-.64 1.67-1.64 3.16-2.87 4.35"/></svg>
-                  : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  ? <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3-11-8 1.04-2.71 2.98-4.94 5.41-6.31" /><path d="M1 1l22 22" /><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M6.1 6.1A10.94 10.94 0 0 1 12 4c5 0 9.27 3 11 8-.64 1.67-1.64 3.16-2.87 4.35" /></svg>
+                  : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                 }
               </button>
             </div>
@@ -525,10 +604,10 @@ function FormCard({register,onSubmit,submitting,showPwd,setShowPwd,showTimeoutMe
           {/* Submit */}
           <button type="submit" className="submit-btn" disabled={submitting} aria-busy={submitting}>
             {submitting
-              ? <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:'spin 1s linear infinite'}}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  Iniciando sesión…
-                </span>
+              ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                Iniciando sesión…
+              </span>
               : "Iniciar sesión →"}
           </button>
         </form>

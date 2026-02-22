@@ -614,7 +614,7 @@ export function Calendario_Admin_comp() {
                   return (
                     <div
                       key={index}
-                      className={`aspect-square min-h-0 p-1 sm:p-1.5 md:p-2 border-r border-b border-slate-200 flex flex-col overflow-hidden ${!dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
+                      className={`aspect-square lg:aspect-auto lg:min-h-[110px] xl:min-h-[130px] p-1 sm:p-1.5 md:p-2 border-r border-b border-slate-200 flex flex-col overflow-hidden ${!dia.esMesActual ? 'bg-slate-50 text-slate-400' : 'bg-white'
                         } ${esHoy ? 'bg-gradient-to-br from-slate-100 to-slate-50 border-slate-300 ring-2 ring-slate-300' : ''} hover:bg-slate-50 transition-colors`}
                     >
                       <div className={`text-[10px] xs:text-xs sm:text-sm font-extrabold shrink-0 ${esHoy ? 'text-slate-900' : 'text-slate-700'}`}>
@@ -640,27 +640,36 @@ export function Calendario_Admin_comp() {
                         )}
                       </div>
                       {/* lg y mayor: lista por tipo + título (sin hora; la hora se ve en el modal de detalles) */}
-                      <div className="hidden lg:flex space-y-0.5 sm:space-y-1 flex-1 min-h-0 overflow-hidden flex-col">
-                        {recordatoriosDelDia.slice(0, 5).map((recordatorio) => (
+                      <div className="hidden lg:flex space-y-1 flex-1 min-h-0 overflow-hidden flex-col pt-0.5">
+                        {recordatoriosDelDia.slice(0, 2).map((recordatorio) => (
                           <div
                             key={recordatorio.id}
                             onClick={() => {
                               setSelectedReminder(recordatorio);
                               setShowEditModal(true);
                             }}
-                            className={`text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-lg border-2 cursor-pointer hover:shadow-md transition-all duration-200 ${getTipoColor(recordatorio.tipo)} ${recordatorio.completado ? 'opacity-50 line-through' : ''}`}
+                            className={`text-[9.5px] xl:text-[11px] p-1 2xl:p-1.5 rounded border border-current/20 cursor-pointer hover:shadow-md transition-all duration-200 leading-tight ${getTipoColor(recordatorio.tipo)} ${recordatorio.completado ? 'opacity-50 line-through' : ''}`}
                           >
-                            <div className="flex items-center gap-1 min-w-0">
-                              <div className={`w-2 h-2 rounded-full shrink-0 ${getTipoDotColor(recordatorio.tipo)}`} />
-                              <span className="font-semibold truncate">{getTipoShortLabel(recordatorio.tipo, recordatorio.titulo)}</span>
+                            <div className="flex items-center gap-1 min-w-0 mb-[1px]">
+                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${getTipoDotColor(recordatorio.tipo)}`} />
+                              <span className="font-bold truncate">{getTipoShortLabel(recordatorio.tipo, recordatorio.titulo)}</span>
                             </div>
-                            <div className="truncate mt-0.5 font-medium">{recordatorio.titulo}</div>
+                            <div className="truncate opacity-90">{recordatorio.titulo}</div>
                           </div>
                         ))}
-                        {recordatoriosDelDia.length > 5 && (
-                          <div className="text-[9px] xs:text-[10px] sm:text-xs text-slate-500 font-semibold shrink-0">
-                            +{recordatoriosDelDia.length - 5} más
-                          </div>
+                        {recordatoriosDelDia.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDayModalReminders([...recordatoriosDelDia]);
+                              setDayModalDate(dia.fechaCompleta);
+                              setShowDayModal(true);
+                            }}
+                            className="text-[10px] xl:text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded py-0.5 px-1 text-center cursor-pointer transition-colors w-full mt-auto shrink-0 shadow-sm"
+                          >
+                            +{recordatoriosDelDia.length - 2} más
+                          </button>
                         )}
                       </div>
                     </div>
@@ -957,7 +966,7 @@ export function Calendario_Admin_comp() {
         {/* Modal para editar recordatorio (mismo en PC; optimizado para móvil/iPad) */}
         {showEditModal && selectedReminder && createPortal(
           <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-black/40 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowEditModal(false);
@@ -965,24 +974,26 @@ export function Calendario_Admin_comp() {
               }
             }}
           >
-            <div className="relative mx-auto border-2 border-slate-300 w-full max-w-md shadow-2xl rounded-t-2xl sm:rounded-2xl bg-white max-h-[90vh] overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-5">
-                  <h3 className="text-base sm:text-xl font-extrabold text-slate-900">
-                    Detalles del Recordatorio
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setShowEditModal(false);
-                      setSelectedReminder(null);
-                    }}
-                    className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                </div>
+            <div className="relative mx-auto w-full max-w-[95vw] sm:max-w-md max-h-[90vh] rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col">
+
+              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-indigo-50 shrink-0">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                  Detalles del Recordatorio
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedReminder(null);
+                  }}
+                  className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg touch-manipulation -mr-2"
+                  aria-label="Cerrar"
+                >
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-6 overflow-y-auto">
 
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
@@ -1075,7 +1086,7 @@ export function Calendario_Admin_comp() {
         {/* Modal del día (móvil/iPad): cuántos recordatorios, de qué tipo; al tocar uno se abre "Detalles del Recordatorio" */}
         {showDayModal && dayModalReminders.length > 0 && dayModalDate && createPortal(
           <div
-            className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-center justify-center p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowDayModal(false);
@@ -1085,7 +1096,7 @@ export function Calendario_Admin_comp() {
             }}
           >
             <div
-              className="relative w-full max-h-[85vh] sm:max-h-[80vh] sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col"
+              className="relative w-full max-w-sm sm:max-w-md max-h-[85vh] rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-indigo-50 shrink-0">
@@ -1151,13 +1162,13 @@ export function Calendario_Admin_comp() {
             .sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
           return pendientes.length > 0 && createPortal(
             <div
-              className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+              className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-center justify-center p-4"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setShowPendientesModal(false);
               }}
             >
               <div
-                className="relative w-full max-h-[85vh] sm:max-h-[80vh] sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col"
+                className="relative w-full max-w-sm sm:max-w-md max-h-[85vh] rounded-2xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 shrink-0">
